@@ -31,7 +31,7 @@
     "name": "noise-field",
     "type": "registry:component",
     "title": "Noise field",
-    "description": "A slow, folding fbm texture with an optional mask that clears space for text.",
+    "description": "A slow, folding noise texture in four styles (smoke, ridges, contours, marble), with a sized mask that clears space for text.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -45,7 +45,7 @@
     "name": "aurora",
     "type": "registry:component",
     "title": "Aurora",
-    "description": "Slow vertical curtains of light that sway and shimmer, drawn as a dither.",
+    "description": "Curtains of light that fold, sway and shimmer, drawn as a dither, with props for colours, curtains, rays, tilt, drift and masks.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
