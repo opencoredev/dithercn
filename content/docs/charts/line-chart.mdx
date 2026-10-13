@@ -4,10 +4,15 @@ description: "Crisp lines with dithered range bands and point markers, for laten
 ---
 
 import LineChartDemo from "@/examples/line-chart-demo";
+import { controls as lineChartControls } from "@/examples/line-chart-controls";
 import LineChartCompare from "@/examples/line-chart-compare";
 import LineChartPoints from "@/examples/line-chart-points";
 
-<ComponentPreview src="examples/line-chart-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/line-chart-demo.tsx"
+  size="lg"
+  controls={lineChartControls}
+>
   <LineChartDemo />
 </ComponentPreview>
 

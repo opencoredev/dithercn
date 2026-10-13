@@ -4,10 +4,14 @@ description: "A tiny inline trend with a dithered fill and a dot on the latest v
 ---
 
 import SparklineDemo from "@/examples/sparkline-demo";
+import { controls as sparklineControls } from "@/examples/sparkline-controls";
 import SparklineTable from "@/examples/sparkline-table";
 import SparklineLine from "@/examples/sparkline-line";
 
-<ComponentPreview src="examples/sparkline-demo.tsx">
+<ComponentPreview
+  src="examples/sparkline-demo.tsx"
+  controls={sparklineControls}
+>
   <SparklineDemo />
 </ComponentPreview>
 

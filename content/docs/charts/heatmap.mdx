@@ -1,13 +1,18 @@
 ---
 title: "Heatmap"
-description: "A calendar heatmap where each day's dither density is its value, for deploys, activity and incidents."
+description: "A calendar or matrix heatmap built from dither cells, where every square steps cleanly from a few dots to solid."
 ---
 
 import HeatmapDemo from "@/examples/heatmap-demo";
+import { controls as heatmapControls } from "@/examples/heatmap-controls";
 import HeatmapYear from "@/examples/heatmap-year";
-import HeatmapQuarter from "@/examples/heatmap-quarter";
+import HeatmapMatrix from "@/examples/heatmap-matrix";
 
-<ComponentPreview src="examples/heatmap-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/heatmap-demo.tsx"
+  size="lg"
+  controls={heatmapControls}
+>
   <HeatmapDemo />
 </ComponentPreview>
 
@@ -31,26 +36,30 @@ export function Deploys() {
 }
 ```
 
-Each column is a week and each row a weekday. The grid ends with the latest day in `data` and goes back `weeks` weeks, 53 by default. Days missing from `data` count as 0, and entries that share a day add up. Dates are read in UTC, so a square never moves with the visitor's time zone.
+Each column is a week and each row a weekday. The grid ends with the latest day in `data` and goes back `weeks` weeks, 53 by default. Days missing from `data` count as 0, and entries for the same day add up. Dates are read in UTC, so a square never moves with the visitor's time zone.
 
-Every day is a square of 4×4 dither cells, which is exactly one Bayer tile. A value at a quarter of the maximum inks 4 of its 16 cells, and the largest value fills the square solid. When the grid is wider than its box it scrolls sideways and starts at the latest week.
+Every square is 4×4 dither cells. With the default four `steps` a square is dotted, a checkerboard, a hollow frame or solid, and an empty day is a faint backing square. Each level is a fixed mask rather than a raw threshold, so every square keeps a crisp outline and the levels stay distinct even at 2px cells. The scale goes up to six steps.
+
+The grid fills its container. Cells shrink from `cell` down to 2px to fit every week; below that the oldest weeks drop off, so a phone shows the most recent months.
+
+Hover a square, or focus the grid and use the arrow keys, for a readout above it. Hover a level in the scale to spotlight every square at that level, and click to keep it lit.
 
 ## Examples
 
-### A full year, every density
+### A year of activity
 
-`steps={16}` maps values to all 16 densities a tile can draw instead of 4 buckets, so close values stay apart. `cell={2}` makes 8px squares that fit a year in a narrower card, and `weekStart={1}` starts weeks on Monday.
+A full year with weeks starting on Monday, in `color="purple"`. On a narrow screen it keeps the latest weeks that fit.
 
-<ComponentPreview src="examples/heatmap-year.tsx">
+<ComponentPreview src="examples/heatmap-year.tsx" size="lg">
   <HeatmapYear />
 </ComponentPreview>
 
-### Capping outliers
+### Weekday by hour
 
-One outage week would make every other day look empty. `max={4}` draws 4 or more as solid and spreads the levels over the usual range. A different `color` sets it apart from the other charts on a page.
+`mode="matrix"` takes a grid of values with row and column labels instead of dates. Here pushes by weekday and hour, with `cell={4}` for larger squares and `steps={5}`. Column labels thin out when they would collide.
 
-<ComponentPreview src="examples/heatmap-quarter.tsx">
-  <HeatmapQuarter />
+<ComponentPreview src="examples/heatmap-matrix.tsx" size="lg">
+  <HeatmapMatrix />
 </ComponentPreview>
 
 ## Props
@@ -58,67 +67,103 @@ One outage week would make every other day look empty. `max={4}` draws 4 or more
 <PropsTable
   rows={[
     {
+      name: "mode",
+      type: '"calendar" | "matrix"',
+      default: '"calendar"',
+      description: "A day per square, or any grid of values.",
+    },
+    {
       name: "data",
-      type: "readonly { date: string | Date; value: number }[]",
+      type: "{ date: string | Date; value: number }[] | number[][]",
       required: true,
       description:
-        'Values by day. date is "YYYY-MM-DD" or a Date, read in UTC.',
+        'Calendar: values by day, date as "YYYY-MM-DD" or a Date read in UTC. Matrix: data[row][column].',
     },
     {
       name: "weeks",
       type: "number",
       default: "53",
-      description: "Weeks shown, ending with the latest day in data.",
+      description: "Calendar only: weeks shown, ending with the latest day.",
     },
     {
       name: "weekStart",
       type: "0 | 1",
       default: "0",
-      description: "The first row: 0 for Sunday, 1 for Monday.",
+      description:
+        "Calendar only: the first row, 0 for Sunday or 1 for Monday.",
+    },
+    {
+      name: "rows",
+      type: "string[]",
+      description: "Matrix only, required: row labels, top to bottom.",
+    },
+    {
+      name: "columns",
+      type: "string[]",
+      description: "Matrix only, required: column labels, left to right.",
     },
     {
       name: "steps",
       type: "number",
       default: "4",
-      description:
-        "How many densities values map to, above empty. Up to 16 with the default matrix.",
+      description: "Densities above empty, 2 to 6. The last is solid.",
     },
     {
       name: "max",
       type: "number",
       default: "The largest value",
-      description: "The value drawn solid. Larger values are drawn solid too.",
+      description:
+        "The value drawn solid. Larger values draw solid too, so one outlier doesn't wash out the rest.",
     },
     {
       name: "unit",
       type: "string | { one: string; other: string }",
-      default: "–",
-      description: 'What a value counts, for the readout, as in "3 deploys".',
+      description:
+        'What a value counts, for the readout and summary: "min" or { one: "deploy", other: "deploys" }.',
     },
     {
       name: "color",
       type: "DitherColor",
-      default: '"--dither-ink"',
-      description: "Ink colour of the squares.",
+      default: '"ink"',
+      description: "Ink colour, a palette name or any CSS colour.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "Soft glow behind the two densest levels.",
     },
     {
       name: "cell",
       type: "number",
       default: "--dither-cell",
       description:
-        "Size of one dither cell in px, rounded to whole device pixels. A day is 4 cells wide.",
+        "Largest dither cell in CSS pixels. Shrinks to 2 to fit the container.",
     },
     {
       name: "legend",
       type: "boolean",
       default: "true",
-      description: "Show the Less to More key.",
+      description: "Show the Less to More scale.",
+    },
+    {
+      name: "interactive",
+      type: "boolean",
+      default: "true",
+      description:
+        "Readout, keyboard and the scale spotlight. false draws a static image.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Squares ripple in from the top left on first view.",
     },
   ]}
 />
 
 ## Notes
 
-- The heatmap is a focusable group labelled with a summary: the date range, the total and the busiest day. Hover a square, or focus the heatmap and use the arrow keys (left and right move a week, up and down a day), to read a day below the grid. Screen readers hear each reading.
-- On entrance every square steps up through the dither levels together. With reduced motion it appears finished.
-- It is one SVG with a pattern per density, so a full year costs about 370 small rectangles and no animation loop after the entrance.
+- The grid is a focusable group labelled with a summary: the range, the total and the busiest square. Arrow keys move a square at a time (left and right move a week in calendar mode), Home and End jump to the ends, and a live region reads each square. Each step in the scale is a toggle button with its range as its name.
+- The ripple plays once when the grid scrolls into view. With reduced motion the grid appears finished and the readout moves without easing.
+- It is one SVG: a backing path and one path per level, built from whole cells snapped to device pixels. Hover only moves an outline and the readout by transform.

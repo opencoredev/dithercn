@@ -1,4 +1,8 @@
+"use client";
+
 import { BarChart } from "@/components/dithercn/bar-chart";
+import { usePreviewValue } from "@/components/preview-controls";
+import * as knobs from "@/examples/bar-chart-controls";
 
 const data = [
   { deploys: 38, week: "W27" },
@@ -16,6 +20,13 @@ const data = [
 ];
 
 export default function BarChartDemo() {
+  const fill = usePreviewValue(knobs.fill);
+  const color = usePreviewValue(knobs.tint);
+  const bloom = usePreviewValue(knobs.bloom);
+  const highlight = usePreviewValue(knobs.highlight);
+  const cell = usePreviewValue(knobs.cell);
+  const interactive = usePreviewValue(knobs.interactive);
+
   return (
     <div className="bg-background border-border w-full max-w-xl rounded-2xl border p-5 [--dither-paper:var(--background)] sm:p-6">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
@@ -33,7 +44,12 @@ export default function BarChartDemo() {
       <BarChart
         data={data}
         x="week"
-        series={[{ label: "Deploys", value: "deploys" }]}
+        series={[{ color, label: "Deploys", value: "deploys" }]}
+        fill={fill}
+        bloom={bloom}
+        highlight={highlight}
+        cell={cell}
+        interactive={interactive}
       />
     </div>
   );

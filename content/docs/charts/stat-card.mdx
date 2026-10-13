@@ -4,10 +4,11 @@ description: "A KPI card with a headline number, a coloured delta and a dithered
 ---
 
 import StatCardDemo from "@/examples/stat-card-demo";
+import { controls as statCardControls } from "@/examples/stat-card-controls";
 import StatCardGrid from "@/examples/stat-card-grid";
 import StatCardCompact from "@/examples/stat-card-compact";
 
-<ComponentPreview src="examples/stat-card-demo.tsx">
+<ComponentPreview src="examples/stat-card-demo.tsx" controls={statCardControls}>
   <StatCardDemo />
 </ComponentPreview>
 
@@ -33,7 +34,7 @@ export function Revenue() {
 }
 ```
 
-`delta` is a percentage: `12.4` reads as +12.4%. It is green when it moves the `good` way and red when it doesn't. `trend` takes recent values, oldest first, and draws them as an area that fades from the line down in dither steps, with a square marker on the latest value.
+`delta` is a percentage: `12.4` reads as +12.4%. It is green when it moves the `good` way and red when it doesn't, using the palette's green and red pulled slightly toward the text colour so the small text keeps its contrast. `trend` takes recent values, oldest first, and draws them as a line with a square marker on the latest value. Under it, `fill="gradient"` draws bands that thin out below the line in dither steps; `dotted`, `hatched` and `solid` fill the area evenly. `color` takes a palette name such as `"blue"`, and `bloom` adds a soft glow behind the trend.
 
 The card uses `bg-card` and a faint dot surface in the ink colour that fades out from the top right corner. Pass a `className` to change its background or width.
 
@@ -41,7 +42,7 @@ The card uses `bg-card` and a faint dot surface in the ink colour that fades out
 
 ### KPI row
 
-Four cards in a grid. Latency and error rate set `good="down"`, so latency going up is red and error rate going down is green. The latency trend uses `color="--destructive"`.
+Four cards in a grid. Latency and error rate set `good="down"`, so latency going up is red and error rate going down is green. Each card has its own `color`, and latency, the one moving the wrong way, uses `color="red"` with `fill="hatched"` and a low bloom.
 
 <ComponentPreview src="examples/stat-card-grid.tsx" size="lg">
   <StatCardGrid />
@@ -99,14 +100,27 @@ Leave `trend` out for a compact card, and `delta` out when there is nothing to c
     {
       name: "color",
       type: "DitherColor",
-      default: '"--dither-ink"',
-      description: "Ink colour of the trend and the dot surface.",
+      default: '"ink"',
+      description:
+        "Colour of the trend and the dot surface, a palette name or any CSS colour.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description: "Texture under the trend line.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "Soft glow in the colour behind the trend.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description: "The threshold pattern.",
+      description: "Threshold pattern of the gradient fill.",
     },
     {
       name: "cell",

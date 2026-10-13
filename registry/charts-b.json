@@ -17,7 +17,7 @@
     "name": "progress-bar",
     "type": "registry:component",
     "title": "Progress bar",
-    "description": "A linear progress bar with a dithered fill, determinate or indeterminate.",
+    "description": "A progress bar built from dither cells: any fill texture with a solid leading edge, stacked parts, step segments and an indeterminate comet.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -45,7 +45,7 @@
     "name": "donut-chart",
     "type": "registry:component",
     "title": "Donut chart",
-    "description": "A donut chart whose segments differ in dither density, with the total in the centre and a legend.",
+    "description": "A donut or pie chart drawn in dither cells, with a colour and texture per slice, a spotlight and a centre that follows the pointer.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -66,6 +66,20 @@
         "path": "components/dithercn/stat-card.tsx",
         "type": "registry:component",
         "target": "components/dithercn/stat-card.tsx"
+      }
+    ]
+  },
+  {
+    "name": "radar-chart",
+    "type": "registry:component",
+    "title": "Radar chart",
+    "description": "Series across several axes, drawn as polygons of dither cells whose density steps up ring by ring, with an axis scrub and legend spotlight.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/radar-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/radar-chart.tsx"
       }
     ]
   }

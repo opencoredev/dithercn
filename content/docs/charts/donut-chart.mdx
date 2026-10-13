@@ -1,13 +1,18 @@
 ---
 title: "Donut chart"
-description: "A donut chart with segments told apart by dither density, a total in the centre and a legend."
+description: "A donut or pie chart drawn in dither cells, with a colour and texture per slice and a centre that follows the pointer."
 ---
 
 import DonutChartDemo from "@/examples/donut-chart-demo";
-import DonutChartColors from "@/examples/donut-chart-colors";
+import { controls as donutChartControls } from "@/examples/donut-chart-controls";
 import DonutChartCard from "@/examples/donut-chart-card";
+import DonutChartPie from "@/examples/donut-chart-pie";
 
-<ComponentPreview src="examples/donut-chart-demo.tsx">
+<ComponentPreview
+  src="examples/donut-chart-demo.tsx"
+  size="lg"
+  controls={donutChartControls}
+>
   <DonutChartDemo />
 </ComponentPreview>
 
@@ -31,26 +36,28 @@ export function Regions() {
 }
 ```
 
-Segments run clockwise from the top in the order you pass them. In one ink, each segment is a step lighter than the one before, so put the largest first. Five densities are available before they repeat; past that, give segments their own `color`.
+Slices run clockwise from 12 o'clock in the order you pass them. Each one draws in the next palette colour (ink, orange, green, pink, purple, blue, red, grey) unless you set `colors` for the chart or `color` on the slice.
 
-Hovering a segment or its legend row brings it forward and shows its value in the centre.
+Every slice is a block of whole dither cells with a solid rim along the outside. `fill="gradient"` thins out from that rim toward the centre; `dotted`, `hatched` and `solid` fill evenly. The gaps between slices are a constant width in cells, so they stay crisp in both modes.
+
+Hover a slice or its legend row to spotlight it: the others fade, the slice steps out by two cells, and the centre switches from the total to that slice's value and share. Click to keep it lit and press Escape to let go. Focus the chart with Tab and the arrow keys step through the slices.
 
 ## Examples
 
-### Colour per segment
+### Storage card
 
-Each segment sets `color` from the theme's chart colours and the same `level`, so colour carries the difference. `matrix="bayer8"` gives a finer texture.
-
-<ComponentPreview src="examples/donut-chart-colors.tsx">
-  <DonutChartColors />
-</ComponentPreview>
-
-### Inside a dashboard card
-
-A smaller chart with a thinner ring and a unit on every value.
+A smaller ring with `fill="hatched"`. The free space is its own slice with `color: "grey"` and `fill: "dotted"`, so it reads as empty without a second chart.
 
 <ComponentPreview src="examples/donut-chart-card.tsx">
   <DonutChartCard />
+</ComponentPreview>
+
+### Pie in a landing section
+
+`mode="pie"` drops the hole. The spotlit slice gets a readout card that glides between slices. `bloom="high"` adds a soft glow in each slice's colour.
+
+<ComponentPreview src="examples/donut-chart-pie.tsx" size="lg">
+  <DonutChartPie />
 </ComponentPreview>
 
 ## Props
@@ -59,28 +66,60 @@ A smaller chart with a thinner ring and a unit on every value.
   rows={[
     {
       name: "data",
-      type: "DonutSegment[]",
+      type: "DonutSlice[]",
       description:
-        "{ label: string; value: number; color?: DitherColor; level?: number }, drawn clockwise from the top.",
+        "{ label: string; value: number; color?: DitherColor; fill?: FillVariant }, drawn clockwise from the top.",
       required: true,
     },
     {
       name: "label",
       type: "string",
-      description: "What the total counts. Shown under it in the centre.",
+      description:
+        "What the total counts. Shown in the centre and used in the chart's summary.",
       required: true,
+    },
+    {
+      name: "mode",
+      type: '"donut" | "pie"',
+      default: '"donut"',
+      description:
+        "A ring with the total in the middle, or full wedges with a readout over the active slice.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description: "Texture of every slice. A slice's own fill wins.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "Soft glow in each slice's colour behind it.",
+    },
+    {
+      name: "colors",
+      type: "DitherColor[]",
+      description:
+        "Colours by slice position, as palette names or CSS colours. A slice's own color wins.",
     },
     {
       name: "size",
       type: "number",
-      default: "200",
+      default: "220",
       description: "Diameter in CSS pixels.",
     },
     {
       name: "thickness",
       type: "number",
-      default: "15% of size",
-      description: "Ring thickness in CSS pixels.",
+      default: "0.36",
+      description: "Donut only: ring thickness as a share of the radius.",
+    },
+    {
+      name: "gap",
+      type: "number",
+      default: "1",
+      description: "Gap between slices, in dither cells.",
     },
     {
       name: "unit",
@@ -90,9 +129,9 @@ A smaller chart with a thinner ring and a unit on every value.
     },
     {
       name: "format",
-      type: "Intl.NumberFormatOptions",
+      type: "Intl.NumberFormatOptions | ((value: number) => string)",
       default: "{ maximumFractionDigits: 0 }",
-      description: "How values and the total are formatted.",
+      description: "How values and the total are written.",
     },
     {
       name: "legend",
@@ -102,16 +141,24 @@ A smaller chart with a thinner ring and a unit on every value.
         "Show the legend. When false it stays available to screen readers.",
     },
     {
-      name: "color",
-      type: "DitherColor",
-      default: '"--dither-ink"',
-      description: "Ink colour for segments without their own.",
+      name: "interactive",
+      type: "boolean",
+      default: "true",
+      description:
+        "Hover, keyboard focus and the legend spotlight. false draws a static image.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description:
+        "Sweep the slices in clockwise the first time the chart is seen.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description: "The threshold pattern.",
+      description: "Threshold pattern of the gradient fill.",
     },
     {
       name: "cell",
@@ -124,6 +171,6 @@ A smaller chart with a thinner ring and a unit on every value.
 
 ## Notes
 
-- The ring is hidden from assistive technology. The legend is a real list with each label, value and share, and the figure has a caption with the total.
-- Segments draw in one after another when the chart appears. With reduced motion turned on they appear at once.
-- It is plain SVG: one circle and one pattern per segment.
+- The chart is a focusable group with a summary label. Arrow keys, Home and End move between slices, Enter keeps one lit, and a live region reads the active slice. A hidden table lists every value and share.
+- The sweep plays once when the chart scrolls into view. With reduced motion turned on, slices appear at once and the spotlight has no transition.
+- The drawing is one SVG path per slice, built from whole cells snapped to device pixels. Hovering only changes opacity and a transform.

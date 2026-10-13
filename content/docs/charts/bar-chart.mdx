@@ -4,10 +4,15 @@ description: "Dithered bars with a solid cap, grouped or stacked, for weekly cou
 ---
 
 import BarChartDemo from "@/examples/bar-chart-demo";
+import { controls as barChartControls } from "@/examples/bar-chart-controls";
 import BarChartStacked from "@/examples/bar-chart-stacked";
 import BarChartGrouped from "@/examples/bar-chart-grouped";
 
-<ComponentPreview src="examples/bar-chart-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/bar-chart-demo.tsx"
+  size="lg"
+  controls={barChartControls}
+>
   <BarChartDemo />
 </ComponentPreview>
 

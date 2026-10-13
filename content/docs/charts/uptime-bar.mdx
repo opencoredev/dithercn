@@ -1,13 +1,17 @@
 ---
 title: "Uptime bar"
-description: "A status-page row of daily bars, dithered by status, with details for each day."
+description: "A status-page row of daily bars, told apart by colour and texture, with details for each day."
 ---
 
 import UptimeBarDemo from "@/examples/uptime-bar-demo";
+import { controls as uptimeBarControls } from "@/examples/uptime-bar-controls";
 import UptimeBarStatusPage from "@/examples/uptime-bar-status-page";
 import UptimeBarColors from "@/examples/uptime-bar-colors";
 
-<ComponentPreview src="examples/uptime-bar-demo.tsx">
+<ComponentPreview
+  src="examples/uptime-bar-demo.tsx"
+  controls={uptimeBarControls}
+>
   <UptimeBarDemo />
 </ComponentPreview>
 
@@ -33,6 +37,8 @@ export function ApiStatus() {
 
 Pass one entry per day, oldest first. Each day's status comes from its `uptime`: 99.9% or more is up, 99% or more is degraded, and anything lower is an outage. Set `status` on a day to override that, or `uptime: null` for a day with no data.
 
+Statuses differ in texture as well as colour. Up days use `fill` (a gradient that is dense at the base by default) in green, degraded days are hatched orange, outages are solid red and days without data are faint grey dots. `bloom` puts a soft glow behind degraded and down days only, so incidents stand out from a distance.
+
 The row shows the last 30 days on narrow screens, 60 from 28rem wide and 90 from 42rem, based on the width of its container. The percentage on the right is the average over every day with data.
 
 ## Examples
@@ -45,9 +51,9 @@ Several rows in one card. The Realtime service is newer than the window, so its 
   <UptimeBarStatusPage />
 </ComponentPreview>
 
-### Green for up
+### Your own colours
 
-`colors` overrides the colour of any status. This one sets a green that changes between light and dark mode through a CSS variable, and uses 3px cells.
+`colors` overrides the colour of any status with a palette name or any CSS colour. This one draws up days as blue dots and degraded days in purple, with 3px cells and a high bloom on incidents.
 
 <ComponentPreview src="examples/uptime-bar-colors.tsx">
   <UptimeBarColors />
@@ -73,8 +79,22 @@ Several rows in one card. The Realtime service is newer than the window, so its 
     {
       name: "colors",
       type: "Partial<Record<UptimeStatus, DitherColor>>",
-      default: "Ink, amber, --destructive, --muted-foreground",
-      description: 'Colours for "up", "degraded", "down" and "none".',
+      default: "green, orange, red, grey",
+      description:
+        'Colours for "up", "degraded", "down" and "none", as palette names or CSS colours.',
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description:
+        "Texture of the up days. Degraded days are hatched, outages solid and days without data dotted.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "Soft glow behind degraded and down days.",
     },
     {
       name: "locale",
@@ -86,7 +106,7 @@ Several rows in one card. The Realtime service is newer than the window, so its 
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description: "The threshold pattern.",
+      description: "Threshold pattern of the gradient fill.",
     },
     {
       name: "cell",
@@ -100,6 +120,6 @@ Several rows in one card. The Realtime service is newer than the window, so its 
 
 ## Notes
 
-- Status shows in density as well as colour: up is nearly solid, degraded is under half, an outage is solid and no data is sparse. The statuses stay apart for colour-blind readers and in greyscale.
+- Status shows in texture as well as colour: up days use the fill, degraded days are hatched, outages solid and days without data dotted. The statuses stay apart for colour-blind readers and in greyscale.
 - Each bar is a button with a full description, such as "Oct 9, 2026, Degraded, 99.62% uptime". Only one bar is in the tab order; the arrow keys, Home and End move between days, and Escape closes the tooltip. Tapping a bar shows its tooltip on touch screens.
 - Dates are formatted in UTC, so the server and the browser agree.

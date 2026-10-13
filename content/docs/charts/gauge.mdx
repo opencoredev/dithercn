@@ -1,13 +1,18 @@
 ---
 title: "Gauge"
-description: "A radial gauge of dithered blocks for a single reading, such as load, usage or a score."
+description: "A radial gauge of dithered blocks for a single reading, such as load, usage or a score, with a solid block at the value."
 ---
 
 import GaugeDemo from "@/examples/gauge-demo";
+import { controls as gaugeControls } from "@/examples/gauge-controls";
 import GaugeDial from "@/examples/gauge-dial";
 import GaugeRing from "@/examples/gauge-ring";
 
-<ComponentPreview src="examples/gauge-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/gauge-demo.tsx"
+  size="lg"
+  controls={gaugeControls}
+>
   <GaugeDemo />
 </ComponentPreview>
 
@@ -25,13 +30,13 @@ export function CpuGauge({ load }: { load: number }) {
 }
 ```
 
-The arc is split into blocks. Blocks up to the value fill in, with the block at the value solid and each one behind it a step lighter, so the arc points at the reading. The rest of the track stays as faint dots.
+The arc is split into blocks over a faint track in the same colour. Blocks up to the value fill in, and the block at the value is solid and steps out by one cell, so the arc points at the reading like a needle. With `fill="gradient"` each block behind it is a step lighter; `dotted`, `hatched` and `solid` fill evenly.
 
 ## Examples
 
 ### Dials on a host card
 
-`variant="dial"` sweeps 270°, like a speedometer. A gauge over 90% switches its `color` to `--destructive`.
+`variant="dial"` sweeps 270°, like a speedometer. A gauge over 90% switches to `color="red"` with `fill="hatched"` and a low bloom, so it reads as a warning without relying on colour alone.
 
 <ComponentPreview src="examples/gauge-dial.tsx">
   <GaugeDial />
@@ -39,7 +44,7 @@ The arc is split into blocks. Blocks up to the value fill in, with the block at 
 
 ### Ring beside a summary
 
-`variant="ring"` is a full circle starting at the top, with the reading in the middle. It hides the min and max labels, which would sit on top of each other.
+`variant="ring"` is a full circle starting at the top, with the reading in the middle, here in `green` with `fill="dotted"`. It hides the min and max labels, which would sit on top of each other.
 
 <ComponentPreview src="examples/gauge-ring.tsx">
   <GaugeRing />
@@ -115,20 +120,40 @@ The arc is split into blocks. Blocks up to the value fill in, with the block at 
     {
       name: "color",
       type: "DitherColor",
-      default: '"--dither-ink"',
-      description: "Ink colour of the filled blocks.",
+      default: '"ink"',
+      description:
+        "Colour of the filled blocks, a palette name or any CSS colour.",
     },
     {
       name: "trackColor",
       type: "DitherColor",
       default: "color",
-      description: "Colour of the empty track.",
+      description: "Colour of the empty track, drawn faint.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description:
+        "Texture of the filled blocks. The block at the value is always solid.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "Soft glow in the fill's colour behind the filled blocks.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Fill the blocks in one by one on mount.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description: "The threshold pattern.",
+      description: "Threshold pattern of the gradient fill.",
     },
     {
       name: "cell",
@@ -144,4 +169,4 @@ The arc is split into blocks. Blocks up to the value fill in, with the block at 
 
 - The gauge has `role="meter"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax` and an `aria-valuetext` that includes the unit. The drawing is hidden from assistive technology.
 - Blocks fade in one after another when the gauge appears or the value rises. With reduced motion turned on they appear at once.
-- It is plain SVG with one pattern per density, so it costs nothing after it renders.
+- It is plain SVG with one pattern per density, so it costs nothing after it renders. Bloom is a blurred copy of the filled blocks.
