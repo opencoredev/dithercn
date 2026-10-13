@@ -3,7 +3,7 @@
     "name": "dither-text",
     "type": "registry:component",
     "title": "Dither text",
-    "description": "Display text whose letters are filled with a dithered gradient or noise, kept as real, selectable text.",
+    "description": "Display text whose letters are filled with a dithered gradient, noise, dots or hatching in any palette colour, kept as real, selectable text.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -17,7 +17,7 @@
     "name": "dissolve-text",
     "type": "registry:component",
     "title": "Dissolve text",
-    "description": "Text that dissolves in, and out, through the levels of a Bayer matrix, by character, word or line.",
+    "description": "Text that dissolves in through Bayer thresholds by character, word or line, in any order, settling solid or into a dithered texture.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -31,7 +31,7 @@
     "name": "scramble-text",
     "type": "registry:component",
     "title": "Scramble text",
-    "description": "A decode effect that cycles glyphs and settles into the final text without shifting the layout.",
+    "description": "Text that resolves character by character through dithered blocks and glyphs, with no layout shift, on mount, in view, hover or text change.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -45,7 +45,7 @@
     "name": "dither-number",
     "type": "registry:component",
     "title": "Dither number",
-    "description": "An animated, Intl-formatted counter whose tabular digits roll or dissolve into place.",
+    "description": "An animated number with tabular digits that roll or resolve through a dither, Intl formatting, prefix and suffix, colour and size presets.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
