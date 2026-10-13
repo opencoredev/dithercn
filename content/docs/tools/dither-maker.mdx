@@ -1,27 +1,27 @@
 ---
 title: "Dither maker"
-description: "Dither an image or a generated pattern in the browser, then download it as PNG or SVG, or copy it as CSS."
+description: "A small dither studio in the browser. Pick a look, drop in an image, compare it with the original and export PNG, SVG or CSS."
 ---
 
 import DitherMakerDemo from "@/examples/dither-maker-demo";
+import DitherMakerBrand from "@/examples/dither-maker-brand";
 
 <DitherMakerDemo />
 
-Drop an image on the preview, or choose one, to dither a photo or logo. Images never leave your device. The exports use the colours you see, so a theme palette is saved as the exact paper and ink of the current light or dark mode.
+Start from a generated pattern, or drop, paste or choose an image. Images never leave your device. Pick a look from the strip under the canvas, then fine-tune it in the inspector. **Compare** splits the canvas into the original and the dither; drag the divider or move it with the arrow keys. **1:1** shows the export's real pixels and **2:1** doubles them; drag to pan.
 
-## What the controls do
+## The controls
 
-- **Method.** Bayer and blue noise are ordered dithers: a fixed pattern that tiles cleanly and suits gradients and flat shapes. Floyd–Steinberg, Atkinson and Sierra Lite spread each cell's error to its neighbours, which keeps more detail in photos. See [Dither engine](/docs/concepts/dither-engine).
-- **Cell size.** How many output pixels one dither cell covers. The output size stays the same, so a bigger cell means fewer, chunkier cells.
-- **Levels.** How many colours the result uses. With two, every cell is paper or ink. With more, the extra colours are mixed evenly between your palette's stops.
-- **Contrast and brightness.** Applied to the tones before dithering. Raise contrast to push a soft photo towards clean shapes.
-- **Palette.** Theme uses `--dither-paper` and `--dither-ink`, with the darker one on the shadows. Custom takes two to four colours, darkest first.
-
-The PNG is full size, one block of pixels per cell. The SVG is drawn in cells with neighbouring cells merged into rectangles, so flat areas cost almost nothing. Copy CSS gives you a rule with the dither embedded as a background image that covers the element.
+- **Looks.** Ready combinations of method, cell, contrast and palette. Each thumbnail is your current source run through that look, so you choose by seeing the result.
+- **Source.** A generated orb, linear ramp, glow or noise field, each with its own control, or an image of your own.
+- **Pattern.** The dither method, with a strip under each one showing how it renders a ramp. Bayer and blue noise are ordered: a fixed pattern that tiles cleanly and suits gradients and flat shapes. Floyd–Steinberg, Atkinson and Sierra Lite spread each cell's error to its neighbours, which keeps more detail in photos. Cell sets how many output pixels one cell covers. Contrast and brightness apply to the tones before dithering.
+- **Colour.** Two to four palette stops, always laid out dark to light, so the theme's paper and ink work the same way in light and dark mode. Pick a stop, then a colour for it from the dithercn palette or the custom picker. Tones sets how many colours the result uses; extra ones are mixed between the stops.
+- **Output.** The shape of the export: 16:9, 1:1, 4:5, 3:1, or the image's own shape. The pixel and cell counts update as you go.
+- **Export.** Opens the [export panel](/docs/tools/export): PNG, SVG or CSS, a preview of the file, its size and weight, and copy and download buttons.
 
 ## Installation
 
-The maker is also a component you can put in your own app, for example in an admin tool or a brand page.
+The maker is a component you can put in your own app, such as an admin tool or a brand page.
 
 <InstallBlock name="dither-maker" />
 
@@ -35,28 +35,29 @@ export default function Page() {
 }
 ```
 
-It fills the width of its container and switches to a side-by-side layout when it has 48rem or more.
+It fills its container. From a 48rem container it puts the inspector beside the canvas; narrower, the inspector sits under the canvas with one tab per group.
 
 ## Examples
 
-### Start from your own image
+### Your own looks
 
-`defaultImage` loads a picture on first render and sets the output to the image's own size. Images on another origin need CORS headers, or the browser won't let the canvas read them.
+Pass `presets` to replace the strip with your brand's looks, and `filename` to name the downloads. Colours can be palette names such as `"purple"`, which follow light and dark mode, or any CSS colour.
 
-```tsx
-<DitherMaker defaultImage="/team-photo.jpg" defaultMethod="atkinson" />
-```
+<ComponentPreview src="examples/dither-maker-brand.tsx" align="stretch">
+  <DitherMakerBrand />
+</ComponentPreview>
 
-### Start on a brand palette
+### Offer sample pictures
 
-`defaultPalette` opens the Custom palette with your colours, darkest first, and sets the levels to match. `filename` names the downloads.
+`samples` adds links to the empty image state, so people can try the maker before they have a picture to hand. `defaultImage` opens on a picture instead. Images on another origin need CORS headers, or the browser won't let the canvas read them.
 
 ```tsx
 <DitherMaker
-  defaultPattern="noise"
-  defaultPalette={["#081226", "#3d6bff", "#dfe7ff"]}
-  defaultCell={3}
-  filename="brand-texture"
+  defaultImage="/team-photo.jpg"
+  samples={[
+    { name: "Earthrise", src: "/examples/earthrise.jpg" },
+    { name: "Tetons", src: "/examples/tetons.jpg" },
+  ]}
 />
 ```
 
@@ -65,11 +66,17 @@ It fills the width of its container and switches to a side-by-side layout when i
 <PropsTable
   rows={[
     {
-      name: "defaultImage",
-      type: "string",
-      default: "–",
+      name: "presets",
+      type: "readonly MakerPreset[]",
+      default: "MAKER_PRESETS",
       description:
-        "URL of an image to start with. Without it, the maker starts on a generated pattern.",
+        "The looks in the strip. Each has an id, a name and a look: method, cell, tones, contrast, brightness, invert and a palette of two to four colours.",
+    },
+    {
+      name: "defaultPreset",
+      type: "string",
+      default: "first preset",
+      description: "Id of the look to start on.",
     },
     {
       name: "defaultPattern",
@@ -78,24 +85,17 @@ It fills the width of its container and switches to a side-by-side layout when i
       description: "The generated pattern to start with.",
     },
     {
-      name: "defaultMethod",
-      type: "DitherMethod",
-      default: '"bayer4"',
+      name: "defaultImage",
+      type: "string",
+      default: "–",
       description:
-        '"bayer4", "bayer8", "blue-noise", "floyd-steinberg", "atkinson" or "sierra-lite".',
+        "URL of an image to start with. The output takes the image's shape.",
     },
     {
-      name: "defaultCell",
-      type: "number",
-      default: "4",
-      description: "Cell size in pixels to start with, from 1 to 16.",
-    },
-    {
-      name: "defaultPalette",
-      type: "[HexColor, HexColor, ...HexColor[]]",
-      default: "Theme",
-      description:
-        "Two to four #rrggbb colours, darkest first. Starts the maker on the Custom palette.",
+      name: "samples",
+      type: "readonly { name: string; src: string }[]",
+      default: "[]",
+      description: "Pictures offered in the empty image state.",
     },
     {
       name: "filename",
@@ -115,6 +115,7 @@ It fills the width of its container and switches to a side-by-side layout when i
 
 ## Notes
 
-- Every control is a native input or a labelled button, so the whole maker works from the keyboard. Export results are announced in a status line under the preview.
-- Dithering runs on the main thread, on the frame after a control changes. A 1600 × 900 output at 4px cells is about 90,000 cells and redraws in a few milliseconds; 1px cells on a large image take noticeably longer.
-- The maker uses the [export helpers](/docs/tools/export), so anything it saves you can also produce in code.
+- Every control is a native input, a labelled button or a radio group with arrow-key navigation. The compare divider is a slider: arrows move it by 2%, Shift by 10%, Home and End jump to the edges.
+- Dithering runs on the main thread, on the frame after a control changes. A 1600 × 900 output at 4px cells is 90,000 cells and redraws in a few milliseconds. The thumbnails wait until the controls settle, so dragging a slider only redraws the canvas.
+- In Fit, each cell gets a whole number of device pixels when that fills most of the stage, so the pattern never shimmers. Use 1:1 to judge the real output.
+- The maker is built on the [export helpers](/docs/tools/export), so anything it saves you can also produce in code.

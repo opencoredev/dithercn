@@ -14,16 +14,31 @@
     ]
   },
   {
+    "name": "dither-export-panel",
+    "type": "registry:component",
+    "title": "Dither export panel",
+    "description": "An export sheet for any dither: PNG, SVG or CSS tabs, sizes, a live preview of the file and its weight, copy and download with feedback.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/dither-export.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/dither-export-panel.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-export-panel.tsx"
+      }
+    ]
+  },
+  {
     "name": "dither-maker",
     "type": "registry:component",
     "title": "Dither maker",
-    "description": "A dither playground: drop in an image or pick a pattern, tune method, levels, cell size and colours, and export PNG, SVG or CSS.",
+    "description": "A small dither studio: drop in an image or pick a pattern, choose a look, tune method, cell, tone and palette, compare with the original, and export PNG, SVG or CSS.",
     "registryDependencies": [
-      "button",
-      "native-select",
-      "tabs",
+      "popover",
       "{{REGISTRY_URL}}/dither-core.json",
-      "{{REGISTRY_URL}}/dither-export.json"
+      "{{REGISTRY_URL}}/dither-export-panel.json"
     ],
     "files": [
       {

@@ -166,10 +166,40 @@ interface Run {
   swatch: number;
 }
 
+/** Joins two path numbers; a minus sign separates them on its own. */
+const pair = (a: number, b: number) => (b < 0 ? `${a}${b}` : `${a} ${b}`);
+
 /**
- * Merge cells into rectangles: runs of one colour along each row, then
- * identical runs on the rows below grow downwards. Returns one SVG path
- * string per colour.
+ * Path data for one colour. Rectangles taller than one cell are filled;
+ * one-cell-tall runs, by far the most common in a dither, are drawn as
+ * strokes one cell wide along the row's centre line. A stroke run costs
+ * `m2 0h3` with relative moves, about a third of a closed rectangle.
+ */
+class SwatchPath {
+  fill = "";
+  stroke = "";
+  private penX = 0;
+  private penY = 0;
+
+  add(run: Run) {
+    if (run.height > 1) {
+      this.fill += `M${pair(run.x, run.y)}h${run.width}v${run.height}h${-run.width}z`;
+      return;
+    }
+    const y = run.y + 0.5;
+    this.stroke +=
+      this.stroke === ""
+        ? `M${pair(run.x, y)}h${run.width}`
+        : `m${pair(run.x - this.penX, y - this.penY)}h${run.width}`;
+    this.penX = run.x + run.width;
+    this.penY = y;
+  }
+}
+
+/**
+ * Merge cells into runs of one colour along each row; identical runs on
+ * the rows below grow downwards into rectangles. Runs close in reading
+ * order, so the relative moves between strokes stay short.
  */
 const mergeRuns = ({
   cells,
@@ -184,10 +214,12 @@ const mergeRuns = ({
   swatchCount: number;
   width: number;
 }) => {
-  const paths = Array.from({ length: swatchCount }, () => "");
-  const close = (run: Run) => {
-    paths[run.swatch] +=
-      `M${run.x} ${run.y}h${run.width}v${run.height}h${-run.width}z`;
+  const paths = Array.from({ length: swatchCount }, () => new SwatchPath());
+  const close = (runs: Iterable<Run>) => {
+    const ordered = [...runs].toSorted((a, b) => a.y - b.y || a.x - b.x);
+    for (const run of ordered) {
+      paths[run.swatch]?.add(run);
+    }
   };
 
   let open = new Map<string, Run>();
@@ -213,14 +245,10 @@ const mergeRuns = ({
       }
       x = end;
     }
-    for (const run of open.values()) {
-      close(run);
-    }
+    close(open.values());
     open = next;
   }
-  for (const run of open.values()) {
-    close(run);
-  }
+  close(open.values());
   return paths;
 };
 
@@ -242,9 +270,11 @@ export interface SVGOptions {
 
 /**
  * Turn a dither into an SVG document. Coordinates are in cells (the
- * `viewBox`), so the file scales cleanly; neighbouring cells of one colour
- * merge into rectangles, one `<path>` per colour, so a 500 × 300 dither
- * stays tens of kilobytes rather than megabytes.
+ * `viewBox`), so the file scales cleanly. Neighbouring cells of one colour
+ * merge: one-cell-tall runs become short relative strokes and taller
+ * blocks become rectangles, two `<path>`s per colour at most. A 400 × 225
+ * ordered dither of a gradient comes to about 150 KB before gzip, and
+ * flat artwork to a few kilobytes.
  */
 export const toSVG = (
   source: PixelBuffer | IndexedBitmap,
@@ -272,15 +302,23 @@ export const toSVG = (
   }
   for (let index = 0; index < swatches.length; index += 1) {
     const swatch = swatches[index];
-    const d = paths[index];
-    if (!swatch || !d) {
+    const path = paths[index];
+    if (!swatch || !path) {
       continue;
     }
-    const opacity =
-      swatch.opacity < 1
-        ? ` fill-opacity="${formatOpacity(swatch.opacity)}"`
-        : "";
-    parts.push(`<path fill="${swatch.fill}"${opacity} d="${d}"/>`);
+    const opacity = swatch.opacity < 1 ? formatOpacity(swatch.opacity) : null;
+    if (path.fill) {
+      const fillOpacity = opacity ? ` fill-opacity="${opacity}"` : "";
+      parts.push(
+        `<path fill="${swatch.fill}"${fillOpacity} d="${path.fill}"/>`
+      );
+    }
+    if (path.stroke) {
+      const strokeOpacity = opacity ? ` stroke-opacity="${opacity}"` : "";
+      parts.push(
+        `<path fill="none" stroke="${swatch.fill}"${strokeOpacity} d="${path.stroke}"/>`
+      );
+    }
   }
   parts.push("</svg>");
   return parts.join("");
