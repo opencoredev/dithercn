@@ -1,5 +1,11 @@
 {
   "title": "Images",
   "description": "Your images and logos, dithered.",
-  "pages": []
+  "pages": [
+    "dither-image",
+    "hover-reveal",
+    "image-transition",
+    "dithered-logo",
+    "logo-marquee"
+  ]
 }

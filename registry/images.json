@@ -1,1 +1,84 @@
-[]
+[
+  {
+    "name": "dither-image",
+    "type": "registry:component",
+    "title": "Dither image",
+    "description": "Any image dithered to your palette with Bayer, blue noise or error diffusion, redrawn on theme change.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-image.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-image.tsx"
+      }
+    ]
+  },
+  {
+    "name": "hover-reveal",
+    "type": "registry:component",
+    "title": "Hover reveal",
+    "description": "A dithered image that reveals the original under a dithered spotlight on hover, focus or tap.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/dither-image.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/hover-reveal.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/hover-reveal.tsx"
+      }
+    ]
+  },
+  {
+    "name": "image-transition",
+    "type": "registry:component",
+    "title": "Image transition",
+    "description": "Images that dissolve into each other through a dither threshold pattern, autoplaying or controlled.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/dither-image.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/image-transition.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/image-transition.tsx"
+      }
+    ]
+  },
+  {
+    "name": "dithered-logo",
+    "type": "registry:component",
+    "title": "Dithered logo",
+    "description": "An SVG or PNG logo drawn in dithered ink, with an optional slow shimmer.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/dither-image.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/dithered-logo.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dithered-logo.tsx"
+      }
+    ]
+  },
+  {
+    "name": "logo-marquee",
+    "type": "registry:component",
+    "title": "Logo marquee",
+    "description": "A seamless marquee or still wall of logos in one consistent dithered ink.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/dithered-logo.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/logo-marquee.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/logo-marquee.tsx"
+      }
+    ]
+  }
+]
