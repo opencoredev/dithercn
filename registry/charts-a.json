@@ -82,7 +82,7 @@
     "name": "heatmap",
     "type": "registry:component",
     "title": "Heatmap",
-    "description": "A calendar heatmap where each day's dither density encodes its value.",
+    "description": "A calendar or matrix heatmap built from dither cells: each square steps from a few dots to solid, with a readout and a level scale.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
