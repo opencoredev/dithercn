@@ -1,22 +1,26 @@
-import { Loader } from "@/components/dithercn/loader";
-import type { LoaderVariant } from "@/components/dithercn/loader";
+"use client";
 
-const VARIANTS: readonly LoaderVariant[] = ["ring", "dots", "bar", "square"];
+import { Loader } from "@/components/dithercn/loader";
+import { usePreviewValue } from "@/components/preview-controls";
+import * as knobs from "@/examples/loader-controls";
 
 export default function LoaderDemo() {
+  const variant = usePreviewValue(knobs.variant);
+  const size = usePreviewValue(knobs.size);
+  const color = usePreviewValue(knobs.tint);
+  const bloom = usePreviewValue(knobs.bloom);
+  const speed = usePreviewValue(knobs.speed);
+
   return (
-    <div className="grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
-      {VARIANTS.map((variant) => (
-        <div
-          key={variant}
-          className="bg-background flex aspect-square flex-col items-center justify-center gap-5 rounded-2xl border"
-        >
-          <Loader variant={variant} size={variant === "bar" ? "md" : "lg"} />
-          <span className="text-muted-foreground font-mono text-xs">
-            {variant}
-          </span>
-        </div>
-      ))}
+    <div className="flex flex-col items-center gap-5">
+      <Loader
+        variant={variant}
+        size={size}
+        color={color}
+        bloom={bloom}
+        speed={speed}
+      />
+      <span className="text-muted-foreground font-mono text-xs">{variant}</span>
     </div>
   );
 }

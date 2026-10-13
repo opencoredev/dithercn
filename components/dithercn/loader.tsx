@@ -3,39 +3,52 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { ComponentProps } from "react";
 
-import { isInked, useDitherColors, useFrameLoop } from "@/lib/dither";
-import type { DitherColor, DitherMatrix, Rgba } from "@/lib/dither";
+import {
+  bloomStyle,
+  isInked,
+  useDitherColors,
+  useFrameLoop,
+} from "@/lib/dither";
+import type { Bloom, DitherColor, DitherMatrix, Rgba } from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /*
  * Every variant is a tone field on a small grid of cells: a function from
  * a cell and the time to a tone between 0 and 1. Each frame the loader
  * thresholds the field with the matrix and paints the inked cells into a
- * canvas one pixel per cell, which CSS scales up without smoothing. A
- * 32px loader is 256 cells, so a frame costs next to nothing.
+ * canvas one pixel per cell, which CSS scales up without smoothing. Shape
+ * edges are hard (a cell is in the ring or not); only the tone inside a
+ * shape fades, so outlines stay crisp and the dither carries the motion.
  */
 
-export type LoaderVariant = "ring" | "dots" | "bar" | "square";
+export type LoaderVariant = "ring" | "pulse" | "grid" | "bar";
 export type LoaderSize = "sm" | "md" | "lg";
 
 export type LoaderProps = Omit<ComponentProps<"div">, "children" | "color"> & {
   /** The animation. Default `"ring"`. */
   variant?: LoaderVariant;
-  /** Height in pixels: 20, 32 or 48. The bar is three times as wide. Default `"md"`. */
+  /** Height in pixels: 20, 32 or 48. The bar is four times as wide. Default `"md"`. */
   size?: LoaderSize;
   /** What a screen reader announces. Default `"Loading"`. */
   label?: string;
-  /** Ink colour. Default `--dither-ink`. */
+  /** A palette name or any CSS colour. Default `"ink"`. */
   color?: DitherColor;
+  /** A soft glow in the loader's colour. Default `"off"`. */
+  bloom?: Bloom;
   /** Threshold matrix. Default `"bayer4"`. */
   matrix?: DitherMatrix;
-  /** Size of one dither cell in CSS pixels. Default 2. */
+  /** Size of one dither cell in CSS pixels. Default 1. */
   cell?: number;
   /** Speed multiplier. Default 1. */
   speed?: number;
 };
 
 const HEIGHT = { lg: 48, md: 32, sm: 20 } as const satisfies Record<
+  LoaderSize,
+  number
+>;
+
+const DEFAULT_CELL = { lg: 1, md: 1, sm: 1 } as const satisfies Record<
   LoaderSize,
   number
 >;
@@ -48,125 +61,196 @@ interface Grid {
 }
 
 const TAU = Math.PI * 2;
+/** Tone of the faint track every variant draws its motion on. */
+const TRACK = 0.13;
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
-const smoothstep = (edge0: number, edge1: number, value: number) => {
-  const k = clamp01((value - edge0) / (edge1 - edge0));
-  return k * k * (3 - 2 * k);
-};
 const fract = (value: number) => value - Math.floor(value);
+const easeInOut = (value: number) =>
+  value < 0.5 ? 4 * value ** 3 : 1 - (-2 * value + 2) ** 3 / 2;
 
-/** A comet running round a ring, its tail fading through the levels. */
+/** Distance of a cell centre from the grid centre, 1 at the edge. */
+const radiusAt = ({ cols, rows }: Grid, x: number, y: number) =>
+  Math.hypot(
+    (x + 0.5 - cols / 2) / (cols / 2),
+    (y + 0.5 - rows / 2) / (rows / 2)
+  );
+
+const SEGMENTS = 8;
+
+/**
+ * Eight round segments on a circle. A comet runs round them, so each
+ * segment steps down through the dither levels as the head passes, and
+ * the tail stretches and shrinks, so the ring breathes instead of
+ * spinning at one pace.
+ */
 const ringField =
   ({ cols, rows }: Grid): ToneField =>
   (x, y, t) => {
-    const dx = (x + 0.5 - cols / 2) / (cols / 2);
-    const dy = (y + 0.5 - rows / 2) / (rows / 2);
-    const radius = Math.hypot(dx, dy);
-    const band =
-      smoothstep(0.42, 0.56, radius) * (1 - smoothstep(0.92, 1.04, radius));
-    if (band === 0) {
+    const scale = cols / 2;
+    const dx = (x + 0.5 - cols / 2) / scale;
+    const dy = (y + 0.5 - rows / 2) / scale;
+    const angle = fract(Math.atan2(dx, -dy) / TAU);
+    const segment = Math.round(angle * SEGMENTS) % SEGMENTS;
+    const centre = (segment / SEGMENTS) * TAU;
+    const distance = Math.hypot(
+      dx - 0.7 * Math.sin(centre),
+      dy + 0.7 * Math.cos(centre)
+    );
+    if (distance > 0.24) {
       return 0;
     }
-    const phase = fract(Math.atan2(dx, -dy) / TAU - t * 0.85);
-    const comet = (1 - phase) ** 2.4;
-    return band * Math.max(0.07, comet);
+    const tail = 0.45 + 0.3 * (0.5 - 0.5 * Math.cos(t * 2.1));
+    const behind = fract(t * 0.9 - segment / SEGMENTS);
+    return behind > tail ? TRACK : Math.max(TRACK, 1 - behind / tail);
   };
 
-/** A 3x3 matrix of dots, pulsing in a diagonal wave. */
-const dotsField =
+/** A dot that beats while thin rings ripple out of it and fade as they grow. */
+const pulseField = ({ cols, rows }: Grid): ToneField => {
+  const band = 1.6 / cols;
+  return (x, y, t) => {
+    const radius = radiusAt({ cols, rows }, x, y);
+    if (radius > 1) {
+      return 0;
+    }
+    const beat = 0.5 - 0.5 * Math.cos(t * TAU * 0.6);
+    if (radius < 0.18 + 0.08 * beat) {
+      return 1;
+    }
+    let tone = 0;
+    for (let ring = 0; ring < 3; ring += 1) {
+      const front = 0.25 + 0.75 * fract(t * 0.6 + ring / 3);
+      if (Math.abs(radius - front) < band) {
+        tone = Math.max(tone, (1 - front) ** 0.6 * 1.3);
+      }
+    }
+    return tone;
+  };
+};
+
+/** The outer blocks of a 3x3 grid, clockwise from the top left. */
+const LOOP: readonly number[] = [0, 1, 2, 5, 8, 7, 6, 3];
+const TRAIL = [1, 0.7, 0.45] as const;
+
+/** A snake running round a 3x3 grid of blocks, one block per step. */
+const gridField =
   ({ cols }: Grid): ToneField =>
   (x, y, t) => {
     const pitch = cols / 3;
-    const gap = Math.max(1, Math.round(pitch * 0.22));
-    const column = Math.floor(x / pitch);
-    const row = Math.floor(y / pitch);
-    const inDot =
-      x - Math.floor(column * pitch) < Math.round(pitch) - gap &&
-      y - Math.floor(row * pitch) < Math.round(pitch) - gap;
-    if (!inDot) {
+    const gap = Math.max(1, Math.round(pitch * 0.25));
+    const column = Math.min(2, Math.floor(x / pitch));
+    const row = Math.min(2, Math.floor(y / pitch));
+    const inBlock =
+      x - Math.round(column * pitch) < Math.round(pitch) - gap &&
+      y - Math.round(row * pitch) < Math.round(pitch) - gap;
+    if (!inBlock) {
       return 0;
     }
-    const wave = 0.5 + 0.5 * Math.cos(TAU * (t * 0.7 - (column + row) / 6));
-    return 0.1 + 0.9 * wave ** 1.8;
+    const block = row * 3 + column;
+    if (block === 4) {
+      return TRACK;
+    }
+    const head = Math.floor(t * 8) % LOOP.length;
+    const position = LOOP.indexOf(block);
+    const behind = (head - position + LOOP.length) % LOOP.length;
+    return TRAIL[behind] ?? TRACK;
   };
 
-/** A bright band sweeping back and forth along a faint track. */
+/** A dense head sweeping across a faint track, its tail thinning behind it. */
 const barField =
   ({ cols }: Grid): ToneField =>
   (x, _y, t) => {
     const u = (x + 0.5) / cols;
-    const head = 0.5 - 0.5 * Math.cos(t * 2.4);
-    const distance = (u - head) / 0.16;
-    return Math.max(0.12, Math.exp(-distance * distance));
-  };
-
-/**
- * A square that dissolves in from its centre, holds, then dissolves out.
- * A faint outline stays, so the loader never disappears completely.
- */
-const squareField =
-  ({ cols, rows }: Grid): ToneField =>
-  (x, y, t) => {
-    const dx = Math.abs(x + 0.5 - cols / 2) / (cols / 2);
-    const dy = Math.abs(y + 0.5 - rows / 2) / (rows / 2);
-    const edge = Math.max(dx, dy);
-    if (edge > 0.8) {
-      return 0;
+    // Each pass eases across and runs on past the end, so the tail leaves too.
+    const head = 1.45 * easeInOut(fract(t * 0.55));
+    const behind = head - u;
+    if (behind < 0 || behind > 0.45) {
+      return TRACK;
     }
-    // 0 → 1 → 0 over 1.8 seconds, easing at both ends.
-    const cycle = 0.5 - 0.5 * Math.cos((t / 1.8) * TAU);
-    const fill = clamp01(cycle * 1.5 - (edge / 0.8) * 0.5);
-    const outline = edge > 0.8 - 2 / cols ? 0.3 : 0.06;
-    return Math.max(outline, fill);
+    return Math.max(TRACK, (1 - behind / 0.45) ** 1.1);
   };
 
 const FIELDS = {
   bar: barField,
-  dots: dotsField,
+  grid: gridField,
+  pulse: pulseField,
   ring: ringField,
-  square: squareField,
 } as const satisfies Record<LoaderVariant, (grid: Grid) => ToneField>;
 
 // The still frame each variant shows under reduced motion.
 const STILL_TIME = {
-  bar: 0.65,
-  dots: 0.3,
-  ring: 0,
-  square: 0.62,
+  bar: 0.9,
+  grid: 0.3,
+  pulse: 0.5,
+  ring: 0.4,
 } as const satisfies Record<LoaderVariant, number>;
 
 const gridFor = (variant: LoaderVariant, height: number, cell: number) => {
-  const rows = Math.max(4, Math.round(height / cell));
-  switch (variant) {
-    case "bar": {
-      return { cols: rows * 3, rows: Math.max(2, Math.round(rows / 4)) };
-    }
-    case "ring":
-    case "dots":
-    case "square": {
-      return { cols: rows, rows };
-    }
-    default: {
-      const exhaustive: never = variant;
-      return exhaustive;
-    }
+  const rows = Math.max(6, Math.round(height / cell));
+  if (variant === "bar") {
+    return { cols: rows * 4, rows: Math.max(2, Math.round(rows / 5)) };
   }
+  return { cols: rows, rows };
 };
 
 const toByte = (value: number) => Math.round(clamp01(value) * 255);
 
+interface DrawOptions {
+  canvas: HTMLCanvasElement | null;
+  frame: { current: ImageData | null };
+  grid: Grid;
+  field: ToneField;
+  ink: Rgba;
+  matrix: DitherMatrix;
+  time: number;
+}
+
+const paint = ({
+  canvas,
+  frame,
+  grid,
+  field,
+  ink,
+  matrix,
+  time,
+}: DrawOptions) => {
+  const context = canvas?.getContext("2d");
+  if (!context) {
+    return;
+  }
+  const { cols, rows } = grid;
+  if (frame.current?.width !== cols || frame.current.height !== rows) {
+    frame.current = context.createImageData(cols, rows);
+  }
+  const { data } = frame.current;
+  const [red, green, blue, alpha] = ink.map(toByte);
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      const offset = (y * cols + x) * 4;
+      data[offset] = red ?? 0;
+      data[offset + 1] = green ?? 0;
+      data[offset + 2] = blue ?? 0;
+      data[offset + 3] = isInked(matrix, x, y, field(x, y, time))
+        ? (alpha ?? 255)
+        : 0;
+    }
+  }
+  context.putImageData(frame.current, 0, 0);
+};
+
 /**
- * A small dithered loading indicator: a ring, a pulsing dot matrix, a bar
- * scanner or a dissolving square. It announces `label` politely to screen
- * readers, holds a still frame under reduced motion, and pauses offscreen.
+ * A small dithered loading indicator: a breathing ring, a pulse, a snake
+ * round a grid of blocks, or a bar. It announces `label` politely to
+ * screen readers, holds a still frame under reduced motion, and pauses
+ * offscreen and in hidden tabs.
  */
 export const Loader = ({
   variant = "ring",
   size = "md",
   label = "Loading",
-  color = "--dither-ink",
+  color = "ink",
+  bloom = "off",
   matrix = "bayer4",
-  cell = 2,
+  cell,
   speed = 1,
   className,
   ...props
@@ -178,41 +262,26 @@ export const Loader = ({
   const colors = useDitherColors(rootRef, [color]);
   const ink: Rgba | null = colors ? colors[0] : null;
 
-  const { cols, rows } = gridFor(variant, HEIGHT[size], Math.max(1, cell));
-  const field = useMemo(
-    () => FIELDS[variant]({ cols, rows }),
-    [variant, cols, rows]
-  );
+  const step = Math.max(1, Math.round(cell ?? DEFAULT_CELL[size]));
+  const { cols, rows } = gridFor(variant, HEIGHT[size], step);
+  const grid = useMemo(() => ({ cols, rows }), [cols, rows]);
+  const field = useMemo(() => FIELDS[variant](grid), [variant, grid]);
 
   const draw = useCallback(
     (time: number) => {
-      const canvas = canvasRef.current;
-      const context = canvas?.getContext("2d");
-      if (!canvas || !context || !ink) {
-        return;
+      if (ink) {
+        paint({
+          canvas: canvasRef.current,
+          field,
+          frame: frameRef,
+          grid,
+          ink,
+          matrix,
+          time,
+        });
       }
-      if (
-        frameRef.current?.width !== cols ||
-        frameRef.current.height !== rows
-      ) {
-        frameRef.current = context.createImageData(cols, rows);
-      }
-      const frame = frameRef.current;
-      const { data } = frame;
-      const [red, green, blue, alpha] = ink.map(toByte);
-      for (let y = 0; y < rows; y += 1) {
-        for (let x = 0; x < cols; x += 1) {
-          const offset = (y * cols + x) * 4;
-          const on = isInked(matrix, x, y, field(x, y, time));
-          data[offset] = red ?? 0;
-          data[offset + 1] = green ?? 0;
-          data[offset + 2] = blue ?? 0;
-          data[offset + 3] = on ? (alpha ?? 255) : 0;
-        }
-      }
-      context.putImageData(frame, 0, 0);
     },
-    [cols, rows, field, ink, matrix]
+    [field, grid, ink, matrix]
   );
 
   // Snap cells to whole device pixels, as the shader does, so every cell is the same size.
@@ -222,10 +291,10 @@ export const Loader = ({
       return;
     }
     const ratio = window.devicePixelRatio || 1;
-    const devicePixels = Math.max(1, Math.round(cell * ratio));
+    const devicePixels = Math.max(1, Math.round(step * ratio));
     canvas.style.width = `${(cols * devicePixels) / ratio}px`;
     canvas.style.height = `${(rows * devicePixels) / ratio}px`;
-  }, [cell, cols, rows]);
+  }, [step, cols, rows]);
 
   useFrameLoop(
     (time) => {
@@ -258,7 +327,11 @@ export const Loader = ({
         height={rows}
         aria-hidden="true"
         className="block [image-rendering:pixelated]"
-        style={{ height: rows * cell, width: cols * cell }}
+        style={{
+          height: rows * step,
+          width: cols * step,
+          ...bloomStyle(color, bloom),
+        }}
       />
       <span className="sr-only">{label}</span>
     </div>
