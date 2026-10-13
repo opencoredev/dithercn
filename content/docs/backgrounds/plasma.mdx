@@ -4,11 +4,17 @@ description: "Classic plasma: overlapping sine waves that flow into each other, 
 ---
 
 import PlasmaDemo from "@/examples/plasma-demo";
+import { controls as plasmaControls } from "@/examples/plasma-controls";
 import PlasmaPalette from "@/examples/plasma-palette";
 import PlasmaHeadline from "@/examples/plasma-headline";
 import PlasmaCoarse from "@/examples/plasma-coarse";
 
-<ComponentPreview src="examples/plasma-demo.tsx" size="full" align="stretch">
+<ComponentPreview
+  src="examples/plasma-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={plasmaControls}
+>
   <PlasmaDemo />
 </ComponentPreview>
 
@@ -94,7 +100,7 @@ Large cells, the 2×2 matrix and only four `levels` give hard contour bands like
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
       default: '["--dither-paper", "--chart-5", "--dither-ink"]',
       description:
-        "Colours from paper to ink. CSS variable names or any CSS colour.",
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
     },
     {
       name: "matrix",

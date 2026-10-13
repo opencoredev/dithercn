@@ -4,10 +4,16 @@ description: "Dithered stars in three parallax layers that twinkle and drift slo
 ---
 
 import StarfieldDemo from "@/examples/starfield-demo";
+import { controls as starfieldControls } from "@/examples/starfield-controls";
 import StarfieldSignIn from "@/examples/starfield-sign-in";
 import StarfieldStill from "@/examples/starfield-still";
 
-<ComponentPreview src="examples/starfield-demo.tsx" size="full" align="stretch">
+<ComponentPreview
+  src="examples/starfield-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={starfieldControls}
+>
   <StarfieldDemo />
 </ComponentPreview>
 
@@ -97,7 +103,7 @@ A slower drift to the lower left and a stronger haze. The form has a translucent
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
       default: '["--dither-paper", "--chart-2", "--dither-ink"]',
       description:
-        "Colours from paper to ink. CSS variable names or any CSS colour.",
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
     },
     {
       name: "matrix",

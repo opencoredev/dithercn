@@ -4,6 +4,7 @@ description: "Three to five colour blobs that drift and melt into each other, dr
 ---
 
 import MeshGradientDemo from "@/examples/mesh-gradient-demo";
+import { controls as meshGradientControls } from "@/examples/mesh-gradient-controls";
 import MeshGradientSunset from "@/examples/mesh-gradient-sunset";
 import MeshGradientSignup from "@/examples/mesh-gradient-signup";
 
@@ -11,6 +12,7 @@ import MeshGradientSignup from "@/examples/mesh-gradient-signup";
   src="examples/mesh-gradient-demo.tsx"
   size="full"
   align="stretch"
+  controls={meshGradientControls}
 >
   <MeshGradientDemo />
 </ComponentPreview>
@@ -83,7 +85,7 @@ Three large blobs, bigger cells and a slower `speed` make a calm backdrop. The f
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
       default: "Paper, then four tints of --dither-ink",
       description:
-        "Colours from paper to ink. CSS variable names or any CSS colour.",
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
     },
     {
       name: "matrix",

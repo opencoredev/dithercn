@@ -4,6 +4,7 @@ description: "A dithered edge that fades a section's content into a solid colour
 ---
 
 import DitherFadeDemo from "@/examples/dither-fade-demo";
+import { controls as ditherFadeControls } from "@/examples/dither-fade-controls";
 import DitherFadeSections from "@/examples/dither-fade-sections";
 import DitherFadeSides from "@/examples/dither-fade-sides";
 import DitherFadeDrift from "@/examples/dither-fade-drift";
@@ -12,6 +13,7 @@ import DitherFadeDrift from "@/examples/dither-fade-drift";
   src="examples/dither-fade-demo.tsx"
   size="full"
   align="stretch"
+  controls={ditherFadeControls}
 >
   <DitherFadeDemo />
 </ComponentPreview>
@@ -96,7 +98,7 @@ With `animate` the edge wanders slowly, drawn with WebGL. Keep it for one hero-s
       type: "DitherColor",
       default: '"--dither-paper"',
       description:
-        "The colour the content fades into. A CSS variable name or any CSS colour.",
+        'The colour the content fades into: a palette name such as "grey", a CSS variable name, or any CSS colour.',
     },
     {
       name: "matrix",
