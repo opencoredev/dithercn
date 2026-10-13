@@ -187,6 +187,19 @@ for (const { file, item } of items) {
   }
 }
 
+// The dithercn-skill item must ship every skill file to both skill folders.
+const skillItem = items.find(({ item }) => item.name === "dithercn-skill");
+const shipped = new Set(skillItem?.item.files?.map((file) => file.target));
+for (const folder of [".agents/skills/dithercn", ".claude/skills/dithercn"]) {
+  for (const file of skillFiles()) {
+    if (!shipped.has(`${folder}/${file}`)) {
+      errors.push(
+        `registry/engine.json: "dithercn-skill" is missing ${folder}/${file}`
+      );
+    }
+  }
+}
+
 const registry = {
   $schema: "https://ui.shadcn.com/schema/registry.json",
   homepage: SITE_URL,
