@@ -1,0 +1,153 @@
+---
+title: "Image compare"
+description: "A draggable before and after slider: the dithered image on one side, the original or another dither on the other."
+---
+
+import ImageCompareDemo from "@/examples/image-compare-demo";
+import ImageComparePresets from "@/examples/image-compare-presets";
+import ImageCompareFeature from "@/examples/image-compare-feature";
+import { controls as imageCompareControls } from "@/examples/image-compare-controls";
+
+<ComponentPreview
+  src="examples/image-compare-demo.tsx"
+  size="lg"
+  controls={imageCompareControls}
+>
+  <ImageCompareDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="image-compare" />
+
+## Usage
+
+```tsx
+import { ImageCompare } from "@/components/dithercn/image-compare";
+
+export function Showcase() {
+  return (
+    <ImageCompare
+      src="/photos/launch.jpg"
+      alt="The launch pad at dawn, dithered and original"
+      className="w-full rounded-xl"
+    />
+  );
+}
+```
+
+Drag the divider, click anywhere on the image to send it there, or tab to the handle and use the arrow keys. By default the left side is dithered with the `duotone` preset and the right side is the original photo. When the image first comes into view, the divider nudges left and right once so readers see that it moves.
+
+Each side is either `{ kind: "original" }` or `{ kind: "dither", ...look }`, where the look takes the same props as [Dither image](/docs/images/dither-image): `preset`, `color`, `palette`, `method`, `cell` and the rest.
+
+## Examples
+
+### Two dither looks
+
+Both sides can be dithered. Here newsprint meets Game Boy greens.
+
+<ComponentPreview src="examples/image-compare-presets.tsx" size="lg">
+  <ImageComparePresets />
+</ComponentPreview>
+
+### Feature section
+
+A landing page block that shows what the brand treatment does to a photo.
+
+<ComponentPreview src="examples/image-compare-feature.tsx" size="lg">
+  <ImageCompareFeature />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "src",
+      type: "string",
+      description: "Image URL. Cross-origin images need CORS headers.",
+      required: true,
+    },
+    {
+      name: "alt",
+      type: "string",
+      description:
+        "Describes the image and the comparison. Used as the group's label.",
+      required: true,
+    },
+    {
+      name: "before",
+      type: '{ kind: "original" } | { kind: "dither", ...DitherLook }',
+      default: '{ kind: "dither" }',
+      description: "The left side.",
+    },
+    {
+      name: "after",
+      type: '{ kind: "original" } | { kind: "dither", ...DitherLook }',
+      default: '{ kind: "original" }',
+      description: "The right side.",
+    },
+    {
+      name: "beforeLabel",
+      type: "string",
+      default: '"Dithered" or "Original"',
+      description: "Label on the left side, also used in the slider's name.",
+    },
+    {
+      name: "afterLabel",
+      type: "string",
+      default: '"Dithered" or "Original"',
+      description: "Label on the right side.",
+    },
+    {
+      name: "labels",
+      type: "boolean",
+      default: "true",
+      description:
+        "Show the corner labels. They fade out when the divider covers them.",
+    },
+    {
+      name: "value",
+      type: "number",
+      description:
+        "Divider position from the left, 0 to 100. Makes the slider controlled.",
+    },
+    {
+      name: "defaultValue",
+      type: "number",
+      default: "50",
+      description: "Starting position when uncontrolled.",
+    },
+    {
+      name: "onValueChange",
+      type: "(value: number) => void",
+      description: "Called on every move, from pointer or keyboard.",
+    },
+    {
+      name: "hint",
+      type: "boolean",
+      default: "true",
+      description:
+        "Nudge the divider once when the image first comes into view.",
+    },
+    {
+      name: "ratio",
+      type: "number",
+      default: "The image's ratio",
+      description: "Width over height.",
+    },
+    {
+      name: "fit",
+      type: '"cover" | "contain"',
+      default: '"cover"',
+      description: "How the image fills its box, on both sides.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The handle is a `role="slider"` with a value from 0 to 100. Arrow keys move it by 1, Shift and arrow or Page Up and Page Down by 10, Home and End to the ends.
+- Clicks glide the divider over 200ms; drags and key presses follow exactly.
+- On touch screens a sideways drag moves the divider and a vertical swipe still scrolls the page.
+- Under reduced motion there is no hint and no glide.
