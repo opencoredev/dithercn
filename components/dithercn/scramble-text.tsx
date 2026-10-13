@@ -166,7 +166,8 @@ const slotFrame = (
   }
   if (mode === "blocks") {
     return {
-      level: Math.max(1, Math.round(easeOut(progress) * LEVELS)),
+      // Stops short of solid, so the block always reads as a dither.
+      level: Math.max(1, Math.round(easeOut(progress) * 13)),
       phase: "block",
     };
   }
@@ -186,7 +187,7 @@ const setMask = (block: Element | null | undefined, level: number) => {
   }
   // Shimmer one level either side of the target.
   const shimmer = Math.round(Math.random() * 2 - 1);
-  const image = MASKS[Math.min(LEVELS, Math.max(1, level + shimmer))] ?? "none";
+  const image = MASKS[Math.min(14, Math.max(1, level + shimmer))] ?? "none";
   block.style.maskImage = image;
   block.style.setProperty("-webkit-mask-image", image);
 };

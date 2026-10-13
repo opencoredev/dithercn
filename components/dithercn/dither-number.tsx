@@ -32,7 +32,7 @@ export const DITHER_NUMBER_SIZES = ["sm", "md", "lg", "xl", "display"] as const;
 export type DitherNumberSize = (typeof DITHER_NUMBER_SIZES)[number];
 
 const SIZE_CLASS = {
-  display: "text-[clamp(4.5rem,16vw,11rem)] font-semibold tracking-[-0.06em]",
+  display: "text-[clamp(3.5rem,11vw,8rem)] font-semibold tracking-[-0.06em]",
   lg: "text-6xl font-semibold tracking-[-0.05em]",
   md: "text-4xl font-semibold tracking-[-0.04em]",
   sm: "text-2xl font-semibold tracking-[-0.03em]",
