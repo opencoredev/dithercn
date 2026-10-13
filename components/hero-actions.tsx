@@ -14,13 +14,13 @@ import { ROUTES } from "@/constants/routes";
  */
 export const HeroActions = () => (
   <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-    <Button asChild size="lg" className="rounded-full">
+    <Button asChild size="lg">
       <Link href={ROUTES.DOCS} transitionTypes={["nav-forward"]}>
         <Icon icon={BookOpen01Icon} />
         Read the docs
       </Link>
     </Button>
-    <Button asChild size="lg" variant="outline" className="rounded-full">
+    <Button asChild size="lg" variant="inverse">
       <Link href={ROUTES.DOCS_CATALOG} transitionTypes={["nav-forward"]}>
         <Icon icon={GridViewIcon} />
         Browse the catalog
