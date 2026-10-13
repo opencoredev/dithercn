@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { DOCS_DIR } from "@/lib/docs";
 import { transformers } from "@/lib/highlight-code";
+import { dithercnDark, dithercnLight } from "@/lib/shiki-themes";
 
 export default defineConfig({
   mdxOptions: {
@@ -18,8 +19,8 @@ export default defineConfig({
         rehypePrettyCode,
         {
           theme: {
-            dark: "min-dark",
-            light: "min-light",
+            dark: dithercnDark,
+            light: dithercnLight,
           },
           transformers,
         },
