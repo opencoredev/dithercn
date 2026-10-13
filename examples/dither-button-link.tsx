@@ -18,7 +18,7 @@ export default function DitherButtonLink() {
           <Link href="/docs/installation">Install dithercn</Link>
         </DitherButton>
         <DitherButton asChild size="lg" variant="outline" fill="dotted">
-          <Link href="/docs/catalog">Browse the catalog</Link>
+          <Link href="/docs/examples">See the examples</Link>
         </DitherButton>
       </div>
     </div>
