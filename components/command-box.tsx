@@ -63,13 +63,19 @@ export const CommandBox = ({
           </TabsList>
         </div>
       </Tabs>
-      <pre className="no-scrollbar overflow-x-auto px-4 py-3.5 pr-12">
-        <code className="font-mono text-[0.8rem] whitespace-pre">
-          <span className="text-muted-foreground select-none">$ </span>
-          <span className="text-muted-foreground">
-            {RUNNERS[packageManager]} shadcn@latest add{" "}
+      {/* The URL wraps instead of scrolling, so the whole command is always
+          readable. On phones it takes its own line. */}
+      <pre className="px-4 py-3.5 pr-12 whitespace-normal">
+        <code className="font-mono text-[0.8rem] leading-relaxed sm:text-sm">
+          <span className="text-muted-foreground whitespace-nowrap select-none">
+            ${" "}
           </span>
-          <span className="text-foreground">{url}</span>
+          <span className="text-muted-foreground whitespace-nowrap">
+            {RUNNERS[packageManager]} shadcn@latest add
+          </span>{" "}
+          <span className="text-foreground block [overflow-wrap:anywhere] sm:inline">
+            {url}
+          </span>
         </code>
       </pre>
       <CopyButton
