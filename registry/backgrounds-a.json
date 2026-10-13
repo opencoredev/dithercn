@@ -68,5 +68,19 @@
         "target": "components/dithercn/waves.tsx"
       }
     ]
+  },
+  {
+    "name": "dither-fade",
+    "type": "registry:component",
+    "title": "Dither fade",
+    "description": "A dithered edge that fades a section's content into a solid colour.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-fade.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-fade.tsx"
+      }
+    ]
   }
 ]

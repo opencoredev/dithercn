@@ -1,0 +1,132 @@
+---
+title: "Dither fade"
+description: "A dithered edge that fades a section's content into a solid colour, for the seam between two sections or the end of a clipped list."
+---
+
+import DitherFadeDemo from "@/examples/dither-fade-demo";
+import DitherFadeSections from "@/examples/dither-fade-sections";
+import DitherFadeSides from "@/examples/dither-fade-sides";
+import DitherFadeDrift from "@/examples/dither-fade-drift";
+
+<ComponentPreview
+  src="examples/dither-fade-demo.tsx"
+  size="full"
+  align="stretch"
+>
+  <DitherFadeDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-fade" />
+
+## Usage
+
+```tsx
+import { DitherFade } from "@/components/dithercn/dither-fade";
+
+export function Changelog() {
+  return (
+    <section className="relative overflow-hidden">
+      <ChangelogEntries />
+      <DitherFade side="bottom" size={200} />
+    </section>
+  );
+}
+```
+
+Put the fade inside a `relative` parent. It covers `size` along `side` and paints `color` over whatever is underneath: sparse cells on the content side, solid at the edge. The default colour is `--dither-paper`, your page background.
+
+It is still and drawn with CSS masks, so it renders on the server and uses no WebGL. Use as many as you like on one page.
+
+## Examples
+
+### Between two sections
+
+Give the fade the colour of the section below it, or leave the default when that section uses the page background. The upper section dissolves into the next one with no hard line.
+
+<ComponentPreview
+  src="examples/dither-fade-sections.tsx"
+  size="lg"
+  align="stretch"
+>
+  <DitherFadeSections />
+</ComponentPreview>
+
+### Both ends of a row
+
+`side="left"` and `side="right"` fade a scrolling row at its ends. Different sizes on each side hint at which way there is more to see.
+
+<ComponentPreview src="examples/dither-fade-sides.tsx">
+  <DitherFadeSides />
+</ComponentPreview>
+
+### Drifting edge
+
+With `animate` the edge wanders slowly, drawn with WebGL. Keep it for one hero-sized seam; the still fade is the better default.
+
+<ComponentPreview
+  src="examples/dither-fade-drift.tsx"
+  size="lg"
+  align="stretch"
+>
+  <DitherFadeDrift />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "side",
+      type: '"top" | "bottom" | "left" | "right"',
+      default: '"bottom"',
+      description:
+        "The edge of the parent the fade sits on. The colour is solid there.",
+    },
+    {
+      name: "size",
+      type: "number | string",
+      default: "160",
+      description:
+        'Depth of the fade. A number is CSS pixels; a string is any CSS length, such as "30%".',
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"--dither-paper"',
+      description:
+        "The colour the content fades into. A CSS variable name or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "false",
+      description: "true lets the edge drift slowly, drawn with WebGL.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Extra classes for the fade's box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The fade is decorative and hidden from assistive technology. Content under it stays in the page and is still read out, so do not hide anything important beneath it.
+- The still fade has no motion. With `animate`, reduced motion holds one still frame, and it pauses offscreen like the other backgrounds.
+- The still fade is 16 masked layers and no script. The animated one costs one small draw per frame and one WebGL context.
