@@ -1,3 +1,4 @@
+import { ditherMaskStyle } from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /**
@@ -6,41 +7,14 @@ import { cn } from "@/lib/utils";
  * Each level is a CSS mask tile, so the dots take their colour from
  * `--dither-ink` and stay crisp at any width.
  */
-export const BAYER_4 = [
-  [0, 8, 2, 10],
-  [12, 4, 14, 6],
-  [3, 11, 1, 9],
-  [15, 7, 13, 5],
-] as const;
-
 export const LEVEL_COUNT = 17;
 
-/** A 4x4 tile with the cells of every threshold below `level` filled. */
-export const maskForLevel = (level: number) => {
-  const dots = BAYER_4.flatMap((row, y) =>
-    row.flatMap((threshold, x) =>
-      threshold < level
-        ? [`<rect x="${x}" y="${y}" width="1" height="1"/>`]
-        : []
-    )
-  ).join("");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4" shape-rendering="crispEdges">${dots}</svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-};
-
 /**
- * Inline style that paints an element's background through one Bayer level,
- * repeated at `--dither-cell`. Pair it with `bg-dither-ink` (or any colour).
+ * Inline style that paints an element's background through one of the 17
+ * Bayer levels, repeated at `--dither-cell`. Pair it with `bg-dither-ink`.
  */
-export const bayerMask = (level: number): React.CSSProperties => {
-  const mask = maskForLevel(level);
-  return {
-    WebkitMaskImage: mask,
-    WebkitMaskSize: "calc(var(--dither-cell) * 4)",
-    maskImage: mask,
-    maskSize: "calc(var(--dither-cell) * 4)",
-  };
-};
+export const bayerMask = (level: number): React.CSSProperties =>
+  ditherMaskStyle(level / (LEVEL_COUNT - 1));
 
 const LEVELS = Array.from({ length: LEVEL_COUNT }, (_, level) => ({
   level,
