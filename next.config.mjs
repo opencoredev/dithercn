@@ -50,6 +50,22 @@ const nextConfig = {
         permanent: true,
         source: `${ROUTES.DOCS}/:path*.mdx`,
       },
+      // Concepts became Engine; the Tools group was folded into it.
+      {
+        destination: `${ROUTES.DOCS}/engine/:path*`,
+        permanent: true,
+        source: `${ROUTES.DOCS}/concepts/:path*`,
+      },
+      {
+        destination: `${ROUTES.DOCS}/engine/export`,
+        permanent: true,
+        source: `${ROUTES.DOCS}/tools/export`,
+      },
+      {
+        destination: `${ROUTES.DOCS}/engine/export`,
+        permanent: true,
+        source: `${ROUTES.DOCS}/tools/:path*`,
+      },
     ];
   },
 };

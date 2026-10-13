@@ -1,0 +1,12 @@
+{
+  "title": "Engine",
+  "description": "How dither-core works and how to build your own dither on it.",
+  "pages": [
+    "dither-engine",
+    "palettes",
+    "pixel-scale",
+    "motion",
+    "performance",
+    "export"
+  ]
+}
