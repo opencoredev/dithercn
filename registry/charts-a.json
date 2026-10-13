@@ -46,5 +46,22 @@
         "target": "components/dithercn/bar-chart.tsx"
       }
     ]
+  },
+  {
+    "name": "line-chart",
+    "type": "registry:component",
+    "title": "Line chart",
+    "description": "Lines for one or more series, with optional dithered range bands and point markers.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/cartesian-chart.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/line-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/line-chart.tsx"
+      }
+    ]
   }
 ]
