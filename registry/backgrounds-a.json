@@ -26,5 +26,19 @@
         "target": "components/dithercn/mesh-gradient.tsx"
       }
     ]
+  },
+  {
+    "name": "noise-field",
+    "type": "registry:component",
+    "title": "Noise field",
+    "description": "A slow, folding fbm texture with an optional mask that clears space for text.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/noise-field.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/noise-field.tsx"
+      }
+    ]
   }
 ]

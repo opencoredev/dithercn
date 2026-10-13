@@ -1,0 +1,155 @@
+---
+title: "Noise field"
+description: "A slow, folding noise texture drawn as a dither, with a mask that clears space for the text on top."
+---
+
+import NoiseFieldDemo from "@/examples/noise-field-demo";
+import NoiseFieldMasked from "@/examples/noise-field-masked";
+import NoiseFieldCard from "@/examples/noise-field-card";
+import NoiseFieldContour from "@/examples/noise-field-contour";
+
+<ComponentPreview
+  src="examples/noise-field-demo.tsx"
+  size="full"
+  align="stretch"
+>
+  <NoiseFieldDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="noise-field" />
+
+## Usage
+
+```tsx
+import { NoiseField } from "@/components/dithercn/noise-field";
+
+export function Section() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <NoiseField mask="center" className="absolute inset-0 -z-10" />
+      <h2>Your headline</h2>
+    </section>
+  );
+}
+```
+
+The field is fractal noise folded back on itself, so it flows like smoke rather than scrolling. It uses `bayer8` by default, whose 64 tones keep the folds smooth. Blue noise gives a grainier, film-like look.
+
+## Examples
+
+### Cleared under a headline
+
+`mask="center"` fades the field to paper in the middle of the box. Use `"top"` or `"bottom"` when the text sits at one end instead.
+
+<ComponentPreview
+  src="examples/noise-field-masked.tsx"
+  size="lg"
+  align="stretch"
+>
+  <NoiseFieldMasked />
+</ComponentPreview>
+
+### Fine grain in a dashboard card
+
+A high `scale`, a low `intensity` and 2px cells turn it into a texture you notice only when it moves.
+
+<ComponentPreview src="examples/noise-field-card.tsx">
+  <NoiseFieldCard />
+</ComponentPreview>
+
+### Hard contours
+
+High `contrast` with only three `levels` snaps the noise into islands with dithered shores, like a topographic map.
+
+<ComponentPreview
+  src="examples/noise-field-contour.tsx"
+  size="lg"
+  align="stretch"
+>
+  <NoiseFieldContour />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "scale",
+      type: "number",
+      default: "1.3",
+      description:
+        "Size of the features. Higher values give smaller, busier noise.",
+    },
+    {
+      name: "contrast",
+      type: "number",
+      default: "1.2",
+      description: "1 is soft. 2 and up give hard-edged islands.",
+    },
+    {
+      name: "intensity",
+      type: "number",
+      default: "0.75",
+      description: "Brightest tone the field reaches, from 0 to 1.",
+    },
+    {
+      name: "mask",
+      type: '"none" | "center" | "top" | "bottom"',
+      default: '"none"',
+      description: "Fades the field out where your text sits.",
+    },
+    {
+      name: "levels",
+      type: "number",
+      default: "All the matrix can draw",
+      description:
+        "Tones the field snaps to before dithering. Low values give contours.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        "Colours from paper to ink. CSS variable names or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer8"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast it moves.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The background fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a CSS approximation in the same colours.
+- It costs one small draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/concepts/performance).
