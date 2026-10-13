@@ -12,5 +12,19 @@
         "target": "components/dithercn/plasma.tsx"
       }
     ]
+  },
+  {
+    "name": "starfield",
+    "type": "registry:component",
+    "title": "Starfield",
+    "description": "Dithered stars in three parallax layers that twinkle and drift slowly.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/starfield.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/starfield.tsx"
+      }
+    ]
   }
 ]
