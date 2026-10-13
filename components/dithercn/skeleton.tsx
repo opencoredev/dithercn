@@ -5,25 +5,29 @@ import type { DitherColor, FillVariant } from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /*
- * A placeholder in three quiet layers of one colour: a faint tint, a
- * sparse texture (the fill variant), and a band of denser dither that
- * sweeps across. The band is four copies of the colour, each masked to
- * one Bayer level and clipped to a narrower slice, so its middle is the
- * densest and its edges fall off level by level. Only `clip-path` and
- * opacity animate; the masks stay put, so every dot stays on the cell
- * grid while the band moves. Levels are kept low on purpose: a skeleton
- * should sit below the content it stands in for, not compete with it.
+ * A placeholder drawn entirely in dither, in one colour. At rest each
+ * block is a faint tint under a Bayer ramp that thins from the left edge,
+ * so it reads as dither even in a still frame. `sweep` runs a wide band
+ * across it: four copies of the colour, each masked to a denser Bayer
+ * level and clipped to a narrower slice, so the band's middle is densest
+ * and its sides fall off level by level. `pulse` steps the whole block up
+ * through three nested Bayer levels and back down, so the dots multiply
+ * and thin out instead of fading. Only `clip-path` and opacity animate;
+ * the masks stay put, so every dot stays on the cell grid.
  */
 
 // Levels of the sweep, light to dense, with the half-width of each slice.
 const BAND = [
-  { halfWidth: 64, level: 3 / 16 },
-  { halfWidth: 42, level: 5 / 16 },
-  { halfWidth: 24, level: 7 / 16 },
-  { halfWidth: 10, level: 9 / 16 },
+  { halfWidth: 120, level: 4 / 16 },
+  { halfWidth: 82, level: 6 / 16 },
+  { halfWidth: 48, level: 8 / 16 },
+  { halfWidth: 20, level: 11 / 16 },
 ] as const;
 
 const REACH = BAND[0].halfWidth;
+
+// Levels the pulse steps through, each switched on for a shorter span.
+const PULSE = [4 / 16, 6 / 16, 9 / 16] as const;
 
 const maskRule = (level: number) => {
   const image = ditherMask(level);
@@ -31,15 +35,19 @@ const maskRule = (level: number) => {
   return `-webkit-mask-image:${image};mask-image:${image};-webkit-mask-size:${size};mask-size:${size};`;
 };
 
+const pulseRule = (index: number) => {
+  const on = 10 + index * 12;
+  return `@keyframes dcn-skeleton-step-${index}{0%,${on - 0.1}%{opacity:0}${on}%,${100 - on}%{opacity:1}${100 - on + 0.1}%,100%{opacity:0}}.dcn-skeleton-pulse-${index}{${maskRule(PULSE[index] ?? 0.5)}opacity:0;animation:dcn-skeleton-step-${index} var(--dcn-duration) linear var(--dcn-delay) infinite}`;
+};
+
 const STYLES = [
   ...BAND.map(
     ({ level }, index) => `.dcn-skeleton-band-${index}{${maskRule(level)}}`
   ),
-  `@keyframes dcn-skeleton-sweep{0%{clip-path:inset(0 calc(100% + ${REACH}px - var(--dcn-half)) 0 calc(0% - ${REACH}px - var(--dcn-half)))}65%,100%{clip-path:inset(0 calc(0% - ${REACH}px - var(--dcn-half)) 0 calc(100% + ${REACH}px - var(--dcn-half)))}}`,
-  ".dcn-skeleton-sweep{clip-path:inset(0 100% 0 0);animation:dcn-skeleton-sweep var(--dcn-duration) cubic-bezier(0.77,0,0.175,1) var(--dcn-delay) infinite}",
-  "@keyframes dcn-skeleton-pulse{from{opacity:0.45}to{opacity:1}}",
-  ".dcn-skeleton-pulse{animation:dcn-skeleton-pulse calc(var(--dcn-duration) / 2) cubic-bezier(0.77,0,0.175,1) var(--dcn-delay) infinite alternate}",
-  "@media (prefers-reduced-motion: reduce){.dcn-skeleton-sweep{display:none}.dcn-skeleton-pulse{animation:none}}",
+  ...PULSE.map((_, index) => pulseRule(index)),
+  `@keyframes dcn-skeleton-sweep{0%{clip-path:inset(0 calc(100% + ${REACH}px - var(--dcn-half)) 0 calc(0% - ${REACH}px - var(--dcn-half)))}80%,100%{clip-path:inset(0 calc(0% - ${REACH}px - var(--dcn-half)) 0 calc(100% + ${REACH}px - var(--dcn-half)))}}`,
+  ".dcn-skeleton-sweep{clip-path:inset(0 100% 0 0);animation:dcn-skeleton-sweep var(--dcn-duration) cubic-bezier(0.65,0,0.35,1) var(--dcn-delay) infinite}",
+  "@media (prefers-reduced-motion: reduce){.dcn-skeleton-sweep{display:none}[class*=dcn-skeleton-pulse-]{animation:none}}",
 ].join("");
 
 const SkeletonStyles = () => (
@@ -79,13 +87,13 @@ export type SkeletonProps = Omit<ComponentProps<"div">, "children" | "color"> &
   SkeletonShape & {
     /** A palette name or any CSS colour. Default `"grey"`. */
     color?: DitherColor;
-    /** Texture of the resting layer. Default `"dotted"`. */
+    /** Texture of the resting layer: a Bayer ramp from the left, a dot lattice, diagonals, or a flat tint. Default `"gradient"`. */
     fill?: FillVariant;
-    /** `sweep` runs a dense band across; `pulse` breathes the texture; `none` holds still. Default `"sweep"`. */
+    /** `sweep` runs a dense band across; `pulse` steps the dither up and down through its levels; `none` holds still. Default `"sweep"`. */
     animation?: SkeletonAnimation;
     /** Size of one dither cell in CSS pixels. Default 2. */
     cell?: number;
-    /** Seconds for one sweep, including the pause after it. Default 2.2. */
+    /** Seconds for one sweep or pulse, including the pause after it. Default 1.8. */
     duration?: number;
     /** Seconds to wait before the first sweep. Default 0. */
     delay?: number;
@@ -105,8 +113,8 @@ interface Look {
 
 type BarProps = Omit<ComponentProps<"div">, "children" | "color"> & Look;
 
-// The resting texture: a light ramp from the left for gradient, the tile
-// for dotted and hatched, nothing extra for solid (its tint is stronger).
+// The resting texture: a ramp from the left for gradient, the tile for
+// dotted and hatched, nothing extra for solid (its tint is stronger).
 const textureStyle = ({ fill, color, cell }: Look): CSSProperties | null => {
   if (fill === "solid") {
     return null;
@@ -116,7 +124,7 @@ const textureStyle = ({ fill, color, cell }: Look): CSSProperties | null => {
     color,
     edge: "left",
     from: 0.375,
-    length: 48,
+    length: 40,
     to: 0.125,
   });
 };
@@ -158,16 +166,13 @@ const Bar = ({
       <div
         className={cn(
           "absolute inset-0 bg-(--dcn-skeleton)",
-          fill === "solid" ? "opacity-[0.16]" : "opacity-[0.08]"
+          fill === "solid" ? "opacity-[0.18]" : "opacity-[0.07]"
         )}
       />
       {texture === null ? null : (
         <div
-          className={cn(
-            "absolute inset-0",
-            animation === "pulse" && "dcn-skeleton-pulse"
-          )}
-          style={{ ...texture, opacity: 0.55 }}
+          className="absolute inset-0"
+          style={{ ...texture, opacity: 0.6 }}
         />
       )}
       {animation === "sweep"
@@ -177,7 +182,7 @@ const Bar = ({
               <div
                 key={halfWidth}
                 className={cn(
-                  "dcn-skeleton-sweep absolute inset-0 bg-(--dcn-skeleton) opacity-70",
+                  "dcn-skeleton-sweep absolute inset-0 bg-(--dcn-skeleton) opacity-60",
                   `dcn-skeleton-band-${index}`
                 )}
                 style={slice}
@@ -185,9 +190,17 @@ const Bar = ({
             );
           })
         : null}
-      {animation === "pulse" && fill === "solid" ? (
-        <div className="dcn-skeleton-pulse absolute inset-0 bg-(--dcn-skeleton) opacity-10" />
-      ) : null}
+      {animation === "pulse"
+        ? PULSE.map((level, index) => (
+            <div
+              key={level}
+              className={cn(
+                "absolute inset-0 bg-(--dcn-skeleton)",
+                `dcn-skeleton-pulse-${index}`
+              )}
+            />
+          ))
+        : null}
     </div>
   );
 };
@@ -197,8 +210,8 @@ const lineWidth = (index: number, count: number) =>
   count > 1 && index === count - 1 ? "62%" : "100%";
 
 /**
- * A loading placeholder: a faint tint, a sparse dither texture, and a band
- * of denser dither that sweeps across. A block by default; `shape="text"`
+ * A loading placeholder drawn in dither: a Bayer ramp at rest, and a band
+ * of denser dither that sweeps across or a pulse that steps through levels. A block by default; `shape="text"`
  * draws lines and `shape="circle"` an avatar. It is hidden from assistive
  * technology: mark the region that is loading with `aria-busy` and
  * announce it in words.
@@ -209,10 +222,10 @@ export const Skeleton = (props: SkeletonProps) => {
     lines: _lines,
     size: _size,
     color = "grey",
-    fill = "dotted",
+    fill = "gradient",
     animation = "sweep",
     cell = 2,
-    duration = 2.2,
+    duration = 1.8,
     delay = 0,
     className,
     style,

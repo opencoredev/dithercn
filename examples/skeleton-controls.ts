@@ -11,7 +11,7 @@ export const animation = segmented({
 });
 
 export const fill = segmented({
-  default: "dotted",
+  default: "gradient",
   id: "fill",
   label: "Fill",
   options: FILL_VARIANTS,
@@ -35,9 +35,9 @@ export const cell = slider({
 });
 
 export const duration = slider({
-  default: 2.2,
+  default: 1.8,
   id: "duration",
-  label: "Sweep",
+  label: "Duration",
   max: 4,
   min: 1,
   step: 0.2,
