@@ -1,3 +1,5 @@
+"use client";
+
 import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 
