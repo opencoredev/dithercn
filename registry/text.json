@@ -1,1 +1,58 @@
-[]
+[
+  {
+    "name": "dither-text",
+    "type": "registry:component",
+    "title": "Dither text",
+    "description": "Display text whose letters are filled with a dithered gradient or noise, kept as real, selectable text.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-text.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-text.tsx"
+      }
+    ]
+  },
+  {
+    "name": "dissolve-text",
+    "type": "registry:component",
+    "title": "Dissolve text",
+    "description": "Text that dissolves in, and out, through the levels of a Bayer matrix, by character, word or line.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dissolve-text.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dissolve-text.tsx"
+      }
+    ]
+  },
+  {
+    "name": "scramble-text",
+    "type": "registry:component",
+    "title": "Scramble text",
+    "description": "A decode effect that cycles glyphs and settles into the final text without shifting the layout.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/scramble-text.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/scramble-text.tsx"
+      }
+    ]
+  },
+  {
+    "name": "dither-number",
+    "type": "registry:component",
+    "title": "Dither number",
+    "description": "An animated, Intl-formatted counter whose tabular digits roll or dissolve into place.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-number.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-number.tsx"
+      }
+    ]
+  }
+]
