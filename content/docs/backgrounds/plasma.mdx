@@ -1,0 +1,144 @@
+---
+title: "Plasma"
+description: "Classic plasma: overlapping sine waves that flow into each other, dithered in two colours or a whole palette."
+---
+
+import PlasmaDemo from "@/examples/plasma-demo";
+import PlasmaPalette from "@/examples/plasma-palette";
+import PlasmaHeadline from "@/examples/plasma-headline";
+import PlasmaCoarse from "@/examples/plasma-coarse";
+
+<ComponentPreview src="examples/plasma-demo.tsx" size="full" align="stretch">
+  <PlasmaDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="plasma" />
+
+## Usage
+
+```tsx
+import { Plasma } from "@/components/dithercn/plasma";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Plasma className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+Plasma fills its box, so give it a size with `className`. Four sine waves, one of them circling the centre, add up to a pattern that never repeats. A slow noise warp bends it so it doesn't look mechanical. By default it runs from `--dither-paper` through `--chart-5` to `--dither-ink`.
+
+## Examples
+
+### Through a palette
+
+Pass any number of colours from paper to ink. More `bands` cycle through the palette more often, and blue noise swaps the Bayer grid for an even grain.
+
+<ComponentPreview src="examples/plasma-palette.tsx" size="full" align="stretch">
+  <PlasmaPalette />
+</ComponentPreview>
+
+### Behind a headline
+
+`intensity` caps the brightest tone, so the crests never reach full ink and the text stays readable. A smaller `scale` and more `warp` give fewer, softer shapes.
+
+<ComponentPreview src="examples/plasma-headline.tsx" size="lg" align="stretch">
+  <PlasmaHeadline />
+</ComponentPreview>
+
+### Coarse and still
+
+Large cells, the 2×2 matrix and only four `levels` give hard contour bands like an old demo-scene effect. `animate={false}` holds one frame.
+
+<ComponentPreview src="examples/plasma-coarse.tsx" size="lg" align="stretch">
+  <PlasmaCoarse />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "scale",
+      type: "number",
+      default: "1",
+      description: "Size of the pattern. Higher values pack more waves in.",
+    },
+    {
+      name: "warp",
+      type: "number",
+      default: "0.3",
+      description:
+        "How far slow noise bends the waves, from 0 (pure sines) to 1.",
+    },
+    {
+      name: "bands",
+      type: "number",
+      default: "1.5",
+      description: "How many times the colours cycle across one wave.",
+    },
+    {
+      name: "intensity",
+      type: "number",
+      default: "1",
+      description:
+        "The brightest tone, from 0 to 1. Lower it to put text on top.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--chart-5", "--dither-ink"]',
+      description:
+        "Colours from paper to ink. CSS variable names or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "levels",
+      type: "number",
+      default: "All the matrix can draw",
+      description:
+        "Tones the plasma snaps to before dithering. Lower values give hard contour bands.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the waves move.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The plasma fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The plasma is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows soft CSS blobs in the same colours.
+- One draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/concepts/performance).

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "plasma",
+    "type": "registry:component",
+    "title": "Plasma",
+    "description": "Classic plasma: overlapping sine waves that flow into each other, dithered in two colours or a palette.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/plasma.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/plasma.tsx"
+      }
+    ]
+  }
+]
