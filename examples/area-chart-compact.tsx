@@ -27,10 +27,8 @@ export default function AreaChartCompact() {
         x="week"
         series={[{ label: "Active users", value: "users" }]}
         axes={false}
-        fill="flat"
-        level={0.25}
+        fill="dotted"
         curve="linear"
-        matrix="bayer8"
         height={96}
       />
     </div>

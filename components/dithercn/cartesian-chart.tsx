@@ -1,16 +1,29 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type {
   ComponentProps,
-  CSSProperties,
   KeyboardEvent,
   PointerEvent,
   ReactNode,
 } from "react";
 
-import { cssColor, MOTION, readDitherCell, useFrameLoop } from "@/lib/dither";
-import type { DitherColor, DitherMatrix } from "@/lib/dither";
+import {
+  cssColor,
+  MOTION,
+  readDitherCell,
+  SERIES_COLORS,
+  useFrameLoop,
+} from "@/lib/dither";
+import type { Bloom, DitherColor, FillVariant } from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /**
@@ -74,37 +87,25 @@ export interface ChartSeries<T> {
   label: string;
   /** The key holding this series' value, or a function that reads it. */
   value: Accessor<T, number>;
-  /** Ink colour. Default: `--dither-ink`, then `--muted-foreground`, `--chart-3`, `--chart-5`. */
+  /** Colour: a palette name (`"green"`) or any CSS colour. Default: the chart's `colors`, then ink, orange, green, pink, purple, blue, red, grey. */
   color?: DitherColor;
 }
 
 export type NonEmpty<T> = readonly [T, ...T[]];
 
-const SERIES_COLORS: NonEmpty<DitherColor> = [
-  "--dither-ink",
-  "--muted-foreground",
-  "--chart-3",
-  "--chart-5",
-];
-
-/** The colour a series draws in: its own, or the next default. */
-export const seriesColor = (color: DitherColor | undefined, index: number) =>
-  color ?? SERIES_COLORS[index % SERIES_COLORS.length] ?? SERIES_COLORS[0];
-
-const SERIES_MATRICES: readonly DitherMatrix[] = ["bayer8", "bayer2"];
-
 /**
- * The texture a series fills with. The first uses the chart's matrix; the
- * others switch texture so overlapping fills stay apart and identity never
- * rests on colour alone.
+ * The colour series `index` draws in: its own `color`, then the chart's
+ * `colors`, then the default palette (ink, orange, green, pink, ...).
  */
-export const seriesMatrix = (matrix: DitherMatrix, index: number) => {
-  if (index === 0) {
-    return matrix;
-  }
-  const others = SERIES_MATRICES.filter((candidate) => candidate !== matrix);
-  return others[(index - 1) % others.length] ?? matrix;
-};
+export const seriesColor = (
+  color: DitherColor | undefined,
+  index: number,
+  colors: readonly DitherColor[] = []
+): DitherColor =>
+  color ??
+  colors[index] ??
+  SERIES_COLORS[index % SERIES_COLORS.length] ??
+  "ink";
 
 /** Snap a length to whole device pixels so dither cells stay sharp. */
 const snapToDevice = (px: number, dpr: number) =>
@@ -271,10 +272,13 @@ export const monotonePath = (points: readonly Point[]) => {
 
 /**
  * 0 → 1 over the entrance, stepping through dither levels, once the chart
- * is on screen. 1 at once under reduced motion.
+ * is on screen. 1 at once under reduced motion or with `enabled: false`.
  */
-export const useReveal = (target: { current: Element | null }) => {
-  const [progress, setProgress] = useState(0);
+export const useReveal = (
+  target: { current: Element | null },
+  enabled = true
+) => {
+  const [progress, setProgress] = useState(enabled ? 0 : 1);
   const duration = (MOTION.slow + MOTION.base) / 1000;
   useFrameLoop(
     (time) => {
@@ -282,7 +286,7 @@ export const useReveal = (target: { current: Element | null }) => {
       // Cubic ease-out, then whole steps so React re-renders at most 16 times.
       setProgress(Math.round((1 - (1 - linear) ** 3) * 16) / 16);
     },
-    { enabled: progress < 1, stillTime: duration, target }
+    { enabled: enabled && progress < 1, stillTime: duration, target }
   );
   return progress;
 };
@@ -294,6 +298,7 @@ export interface Plot {
   bottom: number;
 }
 
+/** What every chart's marks are drawn from. Stable while the pointer scrubs. */
 export interface ChartContext {
   /** Prefix for pattern, mask and clip ids. */
   uid: string;
@@ -306,16 +311,45 @@ export interface ChartContext {
   /** Width of one category: the step between points, or one bar band. */
   band: number;
   yAt: (value: number) => number;
-  /** The datum under the pointer or keyboard focus. */
-  active: number | null;
   /** Entrance progress, 0 → 1. */
   reveal: number;
+  /** Whether entrance motion is on (off under `animate={false}`). */
+  animate: boolean;
+  /** The spotlit series: hovered in the legend, else locked. */
+  focus: number | null;
+  /** Whether the pointer or keyboard is scrubbing. */
+  scrubbing: boolean;
+  /** The colour of series `index`. */
+  colorOf: (index: number) => DitherColor;
+  /** 1, or dimmed when another series is spotlit. */
+  opacityOf: (index: number) => number;
+}
+
+/** Where a series sits at the scrubbed datum, for the marker and the readout. */
+export interface ScrubPoint {
+  seriesIndex: number;
+  /** y in px. */
+  y: number;
 }
 
 export interface ReadoutRow {
   label: string;
   color: DitherColor;
   value: string;
+}
+
+/** Props every cartesian chart shares. */
+export interface ChartStyleProps {
+  /** Texture of the fills: `gradient`, `dotted`, `hatched` or `solid`. */
+  fill?: FillVariant;
+  /** Soft glow in each series' colour behind its fill: `off`, `low` or `high`. Default `off`. */
+  bloom?: Bloom;
+  /** Colours by series position, as palette names or CSS colours. A series' own `color` wins. */
+  colors?: readonly DitherColor[];
+  /** Hover, keyboard scrubbing, readout and legend spotlight. `false` for decorative charts. Default true. */
+  interactive?: boolean;
+  /** Entrance motion. Default true; always off under reduced motion. */
+  animate?: boolean;
 }
 
 export interface CartesianChartProps<T> extends Omit<
@@ -326,6 +360,7 @@ export interface CartesianChartProps<T> extends Omit<
   /** Category label for a datum, shown on the x axis and in the readout. */
   x: Accessor<T, string | number>;
   series: NonEmpty<ChartSeries<T>>;
+  colors: readonly DitherColor[] | undefined;
   scale: Scale;
   /** `point`: data sit on the plot edges and between. `band`: each datum owns a slot. */
   layout: "point" | "band";
@@ -333,26 +368,35 @@ export interface CartesianChartProps<T> extends Omit<
   axes: boolean;
   tooltip: boolean;
   legend: boolean;
+  interactive: boolean;
+  animate: boolean;
   cell?: number;
   formatValue: (value: number) => string;
+  /** Axis tick labels. Default `formatValue`. */
+  formatTick?: (value: number) => string;
   /** Readout rows for a datum. Default: every series' value. */
   readout?: (datum: T) => readonly ReadoutRow[];
   /** Legend key for one series. */
   swatch: (index: number, color: DitherColor) => ReactNode;
-  /** Draws a crosshair at the active datum (point layout). */
-  crosshair: boolean;
+  /** `line`: a crosshair with a marker per series. `column`: a soft band behind the category. */
+  scrub: "line" | "column";
+  /** Where each series sits at a datum: markers and the readout anchor. */
+  pointsAt: (index: number, context: ChartContext) => readonly ScrubPoint[];
+  /** Extra marks for the scrubbed datum, such as solid bars. */
+  activeMarks?: (index: number, context: ChartContext) => ReactNode;
   /** Short description of the chart, read before the data table. */
   summary: string;
   children: (context: ChartContext) => ReactNode;
 }
 
 const AXIS_FONT_WIDTH = 6.1;
+const DIMMED = 0.18;
 
 /** Where the plot sits inside the chart, and the scales that map into it. */
 const layoutPlot = ({
   axes,
   count,
-  formatValue,
+  formatTick,
   height,
   layout,
   scale,
@@ -360,13 +404,13 @@ const layoutPlot = ({
 }: {
   axes: boolean;
   count: number;
-  formatValue: (value: number) => string;
+  formatTick: (value: number) => string;
   height: number;
   layout: "point" | "band";
   scale: Scale;
   width: number;
 }) => {
-  const tickLabels = scale.ticks.map((tick) => formatValue(tick));
+  const tickLabels = scale.ticks.map((tick) => formatTick(tick));
   const longest = Math.max(1, ...tickLabels.map((label) => label.length));
   const plot: Plot = {
     bottom: height - (axes ? 22 : 1),
@@ -388,41 +432,6 @@ const layoutPlot = ({
     plot.bottom - ((value - scale.min) / span) * (plot.bottom - plot.top);
   return { band, plot, plotWidth, tickLabels, xAt, yAt };
 };
-
-/** The hover and keyboard readout: the category, then every row's value. */
-const Readout = ({
-  title,
-  rows,
-  style,
-}: {
-  title: string;
-  rows: readonly ReadoutRow[];
-  style: CSSProperties;
-}) => (
-  <div
-    aria-hidden="true"
-    className="bg-popover text-popover-foreground border-border pointer-events-none absolute top-1 z-10 min-w-28 rounded-lg border px-2.5 py-2 text-xs shadow-[0_8px_24px_-12px_rgb(0_0_0/0.5)]"
-    style={style}
-  >
-    <div className="text-muted-foreground mb-1.5 font-mono text-[10px] tracking-wide uppercase">
-      {title}
-    </div>
-    <div className="flex flex-col gap-1">
-      {rows.map((row) => (
-        <div key={row.label} className="flex items-center gap-2">
-          <span
-            className="h-0.5 w-2.5 shrink-0 rounded-full"
-            style={{ background: cssColor(row.color) }}
-          />
-          <span className="font-medium tabular-nums">{row.value}</span>
-          <span className="text-muted-foreground ml-auto pl-3">
-            {row.label}
-          </span>
-        </div>
-      ))}
-    </div>
-  </div>
-);
 
 /** Every value, for screen readers. */
 const DataTable = ({
@@ -496,230 +505,798 @@ const labelAnchor = (
 };
 
 /**
- * Measures itself, lays out the plot and owns the interaction. Charts pass
- * their marks as a render function of the layout.
+ * The scrubbed datum; whether moving to it glides (pointer) or jumps
+ * (keyboard, first touch); and whether the scrub is showing. A hidden
+ * scrub keeps its index so the crosshair fades out where it was.
+ */
+interface Scrub {
+  index: number;
+  glide: boolean;
+  visible: boolean;
+}
+
+const hide = (current: Scrub | null): Scrub | null =>
+  current === null ? null : { ...current, glide: false, visible: false };
+
+// Gliding parts share one duration and the site's ease-out. Every glide is
+// a transform, so it never triggers layout.
+const GLIDE =
+  "transition-[transform,opacity] duration-200 ease-(--ease-out) motion-reduce:transition-none data-[glide=false]:transition-[opacity]";
+
+/** Gap between the readout and the marker it describes. */
+const READOUT_GAP = 12;
+
+/**
+ * Moves the readout to sit centred above the highest marker, clamped
+ * inside the chart. When there is no room above, it sits beside the
+ * crosshair at the top of the plot instead, so it never covers a marker.
+ * Writes the transform straight to the element so a scrub never
+ * re-lays out React.
+ */
+const useReadoutPosition = (
+  ref: { current: HTMLDivElement | null },
+  anchor: { x: number; y: number; width: number; top: number } | null
+) => {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || anchor === null) {
+      return;
+    }
+    const { offsetWidth: w, offsetHeight: h } = el;
+    const above = anchor.y - h - READOUT_GAP;
+    let left = Math.min(
+      Math.max(0, anchor.x - w / 2),
+      Math.max(0, anchor.width - w)
+    );
+    let top = above;
+    if (above < 0) {
+      const right = anchor.x + READOUT_GAP;
+      left = right + w <= anchor.width ? right : anchor.x - READOUT_GAP - w;
+      ({ top } = anchor);
+    }
+    el.style.transform = `translate3d(${Math.round(left)}px, ${Math.round(top)}px, 0)`;
+  });
+};
+
+const ARROW_STEPS: Readonly<Record<string, number>> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+};
+
+/**
+ * The scrub state and its handlers: pointer moves throttled to one update
+ * per frame, keyboard steps that jump, and a hide that keeps the position.
+ */
+const useScrub = ({
+  count,
+  indexAt,
+  onEscape,
+}: {
+  count: number;
+  indexAt: (px: number) => number;
+  onEscape: () => void;
+}) => {
+  const [scrub, setScrub] = useState<Scrub | null>(null);
+  const pointerX = useRef<number | null>(null);
+  const frame = useRef(0);
+
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (count === 0) {
+      return;
+    }
+    pointerX.current =
+      event.clientX - event.currentTarget.getBoundingClientRect().left;
+    if (frame.current !== 0) {
+      return;
+    }
+    frame.current = requestAnimationFrame(() => {
+      frame.current = 0;
+      if (pointerX.current === null) {
+        return;
+      }
+      const index = indexAt(pointerX.current);
+      setScrub((current) =>
+        current?.index === index && current.visible
+          ? current
+          : { glide: current?.visible === true, index, visible: true }
+      );
+    });
+  };
+
+  const onPointerLeave = () => {
+    pointerX.current = null;
+    cancelAnimationFrame(frame.current);
+    frame.current = 0;
+    setScrub(hide);
+  };
+
+  const jumpTo = (index: number) =>
+    setScrub({
+      glide: false,
+      index: Math.min(count - 1, Math.max(0, index)),
+      visible: true,
+    });
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      setScrub(hide);
+      onEscape();
+      return;
+    }
+    if (count === 0) {
+      return;
+    }
+    const current = scrub?.index ?? count - 1;
+    const page = Math.max(1, Math.round(count / 10));
+    const targets: Readonly<Record<string, number>> = {
+      End: count - 1,
+      Home: 0,
+      PageDown: current + page,
+      PageUp: current - page,
+    };
+    const step = ARROW_STEPS[event.key];
+    const target = step === undefined ? targets[event.key] : current + step;
+    if (target === undefined) {
+      return;
+    }
+    event.preventDefault();
+    // The page may bind the arrows too (docs prev/next); the chart owns them while focused.
+    event.stopPropagation();
+    // Keyboard steps jump: easing would lag behind held arrow keys.
+    jumpTo(target);
+  };
+
+  const onFocus = () =>
+    setScrub((current) =>
+      current?.visible === true
+        ? current
+        : { glide: false, index: current?.index ?? count - 1, visible: true }
+    );
+
+  return {
+    handlers: {
+      onBlur: () => setScrub(hide),
+      onFocus,
+      onKeyDown,
+      onPointerLeave,
+      onPointerMove,
+    },
+    scrub,
+  };
+};
+
+/** Gridlines and value labels, then the category labels that fit. */
+const Axes = <T,>({
+  data,
+  x,
+  scale,
+  tickLabels,
+  plot,
+  plotWidth,
+  height,
+  layout,
+  xAt,
+  yAt,
+}: {
+  data: readonly T[];
+  x: Accessor<T, string | number>;
+  scale: Scale;
+  tickLabels: readonly string[];
+  plot: Plot;
+  plotWidth: number;
+  height: number;
+  layout: "point" | "band";
+  xAt: (index: number) => number;
+  yAt: (value: number) => number;
+}) => {
+  const count = data.length;
+  // Space x labels so they never collide: about one per 72px.
+  const shown = xLabelIndices(
+    count,
+    Math.ceil(count / Math.max(1, Math.floor(plotWidth / 72)))
+  );
+  return (
+    <g>
+      {scale.ticks.map((tick, index) => (
+        <g key={tick}>
+          <line
+            x1={plot.left}
+            x2={plot.right}
+            y1={Math.round(yAt(tick)) + 0.5}
+            y2={Math.round(yAt(tick)) + 0.5}
+            className="stroke-border"
+            strokeWidth={1}
+            shapeRendering="crispEdges"
+          />
+          <text
+            x={plot.left - 10}
+            y={yAt(tick)}
+            dy="0.32em"
+            textAnchor="end"
+            className="fill-muted-foreground font-mono text-[10px] tabular-nums"
+          >
+            {tickLabels[index]}
+          </text>
+        </g>
+      ))}
+      {data.map((datum, index) =>
+        shown.has(index) ? (
+          <text
+            // oxlint-disable-next-line react/no-array-index-key -- categories can repeat; position is the identity.
+            key={index}
+            x={xAt(index)}
+            y={height - 6}
+            textAnchor={labelAnchor(layout, index, count)}
+            className="fill-muted-foreground font-mono text-[10px]"
+          >
+            {readLabel(datum, x)}
+          </text>
+        ) : null
+      )}
+    </g>
+  );
+};
+
+/** A dashed crosshair and one marker per series, gliding by transform. */
+const Crosshair = ({
+  plot,
+  x,
+  anchorY,
+  points,
+  visible,
+  glide,
+  context,
+  labels,
+}: {
+  plot: Plot;
+  x: number;
+  anchorY: number;
+  points: readonly ScrubPoint[];
+  visible: boolean;
+  glide: string;
+  context: ChartContext;
+  labels: readonly string[];
+}) => (
+  <g aria-hidden="true">
+    <line
+      data-glide={glide}
+      x1={0.5}
+      x2={0.5}
+      y1={plot.top}
+      y2={plot.bottom}
+      className={cn("stroke-foreground/35", GLIDE)}
+      strokeWidth={1}
+      strokeDasharray="2 3"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: `translateX(${Math.round(x)}px)`,
+      }}
+    />
+    {labels.map((label, index) => {
+      const point = points.find((candidate) => candidate.seriesIndex === index);
+      return (
+        <circle
+          key={label}
+          data-glide={glide}
+          r={4}
+          fill={cssColor(context.colorOf(index))}
+          stroke="var(--dither-paper)"
+          strokeWidth={2}
+          className={GLIDE}
+          style={{
+            opacity:
+              point === undefined || !visible ? 0 : context.opacityOf(index),
+            transform: `translate(${x}px, ${point?.y ?? anchorY}px)`,
+          }}
+        />
+      );
+    })}
+  </g>
+);
+
+/** The readout card: the category, then one row per series. */
+const Readout = ({
+  ref,
+  row,
+  visible,
+  glide,
+  focus,
+}: {
+  ref: { current: HTMLDivElement | null };
+  row: { label: string; values: readonly ReadoutRow[] } | undefined;
+  visible: boolean;
+  glide: string;
+  focus: number | null;
+}) => (
+  <div
+    ref={ref}
+    aria-hidden="true"
+    data-glide={glide}
+    className={cn(
+      "bg-popover/95 text-popover-foreground border-border pointer-events-none absolute top-0 left-0 z-10 min-w-32 rounded-lg border px-2.5 py-2 shadow-[0_8px_24px_-12px_rgb(0_0_0/0.6)] backdrop-blur-sm",
+      GLIDE
+    )}
+    style={{ opacity: visible ? 1 : 0 }}
+  >
+    {row === undefined ? null : (
+      <>
+        <div className="text-muted-foreground mb-1.5 font-mono text-[10px] tracking-wide uppercase">
+          {row.label}
+        </div>
+        <div className="flex flex-col gap-1">
+          {row.values.map((value, index) => (
+            <div
+              key={value.label}
+              className={cn(
+                "flex items-center gap-2 text-xs transition-opacity duration-150",
+                focus !== null && focus !== index && "opacity-40"
+              )}
+            >
+              <span
+                className="size-2 shrink-0 rounded-[2px]"
+                style={{ background: cssColor(value.color) }}
+              />
+              <span className="text-muted-foreground pr-3">{value.label}</span>
+              <span className="ml-auto font-mono font-medium tabular-nums">
+                {value.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </>
+    )}
+  </div>
+);
+
+/**
+ * Legend entries. Interactive ones are toggle buttons: hover or focus
+ * spotlights a series, click locks it, Escape lets go.
+ */
+const Legend = ({
+  labels,
+  interactive,
+  focus,
+  locked,
+  swatch,
+  colorOf,
+  onHover,
+  onLock,
+}: {
+  labels: readonly string[];
+  interactive: boolean;
+  focus: number | null;
+  locked: number | null;
+  swatch: (index: number, color: DitherColor) => ReactNode;
+  colorOf: (index: number) => DitherColor;
+  onHover: (index: number | null) => void;
+  onLock: (index: number | null) => void;
+}) => (
+  <div
+    className="mt-3 flex flex-wrap gap-1"
+    {...(interactive
+      ? { "aria-label": "Series", role: "group" }
+      : { "aria-hidden": true })}
+  >
+    {labels.map((label, index) => {
+      const content = (
+        <>
+          {swatch(index, colorOf(index))}
+          {label}
+        </>
+      );
+      const itemClass = cn(
+        "text-muted-foreground inline-flex h-7 items-center gap-1.5 rounded-md px-2 font-mono text-[11px] transition-[color,opacity,background-color] duration-150 ease-out",
+        focus !== null && focus !== index && "opacity-45"
+      );
+      if (!interactive) {
+        return (
+          <span key={label} className={itemClass}>
+            {content}
+          </span>
+        );
+      }
+      return (
+        <button
+          key={label}
+          type="button"
+          aria-pressed={locked === index}
+          aria-label={`Spotlight ${label}`}
+          onPointerEnter={() => onHover(index)}
+          onPointerLeave={() => onHover(null)}
+          onFocus={() => onHover(index)}
+          onBlur={() => onHover(null)}
+          onClick={() => onLock(locked === index ? null : index)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              onLock(null);
+            }
+          }}
+          className={cn(
+            itemClass,
+            "hover:text-foreground focus-visible:ring-ring/60 aria-pressed:bg-muted aria-pressed:text-foreground cursor-pointer outline-none focus-visible:ring-2"
+          )}
+        >
+          {content}
+        </button>
+      );
+    })}
+  </div>
+);
+
+/** The visually hidden key help and the live readout for screen readers. */
+const ScreenReaderStatus = ({
+  id,
+  row,
+}: {
+  id: string;
+  row: { label: string; values: readonly ReadoutRow[] } | undefined;
+}) => (
+  <>
+    <p id={id} className="sr-only">
+      Use the arrow keys to move through the data, Home and End to jump to the
+      ends, Escape to clear.
+    </p>
+    <div aria-live="polite" aria-atomic="true" className="sr-only">
+      {row === undefined
+        ? ""
+        : `${row.label}: ${row.values.map((value) => `${value.label} ${value.value}`).join(", ")}`}
+    </div>
+  </>
+);
+
+interface ScrubView {
+  scrubbing: boolean;
+  activeRow: { label: string; values: readonly ReadoutRow[] } | undefined;
+  activeX: number;
+  points: readonly ScrubPoint[];
+  /** The highest marker's y, or the plot bottom. */
+  anchorY: number;
+  glide: string;
+  extraMarks: ReactNode;
+}
+
+/** What the scrub shows right now, derived from its state. */
+const scrubView = ({
+  scrub,
+  tableRows,
+  xAt,
+  plot,
+  context,
+  pointsAt,
+  activeMarks,
+}: {
+  scrub: Scrub | null;
+  tableRows: readonly { label: string; values: readonly ReadoutRow[] }[];
+  xAt: (index: number) => number;
+  plot: Plot;
+  context: ChartContext | null;
+  pointsAt: (index: number, context: ChartContext) => readonly ScrubPoint[];
+  activeMarks:
+    | ((index: number, context: ChartContext) => ReactNode)
+    | undefined;
+}): ScrubView => {
+  const scrubbing = scrub?.visible === true;
+  const glide = String(scrub?.glide ?? false);
+  if (scrub === null || context === null) {
+    return {
+      activeRow: undefined,
+      activeX: 0,
+      anchorY: plot.bottom,
+      extraMarks: null,
+      glide,
+      points: [],
+      scrubbing,
+    };
+  }
+  const points = pointsAt(scrub.index, context);
+  return {
+    activeRow: tableRows[scrub.index],
+    activeX: xAt(scrub.index),
+    anchorY: Math.min(plot.bottom, ...points.map((point) => point.y)),
+    extraMarks: scrubbing ? activeMarks?.(scrub.index, context) : null,
+    glide,
+    points,
+    scrubbing,
+  };
+};
+
+/** Root props: a focusable, labelled group when interactive, else an image. */
+const rootProps = ({
+  interactive,
+  handlers,
+  uid,
+  label,
+  count,
+}: {
+  interactive: boolean;
+  handlers: ReturnType<typeof useScrub>["handlers"];
+  uid: string;
+  label: string;
+  count: number;
+}) =>
+  interactive
+    ? {
+        ...handlers,
+        "aria-describedby": `${uid}-keys`,
+        "aria-label": label,
+        "aria-roledescription": "chart",
+        role: "group",
+        tabIndex: count > 0 ? 0 : -1,
+      }
+    : { "aria-label": label, role: "img" };
+
+/** The drawing: axes (children), the column band, marks, then the crosshair. */
+const ChartSvg = ({
+  context,
+  view,
+  marks,
+  scrubKind,
+  labels,
+  children,
+}: {
+  context: ChartContext;
+  view: ScrubView;
+  marks: ReactNode;
+  scrubKind: "line" | "column" | "none";
+  labels: readonly string[];
+  children: ReactNode;
+}) => {
+  const { width, height, plot, band } = context;
+  return (
+    <svg
+      aria-hidden="true"
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className="block overflow-visible select-none"
+    >
+      {children}
+      {scrubKind === "column" ? (
+        <rect
+          data-glide={view.glide}
+          x={-band / 2}
+          y={plot.top}
+          width={band}
+          height={plot.bottom - plot.top}
+          className={cn("fill-foreground/[0.06]", GLIDE)}
+          style={{
+            opacity: view.scrubbing ? 1 : 0,
+            transform: `translateX(${view.activeX}px)`,
+          }}
+        />
+      ) : null}
+      {marks}
+      {view.extraMarks}
+      {scrubKind === "line" ? (
+        <Crosshair
+          plot={plot}
+          x={view.activeX}
+          anchorY={view.anchorY}
+          points={view.points}
+          visible={view.scrubbing}
+          glide={view.glide}
+          context={context}
+          labels={labels}
+        />
+      ) : null}
+    </svg>
+  );
+};
+
+/**
+ * Measures itself, lays out the plot and owns the interaction: a gliding
+ * crosshair and readout, keyboard scrubbing, and a legend that spotlights
+ * a series on hover and locks it on click. Charts pass their marks as a
+ * render function of the layout; it is memoised, so scrubbing only
+ * redraws the crosshair, markers and readout.
  */
 export const CartesianChart = <T,>({
   data,
   x,
   series,
+  colors,
   scale,
   layout,
   height,
   axes,
   tooltip,
   legend,
+  interactive,
+  animate,
   cell,
   formatValue,
+  formatTick = formatValue,
   readout,
   swatch,
-  crosshair,
+  scrub: scrubKind,
+  pointsAt,
+  activeMarks,
   summary,
   children,
   className,
-  style,
   "aria-label": ariaLabel,
   ...props
 }: CartesianChartProps<T>) => {
   const uid = useId().replaceAll(":", "");
   const ref = useRef<HTMLDivElement>(null);
+  const readoutRef = useRef<HTMLDivElement>(null);
   const size = useChartSize(ref, cell);
-  const reveal = useReveal(ref);
-  const [active, setActive] = useState<number | null>(null);
+  const reveal = useReveal(ref, animate);
+  const [hoveredSeries, setHoveredSeries] = useState<number | null>(null);
+  const [lockedSeries, setLockedSeries] = useState<number | null>(null);
 
   const count = data.length;
   const width = size?.width ?? 0;
-  const { plot, plotWidth, band, xAt, yAt, tickLabels } = layoutPlot({
-    axes,
-    count,
-    formatValue,
-    height,
-    layout,
-    scale,
-    width,
-  });
-
-  const indexAt = (clientX: number, rect: DOMRect) => {
-    const px = clientX - rect.left - plot.left;
-    const raw =
-      layout === "band" ? Math.floor(px / band) : Math.round(px / band);
+  const { plot, plotWidth, band, xAt, yAt, tickLabels } = useMemo(
+    () => layoutPlot({ axes, count, formatTick, height, layout, scale, width }),
+    [axes, count, formatTick, height, layout, scale, width]
+  );
+  const indexAt = (px: number) => {
+    const offset = (px - plot.left) / band;
+    const raw = layout === "band" ? Math.floor(offset) : Math.round(offset);
     return Math.min(count - 1, Math.max(0, raw));
   };
-
-  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (count === 0) {
-      return;
-    }
-    setActive(
-      indexAt(event.clientX, event.currentTarget.getBoundingClientRect())
-    );
-  };
-
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (count === 0) {
-      return;
-    }
-    const current = active ?? count - 1;
-    const next: Record<string, number> = {
-      ArrowLeft: current - 1,
-      ArrowRight: current + 1,
-      End: count - 1,
-      Home: 0,
-    };
-    const target = next[event.key];
-    if (target === undefined) {
-      if (event.key === "Escape") {
-        setActive(null);
-      }
-      return;
-    }
-    event.preventDefault();
-    setActive(Math.min(count - 1, Math.max(0, target)));
-  };
-
-  const rowsFor = (datum: T): readonly ReadoutRow[] =>
-    readout?.(datum) ??
-    series.map((entry, index) => ({
-      color: seriesColor(entry.color, index),
-      label: entry.label,
-      value: formatValue(readValue(datum, entry.value)),
-    }));
-
-  // Space x labels so they never collide: about one per 72px.
-  const shownLabels = xLabelIndices(
+  const { scrub, handlers } = useScrub({
     count,
-    Math.ceil(count / Math.max(1, Math.floor(plotWidth / 72)))
+    indexAt,
+    onEscape: () => setLockedSeries(null),
+  });
+
+  const focus = interactive ? (hoveredSeries ?? lockedSeries) : null;
+  const scrubbing = scrub?.visible === true;
+  const colorOf = useCallback(
+    (index: number) => seriesColor(series[index]?.color, index, colors),
+    [series, colors]
   );
-  const activeDatum = active === null ? undefined : data[active];
-  const activeX = active === null ? 0 : xAt(active);
+  const context = useMemo<ChartContext | null>(
+    () =>
+      size === null
+        ? null
+        : {
+            animate,
+            band,
+            cell: size.cell,
+            colorOf,
+            focus,
+            height,
+            opacityOf: (index) =>
+              focus === null || focus === index ? 1 : DIMMED,
+            plot,
+            reveal,
+            scrubbing,
+            uid,
+            width,
+            xAt,
+            yAt,
+          },
+    [
+      animate,
+      band,
+      size,
+      colorOf,
+      focus,
+      height,
+      plot,
+      reveal,
+      scrubbing,
+      uid,
+      width,
+      xAt,
+      yAt,
+    ]
+  );
+  const marks = useMemo(
+    () => (context === null ? null : children(context)),
+    [children, context]
+  );
+
+  const rowsFor = useCallback(
+    (datum: T): readonly ReadoutRow[] =>
+      readout?.(datum) ??
+      series.map((entry, index) => ({
+        color: colorOf(index),
+        label: entry.label,
+        value: formatValue(readValue(datum, entry.value)),
+      })),
+    [readout, series, colorOf, formatValue]
+  );
+  const tableRows = useMemo(
+    () =>
+      data.map((datum) => ({
+        label: readLabel(datum, x),
+        values: rowsFor(datum),
+      })),
+    [data, x, rowsFor]
+  );
+  const labels = series.map((entry) => entry.label);
+
+  const view = scrubView({
+    activeMarks,
+    context,
+    plot,
+    pointsAt,
+    scrub,
+    tableRows,
+    xAt,
+  });
+  const showReadout = interactive && tooltip && view.scrubbing;
+
+  useReadoutPosition(
+    readoutRef,
+    showReadout
+      ? { top: plot.top, width, x: view.activeX, y: view.anchorY }
+      : null
+  );
 
   return (
-    <div {...props} className={cn("relative w-full", className)} style={style}>
+    <div {...props} className={cn("relative w-full", className)}>
       <div
         ref={ref}
-        role="group"
-        aria-label={ariaLabel ?? summary}
-        aria-roledescription="chart"
-        tabIndex={count > 0 ? 0 : -1}
-        onPointerMove={onPointerMove}
-        onPointerLeave={() => setActive(null)}
-        onFocus={() => setActive((current) => current ?? count - 1)}
-        onBlur={() => setActive(null)}
-        onKeyDown={onKeyDown}
+        {...rootProps({
+          count,
+          handlers,
+          interactive,
+          label: ariaLabel ?? summary,
+          uid,
+        })}
         className="focus-visible:ring-ring/60 relative w-full touch-pan-y rounded-sm outline-none focus-visible:ring-2"
         style={{ height }}
       >
-        {size === null ? null : (
-          <svg
-            aria-hidden="true"
-            width={width}
-            height={height}
-            viewBox={`0 0 ${width} ${height}`}
-            className="block overflow-visible select-none"
+        {context === null ? null : (
+          <ChartSvg
+            context={context}
+            view={view}
+            marks={marks}
+            scrubKind={interactive ? scrubKind : "none"}
+            labels={labels}
           >
             {axes ? (
-              <g>
-                {scale.ticks.map((tick, index) => (
-                  <g key={tick}>
-                    <line
-                      x1={plot.left}
-                      x2={plot.right}
-                      y1={Math.round(yAt(tick)) + 0.5}
-                      y2={Math.round(yAt(tick)) + 0.5}
-                      className="stroke-border"
-                      strokeWidth={1}
-                      shapeRendering="crispEdges"
-                    />
-                    <text
-                      x={plot.left - 10}
-                      y={yAt(tick)}
-                      dy="0.32em"
-                      textAnchor="end"
-                      className="fill-muted-foreground font-mono text-[10px] tabular-nums"
-                    >
-                      {tickLabels[index]}
-                    </text>
-                  </g>
-                ))}
-                {data.map((datum, index) =>
-                  shownLabels.has(index) ? (
-                    <text
-                      // oxlint-disable-next-line react/no-array-index-key -- categories can repeat; position is the identity.
-                      key={index}
-                      x={xAt(index)}
-                      y={height - 6}
-                      textAnchor={labelAnchor(layout, index, count)}
-                      className={cn(
-                        "font-mono text-[10px] transition-[fill] duration-150",
-                        index === active
-                          ? "fill-foreground"
-                          : "fill-muted-foreground"
-                      )}
-                    >
-                      {readLabel(datum, x)}
-                    </text>
-                  ) : null
-                )}
-              </g>
-            ) : null}
-            {crosshair && active !== null ? (
-              <line
-                x1={Math.round(activeX) + 0.5}
-                x2={Math.round(activeX) + 0.5}
-                y1={plot.top}
-                y2={plot.bottom}
-                className="stroke-foreground/30"
-                strokeWidth={1}
-                shapeRendering="crispEdges"
+              <Axes
+                data={data}
+                x={x}
+                scale={scale}
+                tickLabels={tickLabels}
+                plot={plot}
+                plotWidth={plotWidth}
+                height={height}
+                layout={layout}
+                xAt={xAt}
+                yAt={yAt}
               />
             ) : null}
-            {children({
-              active,
-              band,
-              cell: size.cell,
-              height,
-              plot,
-              reveal,
-              uid,
-              width,
-              xAt,
-              yAt,
-            })}
-          </svg>
+          </ChartSvg>
         )}
-        {tooltip && activeDatum !== undefined ? (
+        {interactive && tooltip ? (
           <Readout
-            title={readLabel(activeDatum, x)}
-            rows={rowsFor(activeDatum)}
-            style={
-              activeX > width / 2
-                ? { right: width - activeX + 12 }
-                : { left: activeX + 12 }
-            }
+            ref={readoutRef}
+            row={view.activeRow}
+            visible={showReadout}
+            glide={view.glide}
+            focus={focus}
           />
         ) : null}
       </div>
       {legend ? (
-        <ul
-          aria-hidden="true"
-          className="text-muted-foreground mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs"
-        >
-          {series.map((entry, index) => (
-            <li key={entry.label} className="flex items-center gap-1.5">
-              {swatch(index, seriesColor(entry.color, index))}
-              {entry.label}
-            </li>
-          ))}
-        </ul>
+        <Legend
+          labels={labels}
+          interactive={interactive}
+          focus={focus}
+          locked={lockedSeries}
+          swatch={swatch}
+          colorOf={colorOf}
+          onHover={setHoveredSeries}
+          onLock={setLockedSeries}
+        />
       ) : null}
-      <DataTable
-        summary={summary}
-        series={series}
-        rows={data.map((datum) => ({
-          label: readLabel(datum, x),
-          values: rowsFor(datum),
-        }))}
-      />
+      {interactive ? (
+        <ScreenReaderStatus
+          id={`${uid}-keys`}
+          row={view.scrubbing ? view.activeRow : undefined}
+        />
+      ) : null}
+      <DataTable summary={summary} series={series} rows={tableRows} />
     </div>
   );
 };

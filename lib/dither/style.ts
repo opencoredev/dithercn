@@ -87,10 +87,10 @@ const DOTTED: FillTile = {
   size: 4,
 };
 
-// Rising diagonals, one cell wide, three cells apart.
+// Rising diagonals, one cell wide, four cells apart.
 const HATCHED: FillTile = {
-  path: cellsPath(3, 3, (x, y) => (x + y) % 3 === 2),
-  size: 3,
+  path: cellsPath(4, 4, (x, y) => (x + y) % 4 === 3),
+  size: 4,
 };
 
 /** The repeating tile of a textured variant. */

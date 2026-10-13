@@ -43,7 +43,7 @@ Each bar is a dithered body under a solid 2px cap. One bar is drawn solid, the l
 
 ### Stacked
 
-`variant="stacked"` puts the series on top of each other with a 2px gap between segments, and the axis covers the totals. `highlight="max"` picks the tallest stack.
+`layout="stacked"` puts the series on top of each other with a 2px gap between segments, and the axis covers the totals. `highlight="max"` picks the tallest stack.
 
 <ComponentPreview src="examples/bar-chart-stacked.tsx" size="lg">
   <BarChartStacked />
@@ -51,7 +51,7 @@ Each bar is a dithered body under a solid 2px cap. One bar is drawn solid, the l
 
 ### Grouped comparison
 
-Grouped bars sit side by side, one per series. `highlight="none"` leaves every bar dithered until you hover one, and a lighter `level` with `matrix="bayer8"` gives a finer, quieter texture.
+Grouped bars sit side by side, one per series. `highlight="none"` leaves every bar dithered until you scrub to one, and `fill="hatched"` gives each bar diagonal lines instead of the gradient.
 
 <ComponentPreview src="examples/bar-chart-grouped.tsx" size="lg">
   <BarChartGrouped />
@@ -81,17 +81,52 @@ Grouped bars sit side by side, one per series. `highlight="none"` leaves every b
         "Each series is { label, value, color? }, where value is a numeric field of T or a function.",
     },
     {
-      name: "variant",
-      type: '"grouped" | "stacked"',
+      name: "layout",
+      type: '"grouped" | "stacked" | "percent"',
       default: '"grouped"',
-      description: "How several series share a category.",
+      description:
+        "How several series share a category: side by side, on top of each other, or stacked and scaled to 100%.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description:
+        "gradient is densest at the top of each bar and thins toward the axis. dotted is a sparse lattice, hatched diagonal lines, solid flat colour.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description:
+        "A soft glow in each series' colour behind its fill. Its strength follows --dither-bloom, lower in light mode.",
+    },
+    {
+      name: "colors",
+      type: "readonly DitherColor[]",
+      default: "ink, orange, green, pink, …",
+      description:
+        'Colours by series position: palette names such as "green" or any CSS colour. A series\' own color wins.',
+    },
+    {
+      name: "interactive",
+      type: "boolean",
+      default: "true",
+      description:
+        "Scrubbing, the readout and the legend spotlight. false makes a decorative chart: no focus stop, no readout, just an image with a summary.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Entrance motion. Always off under reduced motion.",
     },
     {
       name: "highlight",
       type: 'number | "last" | "max" | "none"',
       default: '"last"',
       description:
-        "The bar drawn solid, with its value, while nothing is hovered.",
+        "The bar drawn solid, with its value, while nothing is scrubbed.",
     },
     {
       name: "height",
@@ -102,15 +137,15 @@ Grouped bars sit side by side, one per series. `highlight="none"` leaves every b
     {
       name: "level",
       type: "number",
-      default: "0.5",
-      description: "Coverage of the dithered bar body, from 0 to 1.",
+      default: "0.75",
+      description:
+        "Gradient only: coverage at the top of each bar, from 0 to 1.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description:
-        "Dither texture of the first series. Later series switch texture.",
+      description: "Gradient only: the dither texture.",
     },
     {
       name: "cell",
@@ -129,13 +164,14 @@ Grouped bars sit side by side, one per series. `highlight="none"` leaves every b
       name: "tooltip",
       type: "boolean",
       default: "true",
-      description: "Show the readout on hover and keyboard focus.",
+      description: "Show the readout while scrubbing.",
     },
     {
       name: "legend",
       type: "boolean",
       default: "Two or more series",
-      description: "Show a legend under the chart.",
+      description:
+        "Show the legend under the chart. Its entries spotlight a series on hover and lock it on click.",
     },
     {
       name: "format",
@@ -147,10 +183,10 @@ Grouped bars sit side by side, one per series. `highlight="none"` leaves every b
   ]}
 />
 
-Series colours default to `--dither-ink`, then `--muted-foreground`, `--chart-3` and `--chart-5`.
+Series colours follow the palette: ink, then orange, green, pink, purple, blue, red and grey. Pass `colors`, or `color` on one series, with a palette name or any CSS colour.
 
 ## Notes
 
-- The chart is a focusable group with a short summary, and every value is in a visually hidden table. The arrow keys, Home and End move between bars; Escape hides the readout.
+- The chart is a focusable group with a short summary, and every value is in a visually hidden table. The arrow keys, Home and End move between bars, a polite live region reads out each stop, and Escape clears the readout and any locked series. The scrubbed column gets a soft band and fills in solid.
 - Bars rise from the baseline one after another on entrance. With reduced motion they appear in place.
 - Bars are capped at 36px wide and snapped to whole pixels, and the dither cell to whole device pixels, so edges and cells stay sharp.
