@@ -34,4 +34,4 @@ A dither only reads when ink and paper differ enough. As a rule, keep the same c
 
 ## Multi-step palettes
 
-Two-tone dithers cover most backgrounds and UI pieces. Charts and heatmaps need more steps, so they will also read `--chart-1` to `--chart-5`. This is planned with the [dashboard pieces](/docs/dashboard/area-chart). [Theme palettes](/docs/foundations/palettes) tracks the details.
+Two-tone dithers cover most backgrounds and interface pieces. Components that need more steps take a `palette` prop: a list of colours from paper to ink, such as your `--chart-1` to `--chart-5` tokens. [Palettes](/docs/concepts/palettes) shows how a palette ramp is dithered.

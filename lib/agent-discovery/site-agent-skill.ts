@@ -8,11 +8,11 @@ export const SITE_AGENT_SKILL_MD = `# ${SITE.NAME}
 
 ## Summary
 
-${SITE.NAME} is a shadcn registry of dithered backgrounds, dashboard charts, UI pieces, type and images for landing pages and dashboards. Help users discover pieces and install them with the shadcn CLI.
+${SITE.NAME} is a shadcn registry of dithered backgrounds, charts, interface pieces, text effects and images for landing pages and dashboards. Help users discover components and install them with the shadcn CLI.
 
-## Status
+## What installs
 
-One item ships today: \`dither-tokens\`, the CSS variables every piece reads (\`--dither-ink\`, \`--dither-paper\`, \`--dither-cell\`). Catalog pages whose Markdown says **Status: planned** describe pieces that are not in the registry yet. Do not try to install them. The registry index lists only installable items.
+Every component depends on \`dither-core\` (the engine, in \`lib/dither\`) and \`dither-tokens\` (the CSS variables \`--dither-ink\`, \`--dither-paper\`, \`--dither-cell\`); the CLI installs both automatically. The registry index lists every installable item.
 
 ## Registry
 
@@ -23,10 +23,10 @@ One item ships today: \`dither-tokens\`, the CSS variables every piece reads (\`
 ## Install
 
 \`\`\`bash
-npx shadcn@latest add ${SITE.REGISTRY}/dither-tokens.json
+npx shadcn@latest add ${SITE.REGISTRY}/dither-gradient.json
 \`\`\`
 
-Or add \`"@dithercn": "${SITE.REGISTRY}/{name}.json"\` to the \`registries\` field of the user's components.json and run \`npx shadcn@latest add @dithercn/dither-tokens\`.
+Or add \`"@dithercn": "${SITE.REGISTRY}/{name}.json"\` to the \`registries\` field of the user's components.json and run \`npx shadcn@latest add @dithercn/dither-gradient\`.
 
 ## MCP
 

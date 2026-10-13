@@ -1,0 +1,68 @@
+---
+title: "Motion"
+description: "How animated dithers run, pause and hold still, including under reduced motion."
+---
+
+import ConceptMotion from "@/examples/concept-motion";
+
+Animated dithers in dithercn are slow on purpose. A background should drift, not perform. Every animated component follows the same rules, and they come from `dither-core`, so you get them for free when you build your own.
+
+<ComponentPreview src="examples/concept-motion.tsx" size="lg" align="stretch">
+  <ConceptMotion />
+</ComponentPreview>
+
+## When a dither moves
+
+A `DitherShader` animates only while someone can see it. Its `data-state` attribute says what it is doing:
+
+| `data-state` | Meaning                                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `running`    | Drawing up to 30 frames a second.                                                                                                           |
+| `paused`     | Scrolled out of view or in a hidden tab. Time stops, so it resumes where it left off.                                                       |
+| `static`     | Motion is off: `animate={false}` or reduced motion. One still frame is drawn.                                                               |
+| `fallback`   | Nothing drawn yet, WebGL is unavailable, or the shader is far offscreen and has released its context. The `fallback` content shows instead. |
+
+Time only advances while running, and a long frame (a tab switch, a debugger) counts as at most a tenth of a second, so the motion never jumps.
+
+## Reduced motion
+
+When the visitor turns on reduced motion in their system settings, every dither draws one still frame and stops. `stillTime` picks which moment of the animation that frame shows, so you can choose a good one:
+
+```tsx
+<DitherShader field={FIELD} stillTime={14} />
+```
+
+The switch is live: turning the setting on or off while the page is open takes effect at once. Interface pieces follow the same rule. Their transitions become instant, and anything that loops holds still.
+
+## Speed and frame rate
+
+`speed` scales time, and changing it never jumps the motion, because each frame adds its own slice of time. `fps` caps the frame rate. The default of 30 keeps slow drifts smooth at half the cost of 60.
+
+## Your own loops
+
+`useFrameLoop` is the loop `DitherShader` uses. Give it a callback and an element, and it calls you once per frame while that element is on screen:
+
+```tsx
+const ref = useRef<HTMLDivElement>(null);
+const state = useFrameLoop(
+  (time, delta) => {
+    // draw the frame for `time` seconds
+  },
+  { target: ref, fps: 30, stillTime: 0 }
+);
+```
+
+Under reduced motion or with `enabled: false`, it calls the callback once with `stillTime` and a `delta` of 0. It returns `"running"`, `"paused"` or `"static"`, and only re-renders when that changes. `usePrefersReducedMotion`, `useInView` and `useDocumentVisible` are exported too.
+
+## Easing and timing
+
+For transitions in interface pieces, `MOTION` holds the shared values:
+
+```ts
+MOTION.ease; // "cubic-bezier(0.23, 1, 0.32, 1)", a strong ease-out
+MOTION.fast; // 150ms, for presses and colour changes
+MOTION.base; // 240ms, for small reveals
+MOTION.slow; // 600ms, for large surfaces fading in
+```
+
+Hover effects use Tailwind's `hover:` variant, which only applies on devices that can hover, so a tap on a phone never leaves an element stuck in its hover state.

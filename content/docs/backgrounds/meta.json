@@ -1,5 +1,5 @@
 {
   "title": "Backgrounds",
-  "description": "Full-bleed surfaces for heroes and section breaks.",
-  "pages": ["dithered-gradient", "mesh-gradient", "noise-field", "hero-scene"]
+  "description": "Full-bleed dithered surfaces for heroes, sections and cards.",
+  "pages": ["dither-gradient"]
 }

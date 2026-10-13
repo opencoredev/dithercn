@@ -1,10 +1,11 @@
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 
-import { BAYER_4, bayerMask } from "@/components/bayer-ramp";
+import { bayerMask } from "@/components/bayer-ramp";
 import { Icon } from "@/components/icon";
 import { ROUTES } from "@/constants/routes";
 import type { CatalogCategory } from "@/lib/catalog";
+import { BAYER_4 } from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /**
@@ -28,16 +29,14 @@ const Dots = ({
   />
 );
 
-// Foundations: the 4x4 matrix itself, each cell filled to its threshold.
+// Fallback: the 4x4 matrix itself, each cell filled to its threshold.
 const MatrixArt = () => (
   <div className="absolute inset-y-4 left-1/2 grid aspect-square -translate-x-1/2 grid-cols-4 gap-1">
-    {BAYER_4.flatMap((row, y) =>
-      row.map((threshold, x) => (
-        <div key={`${x}-${y}`} className="relative">
-          <Dots level={threshold + 1} className="inset-0" />
-        </div>
-      ))
-    )}
+    {Array.from(BAYER_4.ranks, (rank, index) => (
+      <div key={index} className="relative">
+        <Dots level={rank + 1} className="inset-0" />
+      </div>
+    ))}
   </div>
 );
 
@@ -62,7 +61,7 @@ const GlowArt = () => (
   </>
 );
 
-// Dashboard: a bar chart, one bar per piece in the group.
+// Charts: a bar chart.
 const BAR_HEIGHTS = ["38%", "62%", "47%", "80%", "56%", "92%", "70%"] as const;
 
 const BarsArt = () => (
@@ -75,7 +74,7 @@ const BarsArt = () => (
   </div>
 );
 
-// UI: a skeleton card.
+// Interface: a skeleton card.
 const SkeletonArt = () => (
   <div className="absolute inset-x-5 top-1/2 flex -translate-y-1/2 items-start gap-3">
     <div className="relative size-10 shrink-0 rounded-full">
@@ -95,7 +94,7 @@ const SkeletonArt = () => (
   </div>
 );
 
-// Type: one large glyph filled with dots.
+// Text: one large glyph filled with dots.
 const GlyphArt = () => (
   <span
     className="absolute inset-0 flex items-center justify-center text-[6.5rem] leading-none font-semibold tracking-tighter"
@@ -128,26 +127,6 @@ const LandscapeArt = () => (
   </>
 );
 
-// Logos: a wall of marks sharing one fill.
-const LOGO_SHAPES = [
-  "rounded-full",
-  "rounded-[30%]",
-  "[clip-path:polygon(50%_0,100%_100%,0_100%)]",
-  "[clip-path:polygon(50%_0,100%_50%,50%_100%,0_50%)]",
-  "rounded-t-full",
-  "[clip-path:polygon(0_0,100%_0,100%_35%,35%_35%,35%_100%,0_100%)]",
-] as const;
-
-const LogoWallArt = () => (
-  <div className="absolute inset-0 grid grid-cols-3 place-items-center content-center gap-y-3 px-6 py-4">
-    {LOGO_SHAPES.map((shape) => (
-      <div key={shape} className="relative size-7 sm:size-9">
-        <Dots level={10} className={cn("inset-0", shape)} />
-      </div>
-    ))}
-  </div>
-);
-
 // Tools: a diagonal ramp, the kind of test strip an export tool would print.
 const DIAGONAL_LEVELS = [1, 3, 5, 7, 9, 11, 13, 15] as const;
 
@@ -163,13 +142,11 @@ const DiagonalArt = () => (
 
 const ART = {
   backgrounds: GlowArt,
-  dashboard: BarsArt,
-  foundations: MatrixArt,
+  charts: BarsArt,
   images: LandscapeArt,
-  logos: LogoWallArt,
+  interface: SkeletonArt,
+  text: GlyphArt,
   tools: DiagonalArt,
-  type: GlyphArt,
-  ui: SkeletonArt,
 } as const satisfies Record<string, () => React.ReactNode>;
 
 const isArtKey = (id: string): id is keyof typeof ART => Object.hasOwn(ART, id);
@@ -178,6 +155,9 @@ const TileArt = ({ id }: { id: string }) => {
   const Art = isArtKey(id) ? ART[id] : MatrixArt;
   return <Art />;
 };
+
+const countLabel = (count: number) =>
+  count === 1 ? "1 component" : `${count} components`;
 
 const tileHref = (category: CatalogCategory) =>
   category.pieces[0]?.url ?? `${ROUTES.DOCS_CATALOG}#catalog-${category.id}`;
@@ -190,7 +170,7 @@ export const CatalogTiles = ({
   className?: string;
 }) => (
   <ul
-    className={cn("grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4", className)}
+    className={cn("grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3", className)}
   >
     {catalog.map((category) => (
       <li key={category.id} className="scroll-reveal flex">
@@ -210,7 +190,7 @@ export const CatalogTiles = ({
           </div>
           <div className="flex flex-1 flex-col gap-1.5 p-4 sm:p-5">
             <span className="text-muted-foreground font-mono text-xs tabular-nums">
-              ({category.pieces.length}) planned
+              {countLabel(category.pieces.length)}
             </span>
             <span className="flex items-center justify-between gap-2">
               <span className="text-base font-medium tracking-[-0.01em] sm:text-lg">

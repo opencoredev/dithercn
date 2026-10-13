@@ -1,0 +1,107 @@
+---
+title: "Dither engine"
+description: "How dither-core turns a tone into dots: threshold matrices, levels, error diffusion, and the three ways to draw."
+---
+
+import ConceptMatrices from "@/examples/concept-matrices";
+import ConceptLevels from "@/examples/concept-levels";
+import ConceptDiffusion from "@/examples/concept-diffusion";
+
+Every dithercn component is built on `dither-core`, a small library that installs into `lib/dither` the first time you add a component. You can import it yourself to build your own pieces:
+
+```tsx
+import { DitherShader, ditherMaskStyle, ditherImage } from "@/lib/dither";
+```
+
+It draws dithers three ways, and each component uses whichever fits:
+
+| You want | Use | Drawn with |
+| --- | --- | --- |
+| An animated or full-bleed surface | `DitherShader` | WebGL |
+| A static fill for a shape or block | `DitherPattern`, `ditherMaskStyle` | SVG or a CSS mask |
+| A dithered photo or logo | `ditherImage` | The CPU, once |
+
+## From tone to dots
+
+A dither starts from a tone between 0 and 1 for each cell: 0 is paper, 1 is ink. A threshold matrix gives every cell in a small repeating tile its own threshold. Where the tone is above the cell's threshold, the cell is inked. A tone of 0.25 inks a quarter of the cells, spread evenly across the tile.
+
+The matrix decides how those cells are spread. Each one below draws the same left-to-right ramp:
+
+<ComponentPreview src="examples/concept-matrices.tsx">
+  <ConceptMatrices />
+</ComponentPreview>
+
+- `bayer2`, `bayer4` and `bayer8` are ordered Bayer matrices of 2, 4 and 8 cells square. Bigger tiles draw more distinct tones, with a regular crosshatch that reads as deliberate and printed.
+- `blue-noise` is a 64×64 tile with no visible grid. It looks closest to film grain, and suits large soft surfaces where a crosshatch would distract.
+
+`bayer4` is the default everywhere. Every matrix is ordered, so the same tone always gives the same dots. That keeps animated dithers calm: a cell only changes when its tone crosses its threshold.
+
+## Levels
+
+Before dithering, the tone snaps to a fixed number of `levels`. By default that's every tone the matrix can draw, 17 for `bayer4`. Fewer levels give visible bands, a posterised look that works well for bold backgrounds:
+
+<ComponentPreview src="examples/concept-levels.tsx">
+  <ConceptLevels />
+</ComponentPreview>
+
+## Error diffusion for images
+
+Photos and logos look best with error diffusion. Each pixel is rounded to the nearest colour, and the rounding error is passed on to the pixels not yet visited. `ditherImage` supports `floyd-steinberg`, `atkinson` and `sierra-lite` alongside the ordered matrices:
+
+<ComponentPreview src="examples/concept-diffusion.tsx">
+  <ConceptDiffusion />
+</ComponentPreview>
+
+`ditherImage` never changes its input. It returns a new `ImageData` you can draw with `putImageData`, and it has no DOM dependency beyond `ImageData`, so it runs in a Web Worker too. Error diffusion depends on every earlier pixel, so a small change to the input can move dots everywhere. Keep it for still images and use a matrix for anything that moves.
+
+```ts
+const dithered = ditherImage(context.getImageData(0, 0, width, height), {
+  method: "atkinson",
+  palette: [
+    [0.05, 0.05, 0.1],
+    [0.55, 0.6, 1],
+  ],
+});
+context.putImageData(dithered, 0, 0);
+```
+
+## Writing a field
+
+`DitherShader` runs a GLSL function you write, called the field. It receives the cell's position and returns its tone; the core does the rest: resizing, quantising, the palette, motion and cleanup.
+
+```tsx
+const FIELD = `
+float field(vec2 uv, vec2 res, float t) {
+  // uv: cell centre in [0, 1], y up. res: size in cells. t: seconds.
+  float glow = 1.0 - distance(uv, glowCentre);
+  return clamp(glow + 0.2 * (fbm(uv * 3.0 + t * 0.05) - 0.5), 0.0, 1.0);
+}
+`;
+
+<DitherShader
+  field={FIELD}
+  uniforms={{ glowCentre: [0.5, 0.2] }}
+  className="absolute inset-0"
+/>;
+```
+
+Values in `uniforms` are declared for you: a number becomes a `float`, and a tuple of 2, 3 or 4 numbers a `vec2`, `vec3` or `vec4`. Changing a value only updates the uniform; changing the field's source recompiles it.
+
+The core gives every field three helpers: `hash21(vec2)` for stable per-cell randomness in [0, 1), `snoise(vec2)` for simplex noise in [-1, 1], and `fbm(vec2)` for four octaves of it in [0, 1]. Names starting with `u_` belong to the core's own uniforms, so your uniforms can't use them.
+
+## Static fills
+
+Charts and small surfaces don't need a canvas. `DitherPattern` is an SVG `<pattern>` you reference from any shape, and `ditherMaskStyle` masks any element to one tone:
+
+```tsx
+<svg>
+  <defs>
+    <DitherPattern id="half" level={0.5} />
+  </defs>
+  <rect width={80} height={40} fill="url(#half)" />
+</svg>
+
+<div className="bg-dither-ink h-8" style={ditherMaskStyle(0.25)} />
+```
+
+Both render on the server, follow the theme through CSS variables, and cost nothing after the first paint.

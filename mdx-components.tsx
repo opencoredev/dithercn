@@ -5,11 +5,12 @@ import { Callout } from "@/components/callout";
 import { CatalogIndex } from "@/components/catalog-index";
 import { CodeBlockCommand } from "@/components/code-block-command";
 import { CodeTabs } from "@/components/code-tabs";
-import { ComingSoon } from "@/components/coming-soon";
 import { ComponentPreview } from "@/components/component-preview";
 import { ComponentSource } from "@/components/component-source";
 import { CopyButton } from "@/components/copy-button";
 import { getIconForLanguageExtension } from "@/components/icons";
+import { InstallBlock } from "@/components/install-block";
+import { PropsTable } from "@/components/props-table";
 import {
   Accordion,
   AccordionContent,
@@ -37,7 +38,6 @@ export const mdxComponents = {
   Callout,
   CatalogIndex,
   CodeTabs,
-  ComingSoon,
   ComponentPreview,
   ComponentSource,
   Image: ({
@@ -57,6 +57,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
+  InstallBlock,
   Link: ({ className, ...props }: React.ComponentProps<typeof Link>) => (
     <Link
       className={cn("font-medium underline underline-offset-4", className)}
@@ -72,6 +73,7 @@ export const mdxComponents = {
       {...props}
     />
   ),
+  PropsTable,
   Step: ({ className, children, ...props }: React.ComponentProps<"h3">) => (
     <h3
       className={cn(
