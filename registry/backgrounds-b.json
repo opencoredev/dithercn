@@ -82,5 +82,66 @@
         "target": "components/dithercn/eclipse.tsx"
       }
     ]
+  },
+  {
+    "name": "world-land",
+    "type": "registry:lib",
+    "title": "World land mask",
+    "description": "A 3.8 KB land mask of the world from Natural Earth (public domain), shared by the dither globe and the dot map.",
+    "files": [
+      {
+        "path": "components/dithercn/world-land.ts",
+        "type": "registry:lib",
+        "target": "components/dithercn/world-land.ts"
+      }
+    ]
+  },
+  {
+    "name": "dot-map",
+    "type": "registry:component",
+    "title": "Dot map",
+    "description": "A flat world map in dithered dots with pulsing markers, dithered halos and dotted arcs.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/world-land.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/dot-map.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dot-map.tsx"
+      }
+    ]
+  },
+  {
+    "name": "dither-globe",
+    "type": "registry:component",
+    "title": "Dither globe",
+    "description": "A rotating dithered globe with land, a lit terminator, and optional pulsing markers and arcs.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/world-land.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/dither-globe.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-globe.tsx"
+      }
+    ]
+  },
+  {
+    "name": "dither-orb",
+    "type": "registry:component",
+    "title": "Dither orb",
+    "description": "A lit, dithered orb that slowly morphs and leans towards the pointer.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-orb.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-orb.tsx"
+      }
+    ]
   }
 ]

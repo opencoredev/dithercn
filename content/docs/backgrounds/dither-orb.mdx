@@ -1,0 +1,145 @@
+---
+title: "Dither orb"
+description: "A lit, dithered orb that breathes slowly and leans towards the pointer, for AI and assistant surfaces."
+---
+
+import DitherOrbDemo from "@/examples/dither-orb-demo";
+import { controls as orbControls } from "@/examples/dither-orb-controls";
+import DitherOrbAssistant from "@/examples/dither-orb-assistant";
+import DitherOrbVoice from "@/examples/dither-orb-voice";
+
+<ComponentPreview
+  src="examples/dither-orb-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={orbControls}
+>
+  <DitherOrbDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-orb" />
+
+## Usage
+
+```tsx
+import { DitherOrb } from "@/components/dithercn/dither-orb";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <DitherOrb color="purple" className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+The orb is a sphere shaded by one light, with a soft terminator, a thin rim light on the shadow side and a dithered glow that falls off around it. Its outline breathes with two slow harmonics and a little noise (`morph`). When the pointer moves anywhere on the page, the orb and its light ease towards it, then drift back to the centre when the pointer leaves.
+
+Pass `highlight` for a third, brighter tone on the specular spot, such as `"#fff"` or a pale mix of the orb colour. Pick a colour that is light in both themes: `"--foreground"` turns black in light mode.
+
+## Examples
+
+### Assistant hero
+
+A purple orb with a pale highlight above a prompt.
+
+<ComponentPreview
+  src="examples/dither-orb-assistant.tsx"
+  size="full"
+  align="stretch"
+>
+  <DitherOrbAssistant />
+</ComponentPreview>
+
+### Voice status
+
+A 64px orb on a transparent background, with more `morph` and no lean, as a listening indicator.
+
+<ComponentPreview src="examples/dither-orb-voice.tsx">
+  <DitherOrbVoice />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
+      description: "Colour of the orb and its glow.",
+    },
+    {
+      name: "highlight",
+      type: "DitherColor",
+      default: "–",
+      description: "A third, brighter tone for the specular highlight.",
+    },
+    {
+      name: "background",
+      type: "DitherColor",
+      default: '"--dither-paper"',
+      description:
+        'Colour behind the orb. "transparent" floats it over the page.',
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "0.26",
+      description: "Radius as a share of the box's shorter side, 0.1 to 0.5.",
+    },
+    {
+      name: "morph",
+      type: "number",
+      default: "1",
+      description: "How much the outline wobbles. 0 is a perfect sphere.",
+    },
+    {
+      name: "lean",
+      type: "number",
+      default: "1",
+      description:
+        "How far the orb and its light lean towards the pointer. 0 turns it off.",
+    },
+    {
+      name: "glow",
+      type: "number",
+      default: "0.5",
+      description: "Strength of the dithered glow around the orb, 0 to 1.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "Threshold matrix.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the outline breathes.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description:
+        "false draws one still frame and stops following the pointer.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The orb is decorative and hidden from assistive technology.
+- With reduced motion turned on, it draws one still, centred frame and ignores the pointer.
+- One WebGL context per orb. It pauses offscreen and in hidden tabs, and the pointer listener is passive and eased in one animation frame loop that stops once the orb settles.

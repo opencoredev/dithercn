@@ -1,0 +1,157 @@
+---
+title: "Dot map"
+description: "A flat world map in dithered dots with pulsing markers and dotted arcs, for customers-worldwide sections."
+---
+
+import DotMapDemo from "@/examples/dot-map-demo";
+import { controls as dotMapControls } from "@/examples/dot-map-controls";
+import DotMapCustomers from "@/examples/dot-map-customers";
+import DotMapRegions from "@/examples/dot-map-regions";
+import DotMapRoutes from "@/examples/dot-map-routes";
+
+<ComponentPreview
+  src="examples/dot-map-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={dotMapControls}
+>
+  <DotMapDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dot-map" />
+
+## Usage
+
+```tsx
+import { DotMap } from "@/components/dithercn/dot-map";
+
+const OFFICES = [
+  { at: [51.51, -0.13], label: "London" },
+  { at: [35.68, 139.69], label: "Tokyo" },
+] as const;
+
+export function Offices() {
+  return (
+    <DotMap
+      markers={OFFICES}
+      arcs={[{ from: OFFICES[0].at, to: OFFICES[1].at }]}
+      accent="blue"
+    />
+  );
+}
+```
+
+The map is an SVG that scales to its container's width and keeps its aspect ratio. Land comes from a 3.8 KB mask of Natural Earth's public-domain land polygons that installs with it as `world-land`, so nothing is fetched at runtime.
+
+Each marker pulses and casts a dithered halo on the land around it: dense at the marker, thinning through the Bayer levels. Arcs are dotted curves with a stretch of light running along them.
+
+## Examples
+
+### Customers worldwide
+
+Many small markers, round dots and a tight halo, between a headline and a row of stats.
+
+<ComponentPreview src="examples/dot-map-customers.tsx" size="lg">
+  <DotMapCustomers />
+</ComponentPreview>
+
+### Region map in a card
+
+`bounds` crops the map to a region. Here, Europe, with labelled edge regions in a dashboard card.
+
+<ComponentPreview src="examples/dot-map-regions.tsx">
+  <DotMapRegions />
+</ComponentPreview>
+
+### Routes, held still
+
+Arcs only, with faint sea dots and `animate={false}`.
+
+<ComponentPreview src="examples/dot-map-routes.tsx" size="lg">
+  <DotMapRoutes />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "markers",
+      type: "{ at: [lat, lon]; label?: string; color?: DitherColor }[]",
+      default: "[]",
+      description:
+        "Locations to mark. Labels show beside the marker and are read by screen readers.",
+    },
+    {
+      name: "arcs",
+      type: "{ from: [lat, lon]; to: [lat, lon]; color?: DitherColor }[]",
+      default: "[]",
+      description: "Dotted curves between places.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"grey"',
+      description: "Colour of the land dots.",
+    },
+    {
+      name: "accent",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        "Colour of markers, halos and arcs that don't set their own.",
+    },
+    {
+      name: "columns",
+      type: "number",
+      default: "160",
+      description: "Dots across the full width.",
+    },
+    {
+      name: "shape",
+      type: '"square" | "round"',
+      default: '"square"',
+      description: "Dot shape.",
+    },
+    {
+      name: "halo",
+      type: "number",
+      default: "14",
+      description:
+        "Radius in degrees of each marker's dithered glow on the land. 0 turns it off.",
+    },
+    {
+      name: "ocean",
+      type: "number",
+      default: "0",
+      description: "Share of sea cells with a faint dot, 0 to 1.",
+    },
+    {
+      name: "bounds",
+      type: "{ north; south; west; east }",
+      default: "78°N to 56°S, all longitudes",
+      description: "The region to draw, in degrees.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Pulse the markers and run light along the arcs.",
+    },
+    {
+      name: "title",
+      type: "string",
+      default: '"World map"',
+      description: "Accessible name. Marker labels are appended to it.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The map is one image to assistive technology, named by `title` plus the marker labels.
+- Pulses and running arcs are CSS animations. With reduced motion they are hidden and the map is still.
+- Pass `markers` and `arcs` as constants or memoised arrays: the dot paths are rebuilt when they change. Land cells are cached per grid size.
+- Land data: [Natural Earth](https://www.naturalearthdata.com/) 1:50m land, public domain, rasterised to 0.75° cells.
