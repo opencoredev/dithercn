@@ -4,10 +4,16 @@ description: "God rays: shafts of light from a point or an edge that sweep slowl
 ---
 
 import BeamsDemo from "@/examples/beams-demo";
+import { controls as beamsControls } from "@/examples/beams-controls";
 import BeamsEdge from "@/examples/beams-edge";
 import BeamsHeadline from "@/examples/beams-headline";
 
-<ComponentPreview src="examples/beams-demo.tsx" size="full" align="stretch">
+<ComponentPreview
+  src="examples/beams-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={beamsControls}
+>
   <BeamsDemo />
 </ComponentPreview>
 
@@ -99,7 +105,7 @@ A narrow cone from just above the centre, through a four-colour palette, with a 
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
       default: '["--dither-paper", "--dither-ink"]',
       description:
-        "Colours from paper to ink. CSS variable names or any CSS colour.",
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
     },
     {
       name: "matrix",

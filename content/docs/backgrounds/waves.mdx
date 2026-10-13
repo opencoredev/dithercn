@@ -4,10 +4,16 @@ description: "Layered swells under a glowing horizon, or thin lines like a sound
 ---
 
 import WavesDemo from "@/examples/waves-demo";
+import { controls as wavesControls } from "@/examples/waves-controls";
 import WavesDusk from "@/examples/waves-dusk";
 import WavesLines from "@/examples/waves-lines";
 
-<ComponentPreview src="examples/waves-demo.tsx" size="full" align="stretch">
+<ComponentPreview
+  src="examples/waves-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={wavesControls}
+>
   <WavesDemo />
 </ComponentPreview>
 
@@ -83,7 +89,7 @@ A lower `horizon`, eight `layers` and a warm palette give a sea at sunset. A sma
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
       default: "Paper, then tints of --dither-ink",
       description:
-        "Colours from paper to ink. CSS variable names or any CSS colour.",
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
     },
     {
       name: "matrix",

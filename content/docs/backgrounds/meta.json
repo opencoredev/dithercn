@@ -14,6 +14,9 @@
     "horizon",
     "starfield",
     "halftone",
+    "dither-globe",
+    "dot-map",
+    "dither-orb",
     "dither-fade"
   ]
 }

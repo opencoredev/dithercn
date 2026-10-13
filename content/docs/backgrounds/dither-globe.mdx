@@ -1,0 +1,183 @@
+---
+title: "Dither globe"
+description: "A rotating dithered globe with a lit terminator, pulsing markers and arcs, for global sections of a landing page."
+---
+
+import DitherGlobeDemo from "@/examples/dither-globe-demo";
+import { controls as globeControls } from "@/examples/dither-globe-controls";
+import DitherGlobeHero from "@/examples/dither-globe-hero";
+import DitherGlobeSplit from "@/examples/dither-globe-split";
+import DitherGlobeCard from "@/examples/dither-globe-card";
+
+<ComponentPreview
+  src="examples/dither-globe-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={globeControls}
+>
+  <DitherGlobeDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-globe" />
+
+## Usage
+
+```tsx
+import { DitherGlobe } from "@/components/dithercn/dither-globe";
+
+const LONDON = [51.51, -0.13] as const;
+const TOKYO = [35.68, 139.69] as const;
+
+export function Global() {
+  return (
+    <DitherGlobe
+      markers={[{ at: LONDON }, { at: TOKYO }]}
+      arcs={[{ from: LONDON, to: TOKYO }]}
+      className="aspect-square w-full max-w-md"
+    />
+  );
+}
+```
+
+The globe is drawn on a 2D canvas at dither-cell resolution: every cell on the sphere gets a tone from the land mask and the light, then an ordered threshold decides whether it's inked. Land is bright on the day side and fades to a sparse grid past the terminator; the sea is a faint dither that thickens towards the rim. It uses no WebGL context, so it doesn't count against the page's shader budget.
+
+The globe stays round and centred in its box and takes 84% of the shorter side. Make the box larger than its section and offset it to show only the top of the globe, as in the first example.
+
+Land comes from the shared `world-land` mask (Natural Earth, public domain), installed with the component. Nothing is fetched at runtime.
+
+## Examples
+
+### Horizon behind a headline
+
+A globe 150% of the section's width, pushed below the bottom edge so only its lit top shows.
+
+<ComponentPreview
+  src="examples/dither-globe-hero.tsx"
+  size="full"
+  align="stretch"
+>
+  <DitherGlobeHero />
+</ComponentPreview>
+
+### Beside copy
+
+A square globe in a two-column section. Drag it to spin.
+
+<ComponentPreview
+  src="examples/dither-globe-split.tsx"
+  size="lg"
+  align="stretch"
+>
+  <DitherGlobeSplit />
+</ComponentPreview>
+
+### Turned to one place, in a card
+
+`speed={0}` and `start` at the marker's longitude hold one region in view while the marker keeps pulsing.
+
+<ComponentPreview src="examples/dither-globe-card.tsx">
+  <DitherGlobeCard />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
+      description: "Colour of the land, sea and atmosphere.",
+    },
+    {
+      name: "accent",
+      type: "DitherColor",
+      default: '"orange"',
+      description: "Colour of markers and arcs that don't set their own.",
+    },
+    {
+      name: "markers",
+      type: "{ at: [lat, lon]; color?: DitherColor }[]",
+      default: "[]",
+      description: "Pulsing locations. Markers on the far side are hidden.",
+    },
+    {
+      name: "arcs",
+      type: "{ from: [lat, lon]; to: [lat, lon]; color?: DitherColor }[]",
+      default: "[]",
+      description:
+        "Great-circle arcs lifted off the surface, with a stretch of light running along them.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "6",
+      description:
+        "Degrees of rotation per second. Negative spins the other way.",
+    },
+    {
+      name: "start",
+      type: "number",
+      default: "10",
+      description: "Longitude facing the viewer at the start, in degrees.",
+    },
+    {
+      name: "tilt",
+      type: "number",
+      default: "18",
+      description:
+        "How far the north pole leans towards the viewer, in degrees.",
+    },
+    {
+      name: "light",
+      type: "number",
+      default: "300",
+      description:
+        "Where the light comes from, in degrees clockwise from the top.",
+    },
+    {
+      name: "ocean",
+      type: "number",
+      default: "0.18",
+      description: "Brightness of the sea on the lit side, 0 to 1.",
+    },
+    {
+      name: "atmosphere",
+      type: "boolean",
+      default: "true",
+      description: "A thin dithered glow around the lit rim.",
+    },
+    {
+      name: "draggable",
+      type: "boolean",
+      default: "true",
+      description: "Drag sideways to spin the globe, with a little inertia.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "Threshold matrix.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Spin and pulse. false draws one still frame.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The globe is decorative and hidden from assistive technology. Say what it shows in the copy next to it.
+- With reduced motion turned on, it draws one still frame and dragging is off.
+- It pauses when scrolled out of view or when the tab is hidden. A 600px globe at 2px cells is about 70,000 cells per frame at 30 fps, well within budget on a phone; raise `cell` for very large globes.

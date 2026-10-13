@@ -1,14 +1,20 @@
 ---
 title: "Halftone"
-description: "Print-style halftone: round dots on a rotated grid that grow with a noise, radial or linear source."
+description: "A print halftone: round dots on a rotated screen that swell and shrink with a source, in one ink or up to three overlapping like CMYK."
 ---
 
 import HalftoneDemo from "@/examples/halftone-demo";
+import { controls as halftoneControls } from "@/examples/halftone-controls";
 import HalftoneSpotlight from "@/examples/halftone-spotlight";
 import HalftoneCard from "@/examples/halftone-card";
-import HalftoneCoarse from "@/examples/halftone-coarse";
+import HalftonePrint from "@/examples/halftone-print";
 
-<ComponentPreview src="examples/halftone-demo.tsx" size="full" align="stretch">
+<ComponentPreview
+  src="examples/halftone-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={halftoneControls}
+>
   <HalftoneDemo />
 </ComponentPreview>
 
@@ -24,22 +30,22 @@ import { Halftone } from "@/components/dithercn/halftone";
 export function Hero() {
   return (
     <section className="relative isolate min-h-[480px]">
-      <Halftone className="absolute inset-0 -z-10" />
+      <Halftone color="blue" className="absolute inset-0 -z-10" />
       <h1>Your headline</h1>
     </section>
   );
 }
 ```
 
-Unlike the other backgrounds, halftone is not an ordered dither. Each square of a rotated grid holds one solid dot, sized by the value of the source at its centre, the way a printing screen works. The default source is slow, warped noise.
+Each square of a rotated screen holds one round dot, sized by the source at its centre, the way a printing screen works. Dot edges are dithered at the screen's own device pixels, so dots stay round and grow smoothly from a speck to touching their neighbours. The screen slides slowly along its angle (`drift`), so dots swell and shrink as they cross the source.
 
-It uses one-pixel cells by default so the dots stay round, and 12 cells between dot centres.
+Pass `channels` instead of `color` for two or three inks. Each gets its own screen, turned 30° from the last, and overlapping dots mix their colours. With blue, pink and orange you get the rosettes of a CMYK print.
 
 ## Examples
 
 ### Spotlight behind a headline
 
-`source="radial"` grows the dots towards `center`. With the centre below the bottom edge and a `radius` under 1, the dots swell up from the bottom and run out before the text.
+`source="radial"` grows the dots towards `center`. With the centre below the bottom edge, a `radius` under 1 and a transparent background, the dots swell up from the bottom of the section and run out before the text.
 
 <ComponentPreview
   src="examples/halftone-spotlight.tsx"
@@ -49,24 +55,20 @@ It uses one-pixel cells by default so the dots stay round, and 12 cells between 
   <HalftoneSpotlight />
 </ComponentPreview>
 
-### Linear ramp in a card
+### Duotone ramp in a card
 
-`source="linear"` grows the dots towards `direction`. With a palette of more than two colours, bigger dots take later colours. This one is held still, at a shallow 15° screen angle.
+`source="linear"` grows the dots towards `direction`. Two channels at a shallow 15° screen, held still, and faded in from the left with a CSS mask.
 
 <ComponentPreview src="examples/halftone-card.tsx">
   <HalftoneCard />
 </ComponentPreview>
 
-### Coarse screen
+### Three-ink print
 
-Two-pixel cells, wide spacing and a square grid at 0° give a bold, poster-like screen.
+A coarse 16px screen in three inks behind an editorial block.
 
-<ComponentPreview
-  src="examples/halftone-coarse.tsx"
-  size="full"
-  align="stretch"
->
-  <HalftoneCoarse />
+<ComponentPreview src="examples/halftone-print.tsx" size="full" align="stretch">
+  <HalftonePrint />
 </ComponentPreview>
 
 ## Props
@@ -74,11 +76,32 @@ Two-pixel cells, wide spacing and a square grid at 0° give a bold, poster-like 
 <PropsTable
   rows={[
     {
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        'Colour of the dots: a palette name such as "blue", a CSS variable name, or any CSS colour.',
+    },
+    {
+      name: "channels",
+      type: "[DitherColor, DitherColor, DitherColor?]",
+      default: "–",
+      description:
+        "Two or three inks on separate screens, 30° apart. Overlaps mix. Use instead of color.",
+    },
+    {
+      name: "background",
+      type: "DitherColor",
+      default: '"--dither-paper"',
+      description:
+        'Colour behind the dots. "transparent" lays the screen over the content underneath.',
+    },
+    {
       name: "source",
       type: '"noise" | "radial" | "linear"',
       default: '"noise"',
       description:
-        "What sizes the dots: drifting noise, distance from a point, or a ramp.",
+        "What sizes the dots: soft drifting clouds, distance from a point, or a ramp.",
     },
     {
       name: "center",
@@ -102,55 +125,55 @@ Two-pixel cells, wide spacing and a square grid at 0° give a bold, poster-like 
         "Linear only. Direction the dots grow towards, in degrees as in CSS.",
     },
     {
-      name: "spacing",
+      name: "size",
       type: "number",
-      default: "12",
-      description: "Distance between dot centres, in cells.",
+      default: "10",
+      description: "Distance between dot centres in CSS pixels.",
     },
     {
-      name: "rotation",
+      name: "angle",
       type: "number",
       default: "45",
-      description: "Rotation of the dot grid in degrees.",
+      description: "Screen angle in degrees. Each extra channel adds 30°.",
     },
     {
       name: "intensity",
       type: "number",
-      default: "1",
+      default: "0.9",
       description:
-        "Size of the largest dot. At 1, full dots overlap their neighbours slightly.",
+        "Size of the largest dot, 0 to 1. At 1 the biggest dots just touch.",
     },
     {
       name: "scale",
       type: "number",
       default: "1",
-      description: "Noise only. Size of the noise features.",
+      description: "Noise only. Size of the clouds.",
     },
     {
-      name: "palette",
-      type: "[DitherColor, DitherColor, ...DitherColor[]]",
-      default: '["--dither-paper", "--dither-ink"]',
-      description:
-        "Colours from paper to ink. CSS variable names or any CSS colour.",
-    },
-    {
-      name: "cell",
+      name: "drift",
       type: "number",
       default: "1",
       description:
-        "Size of one cell in CSS pixels. Smaller cells give rounder dots.",
+        "How fast the screen slides along its angle. 0 holds the screen still.",
     },
     {
       name: "speed",
       type: "number",
       default: "1",
-      description: "How fast the source drifts.",
+      description: "How fast the source moves.",
     },
     {
       name: "animate",
       type: "boolean",
       default: "true",
       description: "false draws one still frame.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "one device pixel",
+      description:
+        "Size of one rendered pixel in CSS pixels. Larger cells give blockier dots.",
     },
     {
       name: "className",
@@ -165,5 +188,5 @@ Two-pixel cells, wide spacing and a square grid at 0° give a bold, poster-like 
 
 - The halftone is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
 - With reduced motion turned on, it draws one still frame and stops.
-- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a CSS dot screen.
-- `matrix` is not a prop here: dots are solid, so there is nothing to threshold.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a CSS dot screen in the same inks.
+- Overlap colours are mixed with CSS `color-mix` in oklch, so they follow the theme along with the inks.

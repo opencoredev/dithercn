@@ -1,4 +1,8 @@
+"use client";
+
 import { DitherFade } from "@/components/dithercn/dither-fade";
+import { usePreviewValue } from "@/components/preview-controls";
+import * as knobs from "@/examples/dither-fade-controls";
 
 const ENTRIES = [
   {
@@ -29,6 +33,11 @@ const ENTRIES = [
 ] as const;
 
 export default function DitherFadeDemo() {
+  const size = usePreviewValue(knobs.size);
+  const matrix = usePreviewValue(knobs.matrix);
+  const cell = usePreviewValue(knobs.cell);
+  const animate = usePreviewValue(knobs.animate);
+
   return (
     <div className="relative size-full overflow-hidden px-6 pt-10 sm:px-12">
       <ol className="mx-auto flex max-w-lg flex-col gap-6">
@@ -46,7 +55,7 @@ export default function DitherFadeDemo() {
           </li>
         ))}
       </ol>
-      <DitherFade size={240} />
+      <DitherFade size={size} matrix={matrix} cell={cell} animate={animate} />
     </div>
   );
 }

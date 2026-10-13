@@ -4,11 +4,17 @@ description: "Slow vertical curtains of light that sway and shimmer, drawn as a 
 ---
 
 import AuroraDemo from "@/examples/aurora-demo";
+import { controls as auroraControls } from "@/examples/aurora-controls";
 import AuroraHero from "@/examples/aurora-hero";
 import AuroraBorealis from "@/examples/aurora-borealis";
 import AuroraBanner from "@/examples/aurora-banner";
 
-<ComponentPreview src="examples/aurora-demo.tsx" size="full" align="stretch">
+<ComponentPreview
+  src="examples/aurora-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={auroraControls}
+>
   <AuroraDemo />
 </ComponentPreview>
 
@@ -94,7 +100,7 @@ With `animate={false}` it draws one frame. `stillTime` picks which moment, so yo
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
       default: "Paper, then tints of --dither-ink",
       description:
-        "Colours from paper to ink. CSS variable names or any CSS colour.",
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
     },
     {
       name: "matrix",

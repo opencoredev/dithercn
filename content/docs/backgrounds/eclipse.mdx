@@ -4,10 +4,16 @@ description: "A dark disc with a glowing rim and a soft corona that breathes slo
 ---
 
 import EclipseDemo from "@/examples/eclipse-demo";
+import { controls as eclipseControls } from "@/examples/eclipse-controls";
 import EclipseHeadline from "@/examples/eclipse-headline";
 import EclipseAmber from "@/examples/eclipse-amber";
 
-<ComponentPreview src="examples/eclipse-demo.tsx" size="full" align="stretch">
+<ComponentPreview
+  src="examples/eclipse-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={eclipseControls}
+>
   <EclipseDemo />
 </ComponentPreview>
 
@@ -90,7 +96,8 @@ Explicit colours instead of theme tokens, a smaller disc, a wider corona and the
       name: "rimColor",
       type: "DitherColor",
       default: '"--dither-ink"',
-      description: "Colour of the rim and halo.",
+      description:
+        'Colour of the rim and halo: a palette name such as "orange", a CSS variable name, or any CSS colour.',
     },
     {
       name: "skyColor",

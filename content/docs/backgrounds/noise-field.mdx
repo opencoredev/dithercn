@@ -4,6 +4,7 @@ description: "A slow, folding noise texture drawn as a dither, with a mask that 
 ---
 
 import NoiseFieldDemo from "@/examples/noise-field-demo";
+import { controls as noiseFieldControls } from "@/examples/noise-field-controls";
 import NoiseFieldMasked from "@/examples/noise-field-masked";
 import NoiseFieldCard from "@/examples/noise-field-card";
 import NoiseFieldContour from "@/examples/noise-field-contour";
@@ -12,6 +13,7 @@ import NoiseFieldContour from "@/examples/noise-field-contour";
   src="examples/noise-field-demo.tsx"
   size="full"
   align="stretch"
+  controls={noiseFieldControls}
 >
   <NoiseFieldDemo />
 </ComponentPreview>
@@ -112,7 +114,7 @@ High `contrast` with only three `levels` snaps the noise into islands with dithe
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
       default: '["--dither-paper", "--dither-ink"]',
       description:
-        "Colours from paper to ink. CSS variable names or any CSS colour.",
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
     },
     {
       name: "matrix",

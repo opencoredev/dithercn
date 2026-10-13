@@ -4,10 +4,16 @@ description: "A planet's horizon seen from space, with a lit rim, a drifting aur
 ---
 
 import HorizonDemo from "@/examples/horizon-demo";
+import { controls as horizonControls } from "@/examples/horizon-controls";
 import HorizonSunrise from "@/examples/horizon-sunrise";
 import HorizonHeadline from "@/examples/horizon-headline";
 
-<ComponentPreview src="examples/horizon-demo.tsx" size="full" align="stretch">
+<ComponentPreview
+  src="examples/horizon-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={horizonControls}
+>
   <HorizonDemo />
 </ComponentPreview>
 
@@ -95,7 +101,8 @@ A low, strongly curved horizon leaves most of the frame as sky, with more stars.
       name: "glowColor",
       type: "DitherColor",
       default: '"--dither-ink"',
-      description: "Colour of the glow, rim and stars.",
+      description:
+        'Colour of the glow, rim and stars: a palette name such as "orange", a CSS variable name, or any CSS colour.',
     },
     {
       name: "skyColor",
