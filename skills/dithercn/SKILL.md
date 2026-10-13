@@ -29,7 +29,7 @@ Done when `lib/dither/index.ts` exists and the global CSS defines `--dither-ink`
 | A photo or logo, dithered                                                                                                             | `ditherImage` on canvas pixels                                     | [engine-api.md](references/engine-api.md#images)       |
 | A PNG, SVG or CSS file, or a background with no JavaScript                                                                            | `dither-export`                                                    | [engine-api.md](references/engine-api.md#export)       |
 
-Combine them freely: a dashboard card can hold an SVG meter with `FillPattern` over a `DitherShader` glow. Before writing from scratch, scan [examples.md](references/examples.md): if an example is close, install it and edit its source, which is plain code in `components/dithercn/`.
+Combine them freely: a dashboard card can hold an SVG meter with `FillPattern` over a `DitherShader` glow. Before writing from scratch, scan [examples.md](references/examples.md) (written when the skill is installed; if it's missing, read {{SITE_URL}}/.well-known/agent-skills/dithercn/references/examples.md): if an example is close, install it and edit its source, which is plain code in `components/dithercn/`.
 
 Done when every visual in the request has a technique.
 
