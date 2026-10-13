@@ -4,6 +4,7 @@ description: "A linear, radial or conic gradient drawn as a dither, for heroes, 
 ---
 
 import DitherGradientDemo from "@/examples/dither-gradient-demo";
+import { controls as ditherGradientControls } from "@/examples/dither-gradient-controls";
 import DitherGradientRadial from "@/examples/dither-gradient-radial";
 import DitherGradientConic from "@/examples/dither-gradient-conic";
 import DitherGradientStatic from "@/examples/dither-gradient-static";
@@ -12,6 +13,7 @@ import DitherGradientStatic from "@/examples/dither-gradient-static";
   src="examples/dither-gradient-demo.tsx"
   size="full"
   align="stretch"
+  controls={ditherGradientControls}
 >
   <DitherGradientDemo />
 </ComponentPreview>
@@ -125,7 +127,7 @@ With `animate={false}` the gradient draws one frame and stops. `to={0.55}` keeps
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
       default: '["--dither-paper", "--dither-ink"]',
       description:
-        "Colours from paper to ink. CSS variable names or any CSS colour.",
+        'Colours from paper to ink: palette names such as "green", CSS variable names or any CSS colour.',
     },
     {
       name: "matrix",

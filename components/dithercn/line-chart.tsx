@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import type { ComponentProps } from "react";
 
 import {
@@ -11,17 +12,17 @@ import {
   quantizeLevel,
   readValue,
   seriesColor,
-  seriesMatrix,
   toFormatter,
 } from "@/components/dithercn/cartesian-chart";
 import type {
   Accessor,
   ChartContext,
   ChartSeries,
+  ChartStyleProps,
   NonEmpty,
   ValueFormat,
 } from "@/components/dithercn/cartesian-chart";
-import { cssColor, DitherPattern } from "@/lib/dither";
+import { BloomGroup, cssColor, DitherPattern, FillPattern } from "@/lib/dither";
 import type { DitherColor, DitherMatrix } from "@/lib/dither";
 
 export type {
@@ -44,10 +45,8 @@ export interface LineSeries<T> extends ChartSeries<T> {
   dashed?: boolean;
 }
 
-export interface LineChartProps<T> extends Omit<
-  ComponentProps<"div">,
-  "children"
-> {
+export interface LineChartProps<T>
+  extends Omit<ComponentProps<"div">, "children">, ChartStyleProps {
   /** One entry per point along the x axis, in order. */
   data: readonly T[];
   /** Key (or function) for the x axis label, such as a date or month. */
@@ -62,15 +61,15 @@ export interface LineChartProps<T> extends Omit<
   height?: number;
   /** `smooth` (monotone, never overshoots) or `linear`. Default `smooth`. */
   curve?: "smooth" | "linear";
-  /** Coverage of the range bands, 0 to 1. Default 0.25. */
+  /** Gradient only: coverage of the range bands, 0 to 1. Default 0.25. */
   level?: number;
-  /** Threshold matrix of the first series' band. Default `bayer4`. */
+  /** Gradient only: threshold matrix of the bands. Default `bayer4`. */
   matrix?: DitherMatrix;
   /** Dither cell in px. Default `--dither-cell`. */
   cell?: number;
   /** Show the y and x axes. Default true. */
   axes?: boolean;
-  /** Show the hover and keyboard readout. Default true. */
+  /** Show the readout while scrubbing. Default true. */
   tooltip?: boolean;
   /** Show a legend. Default: when there are two or more series. */
   legend?: boolean;
@@ -132,49 +131,70 @@ export const LineChart = <T,>({
   zero = false,
   height = 240,
   curve = "smooth",
+  fill = "gradient",
+  bloom = "off",
+  colors,
   level = 0.25,
   matrix = "bayer4",
   cell,
   axes = true,
   tooltip = true,
   legend,
+  interactive = true,
+  animate = true,
   format,
   ...props
 }: LineChartProps<T>) => {
   const toPath = curve === "smooth" ? monotonePath : linearPath;
-  const formatValue = toFormatter(format);
-  const scale = niceScale(
-    series.flatMap((entry) =>
-      data.flatMap((datum) => {
-        const value = readValue(datum, entry.value);
-        return entry.range === undefined
-          ? [value]
-          : [
-              value,
-              readValue(datum, entry.range.low),
-              readValue(datum, entry.range.high),
-            ];
-      })
-    ),
-    { zero }
+  const formatValue = useMemo(() => toFormatter(format), [format]);
+  const scale = useMemo(
+    () =>
+      niceScale(
+        series.flatMap((entry) =>
+          data.flatMap((datum) => {
+            const value = readValue(datum, entry.value);
+            return entry.range === undefined
+              ? [value]
+              : [
+                  value,
+                  readValue(datum, entry.range.low),
+                  readValue(datum, entry.range.high),
+                ];
+          })
+        ),
+        { zero }
+      ),
+    [series, data, zero]
   );
   const summary = chartSummary({ data, kind: "Line chart", series, x });
 
-  const readout = (datum: T) =>
-    series.map((entry, index) => {
-      const value = formatValue(readValue(datum, entry.value));
-      const range =
-        entry.range === undefined
-          ? ""
-          : ` (${formatValue(readValue(datum, entry.range.low))}–${formatValue(readValue(datum, entry.range.high))})`;
-      return {
-        color: seriesColor(entry.color, index),
-        label: entry.label,
-        value: `${value}${range}`,
-      };
-    });
+  const readout = useMemo(
+    () => (datum: T) =>
+      series.map((entry, index) => {
+        const value = formatValue(readValue(datum, entry.value));
+        const range =
+          entry.range === undefined
+            ? ""
+            : ` (${formatValue(readValue(datum, entry.range.low))}–${formatValue(readValue(datum, entry.range.high))})`;
+        return {
+          color: seriesColor(entry.color, index, colors),
+          label: entry.label,
+          value: `${value}${range}`,
+        };
+      }),
+    [series, formatValue, colors]
+  );
 
-  const marks = ({ uid, cell: px, xAt, yAt, active, reveal }: ChartContext) => {
+  const marks = ({
+    uid,
+    cell: px,
+    xAt,
+    yAt,
+    reveal,
+    animate: motion,
+    colorOf,
+    opacityOf,
+  }: ChartContext) => {
     const lines = series.map((entry, seriesIndex) => {
       const pointAt = (accessor: Accessor<T, number>) =>
         data.map((datum, index) => ({
@@ -186,7 +206,8 @@ export const LineChart = <T,>({
         range === undefined
           ? null
           : `${toPath(pointAt(range.high))}${reversed(toPath(pointAt(range.low).toReversed()))}Z`;
-      const color = seriesColor(entry.color, seriesIndex);
+      const color = colorOf(seriesIndex);
+      const points = pointAt(entry.value);
       return {
         band,
         bandColor: range?.color ?? color,
@@ -194,52 +215,86 @@ export const LineChart = <T,>({
         dashed: entry.dashed === true,
         id: `${uid}-line-${seriesIndex}`,
         key: entry.label,
-        points: pointAt(entry.value),
+        line: toPath(points),
+        points,
         seriesIndex,
       };
     });
+    const fade =
+      "transition-opacity duration-200 ease-out motion-reduce:transition-none";
 
     return (
       <>
+        <BloomGroup bloom={bloom}>
+          {lines.map(({ color, key, line, seriesIndex }) => (
+            <path
+              key={key}
+              d={line}
+              fill="none"
+              stroke={cssColor(color)}
+              strokeWidth={6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={opacityOf(seriesIndex)}
+            />
+          ))}
+        </BloomGroup>
         {lines.map(({ band, bandColor, id, key, seriesIndex }) =>
           band === null ? null : (
-            <g key={key}>
+            <g
+              key={key}
+              opacity={opacityOf(seriesIndex) * (fill === "solid" ? 0.3 : 1)}
+              className={fade}
+            >
               <defs>
-                <DitherPattern
-                  id={`${id}-band`}
-                  level={quantizeLevel(level * reveal)}
-                  matrix={seriesMatrix(matrix, seriesIndex)}
-                  cell={px}
-                  color={bandColor}
-                />
+                {fill === "gradient" ? (
+                  <DitherPattern
+                    id={`${id}-band`}
+                    level={quantizeLevel(level * reveal)}
+                    matrix={matrix}
+                    cell={px}
+                    color={bandColor}
+                  />
+                ) : (
+                  <FillPattern
+                    id={`${id}-band`}
+                    fill={fill}
+                    color={bandColor}
+                    cell={px}
+                  />
+                )}
               </defs>
               <path
                 d={band}
                 fill={`url(#${id}-band)`}
+                opacity={fill === "gradient" ? 1 : reveal}
                 shapeRendering="crispEdges"
               />
             </g>
           )
         )}
-        {lines.map(({ color, dashed, key, points }) => {
+        {lines.map(({ color, dashed, key, line, points, seriesIndex }) => {
           const ink = cssColor(color);
           const marked = markedPoints(points, markers);
-          const activePoint = active === null ? undefined : points[active];
           return (
-            <g key={key}>
+            <g key={key} opacity={opacityOf(seriesIndex)} className={fade}>
               {dashed ? (
                 <path
-                  d={toPath(points)}
+                  d={line}
                   fill="none"
                   stroke={ink}
                   strokeWidth={2}
                   strokeLinecap="round"
                   strokeDasharray="4 5"
-                  className="ease-(--ease-out) transition-opacity duration-700 motion-reduce:transition-none starting:opacity-0"
+                  className={
+                    motion
+                      ? "ease-(--ease-out) transition-opacity duration-700 motion-reduce:transition-none starting:opacity-0"
+                      : undefined
+                  }
                 />
               ) : (
                 <path
-                  d={toPath(points)}
+                  d={line}
                   pathLength={1}
                   fill="none"
                   stroke={ink}
@@ -247,7 +302,11 @@ export const LineChart = <T,>({
                   strokeLinejoin="round"
                   strokeLinecap="round"
                   strokeDasharray={1}
-                  className="ease-(--ease-out) [stroke-dashoffset:0] transition-[stroke-dashoffset] duration-700 motion-reduce:transition-none starting:[stroke-dashoffset:1]"
+                  className={
+                    motion
+                      ? "ease-(--ease-out) [stroke-dashoffset:0] transition-[stroke-dashoffset] duration-700 motion-reduce:transition-none starting:[stroke-dashoffset:1]"
+                      : undefined
+                  }
                 />
               )}
               {marked.map((point) => (
@@ -259,19 +318,13 @@ export const LineChart = <T,>({
                   fill={ink}
                   stroke="var(--dither-paper)"
                   strokeWidth={2}
-                  className="ease-(--ease-out) transition-opacity delay-500 duration-300 motion-reduce:transition-none starting:opacity-0"
+                  className={
+                    motion
+                      ? "ease-(--ease-out) transition-opacity delay-500 duration-300 motion-reduce:transition-none starting:opacity-0"
+                      : undefined
+                  }
                 />
               ))}
-              {activePoint === undefined ? null : (
-                <circle
-                  cx={activePoint.x}
-                  cy={activePoint.y}
-                  r={4.5}
-                  fill={ink}
-                  stroke="var(--dither-paper)"
-                  strokeWidth={2}
-                />
-              )}
             </g>
           );
         })}
@@ -285,19 +338,31 @@ export const LineChart = <T,>({
       data={data}
       x={x}
       series={series}
+      colors={colors}
       scale={scale}
       layout="point"
       height={height}
       axes={axes}
       tooltip={tooltip}
       legend={legend ?? series.length > 1}
+      interactive={interactive}
+      animate={animate}
       cell={cell}
       formatValue={formatValue}
       readout={readout}
       swatch={(index, color) => (
         <Swatch color={color} dashed={series[index]?.dashed === true} />
       )}
-      crosshair
+      scrub="line"
+      pointsAt={(index, { yAt }) => {
+        const datum = data[index];
+        return datum === undefined
+          ? []
+          : series.map((entry, seriesIndex) => ({
+              seriesIndex,
+              y: yAt(readValue(datum, entry.value)),
+            }));
+      }}
       summary={summary}
     >
       {marks}

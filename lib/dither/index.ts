@@ -15,8 +15,42 @@ export {
 } from "@/lib/dither/matrices";
 export type { DitherMatrix, ThresholdMap } from "@/lib/dither/matrices";
 
-export { cssColor, DEFAULT_PALETTE, MOTION } from "@/lib/dither/tokens";
-export type { DitherColor, DitherPalette, Rgba } from "@/lib/dither/tokens";
+export {
+  cssColor,
+  DEFAULT_PALETTE,
+  DITHER_COLOR_NAMES,
+  DITHER_COLORS,
+  MOTION,
+} from "@/lib/dither/tokens";
+export type {
+  DitherColor,
+  DitherColorName,
+  DitherPalette,
+  Rgba,
+} from "@/lib/dither/tokens";
+
+export {
+  BLOOM_LEVELS,
+  BLOOMS,
+  bloomFilter,
+  bloomLayerStyle,
+  bloomStyle,
+  ditherRamp,
+  FILL_VARIANTS,
+  fillStyle,
+  fillTile,
+  SERIES_COLORS,
+  seriesColor,
+} from "@/lib/dither/style";
+export type {
+  Bloom,
+  FillEdge,
+  FillStyleOptions,
+  FillTile,
+  FillVariant,
+  RampOptions,
+  RampTile,
+} from "@/lib/dither/style";
 
 export {
   readDitherCell,
@@ -44,6 +78,14 @@ export type {
   DitherUniforms,
   ShaderUniformValue,
 } from "@/lib/dither/shader";
+
+export { BloomBox, BloomGroup, FillPattern } from "@/lib/dither/fill";
+export type {
+  BloomBoxProps,
+  BloomGroupProps,
+  FillPatternProps,
+  FillRamp,
+} from "@/lib/dither/fill";
 
 export {
   DitherPattern,

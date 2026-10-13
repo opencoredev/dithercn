@@ -79,14 +79,40 @@ Each row's trend sits in its own cell at 24px high. `dot={false}` keeps a column
     {
       name: "color",
       type: "DitherColor",
-      default: '"--dither-ink"',
-      description: "Ink colour of the line, fill and dot.",
+      default: '"ink"',
+      description: 'A palette name such as "green", or any CSS colour.',
     },
     {
       name: "area",
       type: "boolean",
       default: "true",
       description: "Fill under the line, densest just below it.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description:
+        "Texture of the fill. gradient is densest just under the line.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "A soft glow in the line's colour behind it.",
+    },
+    {
+      name: "interactive",
+      type: "boolean",
+      default: "false",
+      description:
+        "Scrub with the pointer or arrow keys to read single values in a small label.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Entrance motion. Always off under reduced motion.",
     },
     {
       name: "dot",
@@ -98,7 +124,8 @@ Each row's trend sits in its own cell at 24px high. `dot={false}` keeps a column
       name: "level",
       type: "number",
       default: "0.5",
-      description: "Coverage of the fill just under the line, from 0 to 1.",
+      description:
+        "Gradient only: coverage of the fill just under the line, from 0 to 1.",
     },
     {
       name: "matrix",
@@ -131,6 +158,6 @@ Each row's trend sits in its own cell at 24px high. `dot={false}` keeps a column
 
 ## Notes
 
-- The sparkline is a single image to assistive technology, named by `label` and a summary of its first, last, lowest and highest values. It has no hover readout; show the exact number next to it.
+- By default the sparkline is a single image to assistive technology, named by `label` and a summary of its first, last, lowest and highest values, with no readout; show the exact number next to it. With `interactive` it becomes a focusable group: the arrow keys move a gliding dot and a polite live region reads each value.
 - On entrance the line draws in, the fill fades up and the dot appears last. With reduced motion it appears finished.
 - It runs no animation loop and costs one small SVG, so a table with dozens of rows stays cheap.

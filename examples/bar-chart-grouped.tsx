@@ -24,8 +24,7 @@ export default function BarChartGrouped() {
         data={data}
         x="quarter"
         highlight="none"
-        level={0.375}
-        matrix="bayer8"
+        fill="hatched"
         height={200}
         series={[
           { label: "2026", value: "current" },

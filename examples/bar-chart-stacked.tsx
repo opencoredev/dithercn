@@ -20,7 +20,7 @@ export default function BarChartStacked() {
       <BarChart
         data={data}
         x="day"
-        variant="stacked"
+        layout="stacked"
         highlight="max"
         series={[
           { label: "Paid", value: "paid" },

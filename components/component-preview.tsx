@@ -7,6 +7,7 @@ import type {
 } from "@/components/component-preview-frame";
 import { formatCode } from "@/lib/format-code";
 import { highlightCode } from "@/lib/highlight-code";
+import type { PreviewControlSet } from "@/lib/preview-controls";
 import { readOptionalFromRoot } from "@/lib/registry";
 
 /**
@@ -23,17 +24,23 @@ import { readOptionalFromRoot } from "@/lib/registry";
  * backgrounds); `align="stretch"` lets the demo fill the stage edge to edge
  * instead of centring it with padding. The demo mounts when the stage
  * nears the viewport, and Replay remounts it.
+ *
+ * `controls` adds a knobs rail: a plain schema from `@/lib/preview-controls`
+ * that the demo reads with `usePreviewValue`. It stays serialisable, so
+ * this component stays a Server Component.
  */
 export const ComponentPreview = async ({
   src,
   size = "md",
   align = "center",
+  controls,
   className,
   children,
 }: {
   src?: string;
   size?: PreviewSize;
   align?: PreviewAlign;
+  controls?: PreviewControlSet;
   className?: string;
   children: ReactNode;
 }) => {
@@ -50,6 +57,7 @@ export const ComponentPreview = async ({
       codeHtml={codeHtml}
       size={size}
       align={align}
+      controls={controls}
       className={className}
     >
       {children}

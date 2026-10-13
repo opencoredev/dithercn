@@ -6,6 +6,19 @@ import { useHotkeys } from "react-hotkeys-hook";
 
 import { trackEvent } from "@/lib/events";
 
+/** Widgets that use the arrow keys themselves: charts, knobs, sliders. */
+const ARROW_WIDGETS =
+  "input, select, textarea, [contenteditable=true], [role=radiogroup], [role=slider], [role=tablist], [role=group][tabindex]";
+
+/** Page navigation only when no focused widget has claimed the arrow key. */
+const isPageLevelKey = (event: KeyboardEvent) => {
+  if (event.defaultPrevented) {
+    return false;
+  }
+  const { target } = event;
+  return !(target instanceof Element && target.closest(ARROW_WIDGETS));
+};
+
 export const DocsKeyboardShortcuts = ({
   previous,
   next,
@@ -37,7 +50,7 @@ export const DocsKeyboardShortcuts = ({
     () => {
       navigate(next, "next", "ArrowRight");
     },
-    { preventDefault: true }
+    { enabled: isPageLevelKey, preventDefault: true }
   );
 
   useHotkeys(
@@ -45,7 +58,7 @@ export const DocsKeyboardShortcuts = ({
     () => {
       navigate(previous, "previous", "ArrowLeft");
     },
-    { preventDefault: true }
+    { enabled: isPageLevelKey, preventDefault: true }
   );
 
   return null;

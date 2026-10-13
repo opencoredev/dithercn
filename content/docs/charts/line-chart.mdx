@@ -109,17 +109,50 @@ With sparse data, `markers="all"` puts a dot on each point and `curve="linear"` 
         "smooth is a monotone curve that never overshoots a data point.",
     },
     {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description:
+        "Texture of the range bands. gradient is one even dither level, set by level; solid draws a translucent band.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description:
+        "A soft glow in each series' colour behind its fill. Its strength follows --dither-bloom, lower in light mode.",
+    },
+    {
+      name: "colors",
+      type: "readonly DitherColor[]",
+      default: "ink, orange, green, pink, …",
+      description:
+        'Colours by series position: palette names such as "green" or any CSS colour. A series\' own color wins.',
+    },
+    {
+      name: "interactive",
+      type: "boolean",
+      default: "true",
+      description:
+        "Scrubbing, the readout and the legend spotlight. false makes a decorative chart: no focus stop, no readout, just an image with a summary.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Entrance motion. Always off under reduced motion.",
+    },
+    {
       name: "level",
       type: "number",
       default: "0.25",
-      description: "Coverage of the range bands, from 0 to 1.",
+      description: "Gradient only: coverage of the range bands, from 0 to 1.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description:
-        "Dither texture of the first band. Later series switch texture.",
+      description: "Gradient only: the dither texture of the bands.",
     },
     {
       name: "cell",
@@ -138,13 +171,14 @@ With sparse data, `markers="all"` puts a dot on each point and `curve="linear"` 
       name: "tooltip",
       type: "boolean",
       default: "true",
-      description: "Show the readout on hover and keyboard focus.",
+      description: "Show the readout while scrubbing.",
     },
     {
       name: "legend",
       type: "boolean",
       default: "Two or more series",
-      description: "Show a legend under the chart.",
+      description:
+        "Show the legend under the chart. Its entries spotlight a series on hover and lock it on click.",
     },
     {
       name: "format",
@@ -156,10 +190,10 @@ With sparse data, `markers="all"` puts a dot on each point and `curve="linear"` 
   ]}
 />
 
-Series colours default to `--dither-ink`, then `--muted-foreground`, `--chart-3` and `--chart-5`.
+Series colours follow the palette: ink, then orange, green, pink, purple, blue, red and grey. Pass `colors`, or `color` on one series, with a palette name or any CSS colour.
 
 ## Notes
 
-- The chart is a focusable group with a short summary, and every value, including ranges, is in a visually hidden table. The arrow keys, Home and End move the readout; Escape hides it.
+- The chart is a focusable group with a short summary, and every value, including ranges, is in a visually hidden table. The arrow keys, Home and End move the readout without easing, a polite live region reads out each stop, and Escape clears the readout and any locked series. With `bloom`, each line gets a soft glow in its colour.
 - On entrance solid lines draw from left to right, dashed lines fade in, and bands step up through the dither levels. With reduced motion the finished chart appears at once.
 - Markers carry a 2px ring in `--dither-paper` so they stay legible where lines cross. Set `--dither-paper` to your card's background if it differs from the page.

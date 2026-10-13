@@ -1,38 +1,60 @@
+"use client";
+
 import { AreaChart } from "@/components/dithercn/area-chart";
+import { usePreviewValue } from "@/components/preview-controls";
+import * as knobs from "@/examples/area-chart-controls";
 
-const REVENUE = [
-  31.2, 32.8, 32.1, 34.6, 35.9, 35.1, 36.8, 38.4, 37.2, 39.9, 41.3, 40.2, 42.8,
-  44.1, 43.5, 45.9, 47.2, 46.1, 48.2,
-];
-
-const data = REVENUE.map((value, index) => ({
-  day: `Sep ${String(index + 12)}`,
-  revenue: value * 1000,
-}));
+// Thirty days of visitors: a steady climb with a weekly rhythm.
+const data = Array.from({ length: 30 }, (_, index) => {
+  const week = Math.sin((index / 7) * Math.PI * 2);
+  return {
+    day: `Sep ${String(index + 1)}`,
+    direct: Math.round(190 + index * 6.8 + week * 14),
+    search: Math.round(
+      410 + index * 15.4 + week * 38 + Math.sin(index / 4) * 22
+    ),
+  };
+});
 
 export default function AreaChartDemo() {
+  const fill = usePreviewValue(knobs.fill);
+  const stack = usePreviewValue(knobs.stack);
+  const bloom = usePreviewValue(knobs.bloom);
+  const color = usePreviewValue(knobs.firstColor);
+  const cell = usePreviewValue(knobs.cell);
+  const interactive = usePreviewValue(knobs.interactive);
+
   return (
-    <div className="bg-background border-border w-full max-w-xl rounded-2xl border p-5 [--dither-paper:var(--background)] sm:p-6">
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+    <div className="w-full max-w-2xl">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <div className="flex flex-col gap-1">
-          <span className="text-muted-foreground text-sm">Revenue</span>
-          <span className="text-3xl font-semibold tracking-tight">$48.2K</span>
+          <span className="text-muted-foreground font-mono text-[11px] tracking-[0.08em] uppercase">
+            Visitors, September
+          </span>
+          <span className="text-3xl font-semibold tracking-tight tabular-nums">
+            1,258
+            <span className="text-muted-foreground ml-2 text-sm font-normal">
+              today
+            </span>
+          </span>
         </div>
         <span className="text-muted-foreground text-sm">
-          <span className="text-foreground font-medium">+54.5%</span> since Sep
-          12
+          <span className="text-foreground font-medium">+109%</span> since Sep 1
         </span>
       </div>
       <AreaChart
         data={data}
         x="day"
-        series={[{ label: "Revenue", value: "revenue" }]}
-        format={{
-          currency: "USD",
-          maximumFractionDigits: 1,
-          notation: "compact",
-          style: "currency",
-        }}
+        series={[
+          { color, label: "Search", value: "search" },
+          { label: "Direct", value: "direct" },
+        ]}
+        fill={fill}
+        stack={stack}
+        bloom={bloom}
+        cell={cell}
+        interactive={interactive}
+        height={260}
       />
     </div>
   );
