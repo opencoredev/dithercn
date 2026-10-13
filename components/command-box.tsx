@@ -1,119 +1,80 @@
 "use client";
 
-import { motion } from "motion/react";
-import { useRef } from "react";
-
 import { CopyButton } from "@/components/copy-button";
 import { getIconForPackageManager } from "@/components/icons";
-import { RegistryAddButton } from "@/components/registry-add-button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TextFlip } from "@/components/ui/text-flip";
-import { SITE } from "@/constants/site";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  isPackageManager,
+  PACKAGE_MANAGERS,
+  usePackageManager,
+} from "@/hooks/use-package-manager";
 import type { PackageManager } from "@/hooks/use-package-manager";
-import { usePackageManager } from "@/hooks/use-package-manager";
 import { cn } from "@/lib/utils";
-import registry from "@/registry.json";
 
-const pmCommands = {
+const RUNNERS = {
   bun: "bunx --bun",
   npm: "npx",
   pnpm: "pnpm dlx",
-  yarn: "yarn",
-};
+  yarn: "yarn dlx",
+} as const satisfies Record<PackageManager, string>;
 
-const registryItemNames = registry.items
-  .map((item) => item.name)
-  .toSorted((a, b) =>
-    a.localeCompare(b, "en", {
-      sensitivity: "base",
-    })
-  );
-
-export const CommandBox = ({ className }: { className?: string }) => {
+/**
+ * `itemUrl` comes from a server component: SITE reads server-only env vars,
+ * so computing it here would differ between server and client render.
+ */
+export const CommandBox = ({
+  itemUrl: url,
+  className,
+}: {
+  itemUrl: string;
+  className?: string;
+}) => {
   const [packageManager, setPackageManager] = usePackageManager();
-
-  const currentItemRef = useRef(registryItemNames[0]);
+  const command = `${RUNNERS[packageManager]} shadcn@latest add ${url}`;
 
   return (
     <div
       className={cn(
-        "bg-code text-code-foreground relative overflow-hidden rounded-lg text-sm",
+        "bg-code text-code-foreground relative overflow-hidden rounded-md border text-sm",
         className
       )}
     >
       <Tabs
         className="gap-0"
-        onValueChange={(value: string) => {
-          setPackageManager(value as PackageManager);
-        }}
         value={packageManager}
+        onValueChange={(value) => {
+          if (isPackageManager(value)) {
+            setPackageManager(value);
+          }
+        }}
       >
-        <div className="border-border/50 flex items-center gap-2 border-b px-3 py-1">
-          <TabsList className="rounded-none bg-transparent p-0 [&_svg]:me-2 [&_svg]:size-4 [&_svg]:text-muted-foreground">
+        <div className="flex items-center gap-2 border-b border-dashed px-3 py-1">
+          <TabsList className="[&_svg]:text-muted-foreground rounded-none bg-transparent p-0 [&_svg]:me-2 [&_svg]:size-4">
             {getIconForPackageManager(packageManager)}
-
-            {Object.entries(pmCommands).map(([key]) => (
+            {PACKAGE_MANAGERS.map((pm) => (
               <TabsTrigger
-                key={key}
-                className="data-[state=active]:border-input h-7 border border-transparent pt-0.5 data-[state=active]:shadow-none"
-                sound="tabSwitch"
-                value={key}
+                key={pm}
+                value={pm}
+                className="data-[state=active]:border-input h-7 border border-transparent pt-0.5 font-mono text-xs data-[state=active]:shadow-none"
               >
-                {key}
+                {pm}
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
-        <pre className="-translate-y-px px-4 py-3.5">
-          <code
-            data-language="bash"
-            className="text-left block font-mono text-sm text-muted-foreground max-sm:leading-6"
-          >
-            {Object.entries(pmCommands).map(([key, command]) => (
-              <TabsContent key={key} value={key} asChild>
-                <span className="block sm:inline-block">
-                  <span className="select-none">$ </span>
-                  {command} shadcn add{" "}
-                  <span className="select-none sm:hidden" aria-hidden="true">
-                    \
-                  </span>
-                </span>
-              </TabsContent>
-            ))}
-
-            <span>{SITE.REGISTRY}/</span>
-
-            <TextFlip
-              className="text-foreground"
-              as={motion.span}
-              variants={{
-                animate: { opacity: 1, y: 0 },
-                exit: { opacity: 0, y: 12 },
-                initial: { opacity: 0, y: -12 },
-              }}
-              interval={1.5}
-              onIndexChange={(index: number) => {
-                currentItemRef.current = registryItemNames[index];
-              }}
-            >
-              {registryItemNames}
-            </TextFlip>
-          </code>
-        </pre>
       </Tabs>
-
-      <RegistryAddButton
-        registry={SITE.REGISTRY}
-        className="absolute top-2 right-10 z-10 w-7 h-7 sm:w-auto gap-1.5 border-none px-2 opacity-70 hover:opacity-100 focus-visible:opacity-100 [&_svg:not([class*='size-'])]:size-4 sm:[&_svg:not([class*='size-'])]:size-3.5"
-        variant="ghost"
-        size="sm"
-      />
-
+      <pre className="no-scrollbar overflow-x-auto px-4 py-3.5 pr-12">
+        <code className="font-mono text-[0.8rem] whitespace-pre">
+          <span className="text-muted-foreground select-none">$ </span>
+          <span className="text-muted-foreground">
+            {RUNNERS[packageManager]} shadcn@latest add{" "}
+          </span>
+          <span className="text-foreground">{url}</span>
+        </code>
+      </pre>
       <CopyButton
-        className="absolute top-2 right-2 z-10 size-7 opacity-70 hover:opacity-100 focus-visible:opacity-100"
-        value={() =>
-          `${pmCommands[packageManager]} shadcn@latest add ${SITE.REGISTRY}/${currentItemRef.current}`
-        }
+        className="absolute top-1.5 right-1.5 z-10 size-7"
+        value={command}
         event="copy_npm_command"
       />
     </div>
