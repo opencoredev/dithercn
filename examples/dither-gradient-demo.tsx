@@ -3,14 +3,14 @@
 import { DitherGradient } from "@/components/dithercn/dither-gradient";
 import type { GradientShape } from "@/components/dithercn/dither-gradient";
 import { usePreviewValue } from "@/components/preview-controls";
-import { ditherGradientControls as knobs } from "@/examples/dither-gradient-controls";
+import * as knobs from "@/examples/dither-gradient-controls";
 
 export default function DitherGradientDemo() {
   const mode = usePreviewValue(knobs.mode);
-  const color = usePreviewValue(knobs.color);
+  const color = usePreviewValue(knobs.ink);
   const matrix = usePreviewValue(knobs.matrix);
   const cell = usePreviewValue(knobs.cell);
-  const to = usePreviewValue(knobs.to);
+  const to = usePreviewValue(knobs.strength);
   const noise = usePreviewValue(knobs.noise);
   const animate = usePreviewValue(knobs.animate);
 

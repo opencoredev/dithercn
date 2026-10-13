@@ -2,7 +2,7 @@
 
 import { AreaChart } from "@/components/dithercn/area-chart";
 import { usePreviewValue } from "@/components/preview-controls";
-import { areaChartControls as knobs } from "@/examples/area-chart-controls";
+import * as knobs from "@/examples/area-chart-controls";
 
 // Thirty days of visitors: a steady climb with a weekly rhythm.
 const data = Array.from({ length: 30 }, (_, index) => {
@@ -20,7 +20,7 @@ export default function AreaChartDemo() {
   const fill = usePreviewValue(knobs.fill);
   const stack = usePreviewValue(knobs.stack);
   const bloom = usePreviewValue(knobs.bloom);
-  const color = usePreviewValue(knobs.color);
+  const color = usePreviewValue(knobs.firstColor);
   const cell = usePreviewValue(knobs.cell);
   const interactive = usePreviewValue(knobs.interactive);
 

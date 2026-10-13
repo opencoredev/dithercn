@@ -89,7 +89,7 @@ export const ComponentPreviewFrame = ({
   const [values, setValues] = useState<Record<string, PreviewValue>>({});
   const [panelOpen, setPanelOpen] = useState(true);
   const { isNear, ref } = useNearViewport();
-  const controlList = controls === undefined ? [] : Object.values(controls);
+  const controlList = controls ?? [];
   const hasControls = controlList.length > 0;
   const showPanel = hasControls && panelOpen;
 

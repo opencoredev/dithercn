@@ -6,10 +6,9 @@
  *
  * ```ts
  * // examples/area-chart-controls.ts
- * export const areaChartControls = {
- *   fill: segmented({ id: "fill", label: "Fill", options: FILL_VARIANTS, default: "gradient" }),
- *   cell: slider({ id: "cell", label: "Cell", min: 2, max: 6, step: 1, default: 3, unit: "px" }),
- * };
+ * export const fill = segmented({ id: "fill", label: "Fill", options: FILL_VARIANTS, default: "gradient" });
+ * export const cell = slider({ id: "cell", label: "Cell", min: 2, max: 6, step: 1, default: 3, unit: "px" });
+ * export const controls = [fill, cell];
  * ```
  */
 
@@ -68,8 +67,11 @@ export type OptionsControl<O extends string = string> =
 
 export type PreviewControl = OptionsControl | SliderControl | ToggleControl;
 
-/** Controls by key, in display order. */
-export type PreviewControlSet = Readonly<Record<string, PreviewControl>>;
+/**
+ * The controls of one preview, in display order. An array, not an object:
+ * the linter sorts object keys, which would reorder the tray.
+ */
+export type PreviewControlSet = readonly PreviewControl[];
 
 /** A control's current value as stored by the frame. */
 export type PreviewValue = string | number | boolean;
