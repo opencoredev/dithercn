@@ -753,7 +753,7 @@ const CSSOptions = ({
         options={["image", "tile"] as const}
         value={css.kind}
         onChange={(kind) => onChange({ kind, level: css.level })}
-        render={(kind) => (kind === "image" ? "Whole image" : "Tile")}
+        render={(kind) => (kind === "image" ? "Image" : "Tile")}
         className="w-44"
       />
     </div>

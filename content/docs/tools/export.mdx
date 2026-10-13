@@ -19,11 +19,11 @@ Export comes in two parts. `dither-export-panel` is the panel above, the same on
 
 ## Which format
 
-| Format | Best for | How it scales |
-| --- | --- | --- |
-| PNG | Photos and error-diffusion dithers, which have few long runs | Pixel-exact; pick 1× to 4× |
-| SVG | Ordered dithers, gradients and flat artwork | Vector cells, sharp at any size from one pixel per cell up |
-| CSS | Backgrounds you want in a stylesheet, with no extra request | The whole image as a covering background, or a repeating tile |
+| Format | Use it for |
+| --- | --- |
+| PNG | Photos and diffusion dithers. Pixel-exact, 1× to 4×. |
+| SVG | Ordered dithers and flat art. Sharp at any size. |
+| CSS | Backgrounds in a stylesheet: the whole image, or a tile. |
 
 ## Installation
 
@@ -155,7 +155,7 @@ const svg = toSVG(
   ]}
 />
 
-The CSS tab writes the whole image by default, embedded as whichever of PNG or SVG comes out smaller. **Tile** writes a repeating tile instead, a few hundred bytes, using the image's lightest colour as ink and its darkest as paper.
+The CSS tab writes the whole image by default, embedded as whichever of PNG or SVG comes out smaller. **Tile** writes a repeating tile instead (under 1 KB for Bayer patterns), using the image's lightest colour as ink and its darkest as paper.
 
 ### toPNG
 
