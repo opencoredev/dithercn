@@ -1,0 +1,72 @@
+[
+  {
+    "name": "gauge",
+    "type": "registry:component",
+    "title": "Gauge",
+    "description": "A radial gauge of dithered blocks that fill in to the value, with the reading in the middle.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/gauge.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/gauge.tsx"
+      }
+    ]
+  },
+  {
+    "name": "progress-bar",
+    "type": "registry:component",
+    "title": "Progress bar",
+    "description": "A linear progress bar with a dithered fill, determinate or indeterminate.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/progress-bar.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/progress-bar.tsx"
+      }
+    ]
+  },
+  {
+    "name": "uptime-bar",
+    "type": "registry:component",
+    "title": "Uptime bar",
+    "description": "A status-page row of daily dithered bars with per-day tooltips and overall uptime.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/uptime-bar.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/uptime-bar.tsx"
+      }
+    ]
+  },
+  {
+    "name": "donut-chart",
+    "type": "registry:component",
+    "title": "Donut chart",
+    "description": "A donut chart whose segments differ in dither density, with the total in the centre and a legend.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/donut-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/donut-chart.tsx"
+      }
+    ]
+  },
+  {
+    "name": "stat-card",
+    "type": "registry:component",
+    "title": "Stat card",
+    "description": "A KPI card with a value, a coloured delta and a dithered trend area on a dotted surface.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/stat-card.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/stat-card.tsx"
+      }
+    ]
+  }
+]

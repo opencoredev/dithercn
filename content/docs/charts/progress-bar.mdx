@@ -1,0 +1,123 @@
+---
+title: "Progress bar"
+description: "A linear progress bar with a dithered fill, for uploads, deploys and usage quotas."
+---
+
+import ProgressBarDemo from "@/examples/progress-bar-demo";
+import ProgressBarQuota from "@/examples/progress-bar-quota";
+import ProgressBarUploads from "@/examples/progress-bar-uploads";
+
+<ComponentPreview src="examples/progress-bar-demo.tsx">
+  <ProgressBarDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="progress-bar" />
+
+## Usage
+
+```tsx
+import { ProgressBar } from "@/components/dithercn/progress-bar";
+
+export function Upload({ percent }: { percent: number }) {
+  return <ProgressBar label="Uploading report.pdf" value={percent} />;
+}
+```
+
+`value` runs from 0 to `max`, which is 100 unless you set it. The fill is a half-density dither with a head that gets denser toward the value, over a track of faint dots.
+
+Leave `value` out when you can't measure progress. The bar becomes indeterminate: a band of ink sweeps across the track, turning cells on and off as it passes.
+
+```tsx
+<ProgressBar label="Indexing repository" />
+```
+
+## Examples
+
+### Usage quotas
+
+`valueText` replaces the percentage, both on screen and for screen readers. Here it reads "7.2 of 10 GB", and a bar past 90% switches its `color` to `--destructive`.
+
+<ComponentPreview src="examples/progress-bar-quota.tsx">
+  <ProgressBarQuota />
+</ComponentPreview>
+
+### Upload list
+
+Three states in a file list at `size="lg"`: finished, in progress, and an indeterminate step while the server transcodes.
+
+<ComponentPreview src="examples/progress-bar-uploads.tsx">
+  <ProgressBarUploads />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "label",
+      type: "string",
+      description:
+        "What is in progress. Shown above the bar and used as its accessible name.",
+      required: true,
+    },
+    {
+      name: "value",
+      type: "number | null",
+      default: "–",
+      description:
+        "Progress from 0 to max. Leave it out for an indeterminate bar.",
+    },
+    {
+      name: "max",
+      type: "number",
+      default: "100",
+      description: "The value that means done.",
+    },
+    {
+      name: "valueText",
+      type: "string",
+      default: "The percentage",
+      description: "Text for the readout and for screen readers.",
+    },
+    {
+      name: "hideLabel",
+      type: "boolean",
+      default: "false",
+      description:
+        "Hide the label and readout visually. Screen readers still get them.",
+    },
+    {
+      name: "size",
+      type: '"sm" | "md" | "lg"',
+      default: '"md"',
+      description: "Bar height: 2, 4 or 8 cells.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"--dither-ink"',
+      description:
+        "Ink colour of the track and fill. A CSS variable name or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The bar has `role="progressbar"` with `aria-valuenow`, `aria-valuemax` and `aria-valuetext`. An indeterminate bar leaves `aria-valuenow` out, which is how assistive technology knows progress is unknown.
+- The fill eases to each new value over 600ms. With reduced motion turned on it jumps, and the indeterminate band holds still in the middle of the track.
+- The indeterminate sweep runs at 30 fps, only while the bar is on screen and the tab is visible. Each frame updates the 48 columns whose density changed and nothing else.

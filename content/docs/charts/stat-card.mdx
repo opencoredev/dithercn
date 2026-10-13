@@ -1,0 +1,124 @@
+---
+title: "Stat card"
+description: "A KPI card with a headline number, a coloured delta and a dithered trend along the bottom."
+---
+
+import StatCardDemo from "@/examples/stat-card-demo";
+import StatCardGrid from "@/examples/stat-card-grid";
+import StatCardCompact from "@/examples/stat-card-compact";
+
+<ComponentPreview src="examples/stat-card-demo.tsx">
+  <StatCardDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="stat-card" />
+
+## Usage
+
+```tsx
+import { StatCard } from "@/components/dithercn/stat-card";
+
+export function Revenue() {
+  return (
+    <StatCard
+      label="Monthly recurring revenue"
+      value="$48,210"
+      delta={12.4}
+      deltaLabel="vs last month"
+      trend={[31.2, 34.6, 37.8, 41.2, 45.1, 48.2]}
+    />
+  );
+}
+```
+
+`delta` is a percentage: `12.4` reads as +12.4%. It is green when it moves the `good` way and red when it doesn't. `trend` takes recent values, oldest first, and draws them as an area that fades from the line down in dither steps, with a square marker on the latest value.
+
+The card uses `bg-card` and a faint dot surface in the ink colour that fades out from the top right corner. Pass a `className` to change its background or width.
+
+## Examples
+
+### KPI row
+
+Four cards in a grid. Latency and error rate set `good="down"`, so latency going up is red and error rate going down is green. The latency trend uses `color="--destructive"`.
+
+<ComponentPreview src="examples/stat-card-grid.tsx" size="lg">
+  <StatCardGrid />
+</ComponentPreview>
+
+### Without a trend
+
+Leave `trend` out for a compact card, and `delta` out when there is nothing to compare. A delta of 0 is grey with no arrow.
+
+<ComponentPreview src="examples/stat-card-compact.tsx" size="sm">
+  <StatCardCompact />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "label",
+      type: "string",
+      description: "What the number is.",
+      required: true,
+    },
+    {
+      name: "value",
+      type: "number | string",
+      description:
+        "The headline number. Numbers get thousands separators; strings show as given.",
+      required: true,
+    },
+    {
+      name: "delta",
+      type: "number",
+      default: "–",
+      description: "Change since the last period, in percent.",
+    },
+    {
+      name: "deltaLabel",
+      type: "string",
+      default: "–",
+      description: 'What the change compares with, such as "vs last month".',
+    },
+    {
+      name: "good",
+      type: '"up" | "down"',
+      default: '"up"',
+      description: "Which direction counts as good, for the delta colour.",
+    },
+    {
+      name: "trend",
+      type: "number[]",
+      default: "–",
+      description: "Recent values, oldest first. Needs at least two.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"--dither-ink"',
+      description: "Ink colour of the trend and the dot surface.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+  ]}
+/>
+
+## Notes
+
+- Screen readers hear the label, the value and the delta in words, such as "Up 12.4% vs last month". The trend and the surface are decorative and hidden.
+- The trend is drawn at the card's real width in CSS pixels, so cells stay square and crisp at any size. It redraws when the card resizes.
+- Nothing moves, so there is nothing to reduce.

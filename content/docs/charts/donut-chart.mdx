@@ -1,0 +1,129 @@
+---
+title: "Donut chart"
+description: "A donut chart with segments told apart by dither density, a total in the centre and a legend."
+---
+
+import DonutChartDemo from "@/examples/donut-chart-demo";
+import DonutChartColors from "@/examples/donut-chart-colors";
+import DonutChartCard from "@/examples/donut-chart-card";
+
+<ComponentPreview src="examples/donut-chart-demo.tsx">
+  <DonutChartDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="donut-chart" />
+
+## Usage
+
+```tsx
+import { DonutChart } from "@/components/dithercn/donut-chart";
+
+const data = [
+  { label: "North America", value: 48210 },
+  { label: "Europe", value: 31870 },
+  { label: "Asia Pacific", value: 17430 },
+];
+
+export function Regions() {
+  return <DonutChart data={data} label="Requests today" />;
+}
+```
+
+Segments run clockwise from the top in the order you pass them. In one ink, each segment is a step lighter than the one before, so put the largest first. Five densities are available before they repeat; past that, give segments their own `color`.
+
+Hovering a segment or its legend row brings it forward and shows its value in the centre.
+
+## Examples
+
+### Colour per segment
+
+Each segment sets `color` from the theme's chart colours and the same `level`, so colour carries the difference. `matrix="bayer8"` gives a finer texture.
+
+<ComponentPreview src="examples/donut-chart-colors.tsx">
+  <DonutChartColors />
+</ComponentPreview>
+
+### Inside a dashboard card
+
+A smaller chart with a thinner ring and a unit on every value.
+
+<ComponentPreview src="examples/donut-chart-card.tsx">
+  <DonutChartCard />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "data",
+      type: "DonutSegment[]",
+      description:
+        "{ label: string; value: number; color?: DitherColor; level?: number }, drawn clockwise from the top.",
+      required: true,
+    },
+    {
+      name: "label",
+      type: "string",
+      description: "What the total counts. Shown under it in the centre.",
+      required: true,
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "200",
+      description: "Diameter in CSS pixels.",
+    },
+    {
+      name: "thickness",
+      type: "number",
+      default: "15% of size",
+      description: "Ring thickness in CSS pixels.",
+    },
+    {
+      name: "unit",
+      type: "string",
+      default: '""',
+      description: 'Shown after every value, such as " GB".',
+    },
+    {
+      name: "format",
+      type: "Intl.NumberFormatOptions",
+      default: "{ maximumFractionDigits: 0 }",
+      description: "How values and the total are formatted.",
+    },
+    {
+      name: "legend",
+      type: "boolean",
+      default: "true",
+      description:
+        "Show the legend. When false it stays available to screen readers.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"--dither-ink"',
+      description: "Ink colour for segments without their own.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The ring is hidden from assistive technology. The legend is a real list with each label, value and share, and the figure has a caption with the total.
+- Segments draw in one after another when the chart appears. With reduced motion turned on they appear at once.
+- It is plain SVG: one circle and one pattern per segment.
