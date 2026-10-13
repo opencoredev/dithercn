@@ -12,16 +12,20 @@
         "theme": {
           "color-dither-ink": "var(--dither-ink)",
           "color-dither-paper": "var(--dither-paper)"
-        },
-        "light": {
-          "dither-ink": "var(--primary)",
-          "dither-paper": "var(--background)",
-          "dither-cell": "3px"
-        },
-        "dark": {
-          "dither-ink": "var(--primary)",
-          "dither-paper": "var(--background)",
-          "dither-cell": "3px"
+        }
+      },
+      "css": {
+        "@layer base": {
+          ":root": {
+            "--dither-ink": "var(--primary)",
+            "--dither-paper": "var(--background)",
+            "--dither-cell": "3px"
+          },
+          ".dark": {
+            "--dither-ink": "var(--primary)",
+            "--dither-paper": "var(--background)",
+            "--dither-cell": "3px"
+          }
         }
       }
     }

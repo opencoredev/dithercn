@@ -30,19 +30,26 @@ npx shadcn@latest add http://localhost:3000/r/dither-tokens.json
 The CLI adds three variables for light and dark mode to the CSS file named in your `components.json`, and two colours to its `@theme inline` block:
 
 ```css
-:root {
-  --dither-ink: var(--primary);
-  --dither-paper: var(--background);
-  --dither-cell: 3px;
-}
-
 @theme inline {
   --color-dither-ink: var(--dither-ink);
   --color-dither-paper: var(--dither-paper);
 }
+
+@layer base {
+  :root {
+    --dither-ink: var(--primary);
+    --dither-paper: var(--background);
+    --dither-cell: 3px;
+  }
+  .dark {
+    --dither-ink: var(--primary);
+    --dither-paper: var(--background);
+    --dither-cell: 3px;
+  }
+}
 ```
 
-The `.dark` block gets the same three variables. Because they point at your theme tokens, there is nothing to set for dark mode.
+Because the variables point at your theme tokens, there is nothing extra to set for dark mode.
 
 </Steps>
 

@@ -12,7 +12,7 @@ ${SITE.NAME} is a shadcn registry of dithered backgrounds, dashboard charts, UI 
 
 ## Status
 
-One item ships today: \`dither-tokens\`, the CSS variables every piece reads (\`--dither-ink\`, \`--dither-paper\`, \`--dither-cell\`). Catalog pages with \`status: planned\` describe pieces that are not in the registry yet. Do not try to install them.
+One item ships today: \`dither-tokens\`, the CSS variables every piece reads (\`--dither-ink\`, \`--dither-paper\`, \`--dither-cell\`). Catalog pages whose Markdown says **Status: planned** describe pieces that are not in the registry yet. Do not try to install them. The registry index lists only installable items.
 
 ## Registry
 

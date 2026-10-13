@@ -29,13 +29,21 @@ export const getPageMarkdownUrl = (page: InferPageType<typeof source>) => {
   };
 };
 
+const PLANNED_NOTICE =
+  "> **Status: planned.** This piece is not in the registry yet. Do not try to install it; the page describes what is planned.";
+
 export const getLLMText = async (page: InferPageType<typeof source>) => {
   const processed = await page.data.getText("processed");
+  const isPlanned = page.data.status === "planned";
+  // <ComingSoon /> renders as a notice on the site; in Markdown it is
+  // replaced by the explicit status line above.
+  const body = processed.replaceAll(/^<ComingSoon \/>\s*$/gm, "").trim();
 
   const sections = [
     page.data.description,
+    isPlanned ? PLANNED_NOTICE : null,
     AGENT_DOCS_DIRECTIVE_MARKDOWN,
-    processed,
+    body,
   ].filter(Boolean);
 
   return `# ${page.data.title}
