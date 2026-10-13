@@ -1,0 +1,176 @@
+---
+title: "Avatar"
+description: "A generative avatar: a mirrored dither face drawn from a name, with a group that overlaps and counts the rest."
+---
+
+import AvatarDemo from "@/examples/avatar-demo";
+import { controls as avatarControls } from "@/examples/avatar-controls";
+import AvatarGroupExample from "@/examples/avatar-group";
+import AvatarMembers from "@/examples/avatar-members";
+import AvatarFills from "@/examples/avatar-fills";
+
+<ComponentPreview
+  src="examples/avatar-demo.tsx"
+  size="md"
+  controls={avatarControls}
+>
+  <AvatarDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="avatar" />
+
+## Usage
+
+```tsx
+import { Avatar, AvatarGroup } from "@/components/dithercn/avatar";
+
+export function Owner() {
+  return <Avatar name="ada@acme.dev" label="Ada Lovelace" status="online" />;
+}
+
+export function Viewers({ names }: { names: string[] }) {
+  return (
+    <AvatarGroup max={4}>
+      {names.map((name) => (
+        <Avatar key={name} name={name} />
+      ))}
+    </AvatarGroup>
+  );
+}
+```
+
+`name` seeds a small random generator that fills half of a 7 by 7 grid of blocks, and the other half mirrors it. A block is more likely to be on near the centre, so every face is a compact mark rather than noise, and the middle column always has at least two blocks. Each block gets one of three tones, denser towards the middle, and the fill decides how a tone is drawn. The same string always gives the same face and colour, on the server and in the browser, so you can use an email or a user id and get a stable avatar for free.
+
+Without `color`, the avatar picks one of six palette hues from the string. Pass a palette name or any CSS colour to set it yourself.
+
+## Examples
+
+### Group with a count
+
+`AvatarGroup` overlaps its avatars, cuts a gap around each in the surface colour, and replaces the rest with a "+N" chip. Set `outline` to the colour behind the group so the gaps disappear into it.
+
+<ComponentPreview src="examples/avatar-group.tsx" size="md">
+  <AvatarGroupExample />
+</ComponentPreview>
+
+### Members with presence
+
+A member list seeded by email, labelled by name. `status` adds a dot and appends the state to the accessible name, as in "Alan Turing, busy". The owner gets a `ring`; the bot gets a grey hatched face.
+
+<ComponentPreview src="examples/avatar-members.tsx" size="md">
+  <AvatarMembers />
+</ComponentPreview>
+
+### Fills
+
+The same six names in every fill. Gradient draws the three tones as Bayer levels; dotted and hatched texture the lighter tones and keep the densest solid; solid uses opacity steps.
+
+<ComponentPreview src="examples/avatar-fills.tsx" size="md">
+  <AvatarFills />
+</ComponentPreview>
+
+## Props
+
+### Avatar
+
+<PropsTable
+  rows={[
+    {
+      name: "name",
+      type: "string",
+      required: true,
+      description:
+        "The string the face and colour come from, such as a name, email or id. Also the accessible name.",
+    },
+    {
+      name: "label",
+      type: "string",
+      description:
+        "Accessible name to use instead of name, when name is an id.",
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "40",
+      description: "Diameter in pixels. Inside a group, the group's size.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      description:
+        "A palette name or any CSS colour. Without it, one of six hues picked from name.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description: "How each block's tone is drawn.",
+    },
+    {
+      name: "shape",
+      type: '"circle" | "square"',
+      default: '"circle"',
+      description: "A circle or a rounded square.",
+    },
+    {
+      name: "ring",
+      type: "boolean",
+      default: "false",
+      description:
+        "A ring in the avatar's colour, for the current user or a selection.",
+    },
+    {
+      name: "status",
+      type: '"online" | "away" | "busy" | "offline"',
+      description:
+        "A presence dot in the corner, added to the accessible name.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "A soft glow in the avatar's colour.",
+    },
+  ]}
+/>
+
+### AvatarGroup
+
+<PropsTable
+  rows={[
+    {
+      name: "max",
+      type: "number",
+      description: "Show at most this many avatars, then a +N chip.",
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "32",
+      description: "Diameter of every avatar in pixels.",
+    },
+    {
+      name: "outline",
+      type: "string",
+      default: '"var(--background)"',
+      description:
+        "Colour of the gap around each avatar. Match the surface behind the group.",
+    },
+    {
+      name: "moreLabel",
+      type: "(count: number) => string",
+      default: '"N more"',
+      description: "What the +N chip announces to screen readers.",
+    },
+  ]}
+/>
+
+`avatarFace(name)` and `avatarColor(name)` are exported too, if you want the same face elsewhere, such as an Open Graph image.
+
+## Notes
+
+- The avatar is a `role="img"` element named by `label` or `name`, plus the status when there is one. The group is a `role="group"`; give it an `aria-label` such as "Viewers" when the context does not say.
+- The face is one or a few SVG paths, cached per name and fill. No canvas, no client JavaScript.
+- Avatars in a group lift by 2 pixels on hover on devices that can hover. With reduced motion they stay put.
