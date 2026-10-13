@@ -15,30 +15,36 @@ const USE_CASES = [
 ] as const;
 
 const INTERVAL_MS = 2400;
+/** One full pass, then it rests on the first word again. */
+const STEPS = USE_CASES.length;
 
 /**
  * "Made for <use case>", rotating. Every word sits in the same grid cell, so
  * the slot is as wide as the longest one and the outgoing word fades out
  * upwards while the next rises in: the line never shifts and never goes
  * blank.
- * Reduced motion holds the first word. Screen readers get the list once.
+ * It plays one pass and stops, and pauses while hovered, so nobody has to
+ * chase it (WCAG 2.2.2). Reduced motion holds the first word. Screen readers
+ * get the list once.
  */
 export const HeroUseCases = ({ className }: { className?: string }) => {
-  const [active, setActive] = useState(0);
+  const [step, setStep] = useState(0);
+  const [hovered, setHovered] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
+  const done = step >= STEPS;
 
   useEffect(() => {
-    if (reducedMotion) {
+    if (reducedMotion || hovered || done) {
       return;
     }
-    const timer = setInterval(
-      () => setActive((index) => (index + 1) % USE_CASES.length),
+    const timer = setTimeout(
+      () => setStep((current) => current + 1),
       INTERVAL_MS
     );
-    return () => clearInterval(timer);
-  }, [reducedMotion]);
+    return () => clearTimeout(timer);
+  }, [reducedMotion, hovered, done, step]);
 
-  const shown = reducedMotion ? 0 : active;
+  const shown = reducedMotion ? 0 : step % USE_CASES.length;
   const leaving = (shown + USE_CASES.length - 1) % USE_CASES.length;
   const stateOf = (index: number) => {
     if (index === shown) {
@@ -48,7 +54,11 @@ export const HeroUseCases = ({ className }: { className?: string }) => {
   };
 
   return (
-    <p className={className}>
+    <p
+      className={className}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+    >
       <span className="sr-only">Made for {USE_CASES.join(", ")}.</span>
       <span aria-hidden="true" className="inline-flex items-baseline gap-[1ch]">
         Made for

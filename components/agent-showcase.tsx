@@ -301,13 +301,14 @@ export const AgentShowcase = ({ className }: { className?: string }) => {
   const [value, setValue] = useState<ShowcaseId>(SHOWCASE[0].id);
   const [userPicked, setUserPicked] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const inView = useInView(rootRef, { rootMargin: "0px" });
   const visible = useDocumentVisible();
   const reducedMotion = usePrefersReducedMotion();
 
   const autoAdvance = !userPicked && !reducedMotion;
-  const paused = hovered || !inView || !visible;
+  const paused = hovered || focused || !inView || !visible;
 
   return (
     <TabsPrimitive.Root
@@ -321,6 +322,13 @@ export const AgentShowcase = ({ className }: { className?: string }) => {
       }}
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={(event) => {
+        // Stay paused while focus moves between tabs and the panel.
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setFocused(false);
+        }
+      }}
       className={cn("flex flex-col gap-4", className)}
     >
       <TabsPrimitive.List
