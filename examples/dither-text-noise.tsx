@@ -9,15 +9,16 @@ export default function DitherTextNoise() {
         scale={2.4}
         from={0.35}
         to={1}
+        direction="right"
         matrix="blue-noise"
-        palette={["transparent", "--chart-4", "--dither-ink"]}
-        className="text-5xl leading-none font-semibold tracking-[-0.05em] sm:text-7xl"
+        palette={["transparent", "blue", "purple"]}
+        className="text-5xl leading-none font-bold tracking-[-0.05em] sm:text-7xl"
       >
         Weather report
       </DitherText>
       <p className="text-muted-foreground max-w-sm text-sm text-pretty">
-        Blue noise and a three-colour palette give the letters a soft, grainy
-        drift instead of a grid.
+        Blue noise and a palette from blue to purple give the letters a soft,
+        grainy drift instead of a grid.
       </p>
     </div>
   );

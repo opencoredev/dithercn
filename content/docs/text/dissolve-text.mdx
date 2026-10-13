@@ -1,13 +1,19 @@
 ---
 title: "Dissolve text"
-description: "Text that dissolves in through Bayer thresholds, by character, word or line, and can dissolve back out."
+description: "Text that dissolves in through Bayer thresholds by character, word or line, in any order, settling solid or into a dithered texture, and can dissolve back out."
 ---
 
 import DissolveTextDemo from "@/examples/dissolve-text-demo";
+import { controls as dissolveControls } from "@/examples/dissolve-text-controls";
 import DissolveTextWords from "@/examples/dissolve-text-words";
 import DissolveTextCycle from "@/examples/dissolve-text-cycle";
+import DissolveTextHatched from "@/examples/dissolve-text-hatched";
 
-<ComponentPreview src="examples/dissolve-text-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/dissolve-text-demo.tsx"
+  size="lg"
+  controls={dissolveControls}
+>
   <DissolveTextDemo />
 </ComponentPreview>
 
@@ -22,7 +28,7 @@ import { DissolveText } from "@/components/dithercn/dissolve-text";
 
 export function Headline() {
   return (
-    <DissolveText as="h2" className="text-6xl font-semibold">
+    <DissolveText as="h2" accent="blue" className="text-6xl font-semibold">
       Arrives one dot at a time
     </DissolveText>
   );
@@ -31,11 +37,23 @@ export function Headline() {
 
 Each character is masked by a 4×4 Bayer matrix that fills in level by level, from no dots to solid, so the letters build up out of the dither. By default it plays once when the text scrolls into view, one character after another. Use the replay button on the preview to see it again.
 
+`direction` sets the order: `start` (reading order), `end`, `center` (from the middle out), `edges` (from both ends in) or `random`, a shuffle that is the same on every visit. `accent` gives each unit a colour while it arrives, fading to the text colour over twice the `duration`.
+
+`fill` sets what the letters settle into. `solid` ends as plain text. `gradient` stops at a dither level (`level`, 0.625 by default). `dotted` and `hatched` end in the style kit's textures, which suit large, heavy type.
+
 ## Examples
+
+### Hatched poster type
+
+`fill="hatched"` and `direction="center"` on a heavy display face, with the line below following from the middle out.
+
+<ComponentPreview src="examples/dissolve-text-hatched.tsx" size="lg">
+  <DissolveTextHatched />
+</ComponentPreview>
 
 ### Word by word
 
-`by="word"` reveals whole words, which reads better for a paragraph. An 8×8 matrix with 2px cells gives a finer grain at body sizes.
+`by="word"` reveals whole words, which reads better for a paragraph. An 8×8 matrix with 2px cells gives a finer grain at body sizes, and the heading arrives in green.
 
 <ComponentPreview src="examples/dissolve-text-words.tsx">
   <DissolveTextWords />
@@ -43,7 +61,7 @@ Each character is masked by a 4×4 Bayer matrix that fills in level by level, fr
 
 ### Dissolving out and in
 
-Set `show={false}` and the text dissolves back out. Here a timer hides the word, swaps it, and shows the next one.
+Set `show={false}` and the text dissolves back out. Here a timer hides the word, swaps it, and shows the next one in a random order. Each letter arrives white and settles into the ink colour.
 
 <ComponentPreview src="examples/dissolve-text-cycle.tsx">
   <DissolveTextCycle />
@@ -73,6 +91,12 @@ Set `show={false}` and the text dissolves back out. Here a timer hides the word,
         "Dissolve each character, each word, or the whole text at once.",
     },
     {
+      name: "direction",
+      type: '"start" | "end" | "center" | "edges" | "random"',
+      default: '"start"',
+      description: "The order units dissolve in.",
+    },
+    {
       name: "trigger",
       type: '"mount" | "in-view"',
       default: '"in-view"',
@@ -84,6 +108,31 @@ Set `show={false}` and the text dissolves back out. Here a timer hides the word,
       type: "boolean",
       default: "true",
       description: "false dissolves the text out. true brings it back.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: "the text colour",
+      description: "Text colour: a palette name or any CSS colour.",
+    },
+    {
+      name: "accent",
+      type: 'DitherColor | "none"',
+      default: '"none"',
+      description:
+        "Colour each unit has while it arrives, fading to the text colour.",
+    },
+    {
+      name: "fill",
+      type: '"solid" | "gradient" | "dotted" | "hatched"',
+      default: '"solid"',
+      description: "What the letters settle into.",
+    },
+    {
+      name: "level",
+      type: "number",
+      default: "0.625",
+      description: "Gradient only: the coverage the letters settle at, 0 to 1.",
     },
     {
       name: "duration",
@@ -104,6 +153,12 @@ Set `show={false}` and the text dissolves back out. Here a timer hides the word,
       description: "Milliseconds before the first unit starts.",
     },
     {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "Multiplies every timing. 2 plays twice as fast.",
+    },
+    {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8"',
       default: '"bayer4"',
@@ -122,5 +177,5 @@ Set `show={false}` and the text dissolves back out. Here a timer hides the word,
 
 - The text stays real text, one inline element per character or word, so it can be selected, copied and indexed. While it is dissolved out, it is hidden from assistive technology.
 - The animation is plain CSS keyframes that step a `mask-image` through the matrix's levels with an ease-out timing. A text that plays on mount needs no JavaScript to run.
-- With reduced motion turned on, the text appears and disappears instantly.
+- With reduced motion turned on, the text appears and disappears instantly. A textured `fill` still applies.
 - Text waiting for `in-view` stays hidden until it scrolls into view. Without JavaScript it is shown as normal text.

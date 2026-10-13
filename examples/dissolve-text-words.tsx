@@ -8,6 +8,7 @@ export default function DissolveTextWords() {
         by="word"
         matrix="bayer8"
         cell={2}
+        accent="green"
         className="text-2xl font-semibold tracking-[-0.03em]"
       >
         Quarterly report

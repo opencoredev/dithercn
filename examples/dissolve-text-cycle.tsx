@@ -37,7 +37,9 @@ export default function DissolveTextCycle() {
         trigger="mount"
         duration={440}
         stagger={22}
-        className="text-dither-ink"
+        direction="random"
+        color="ink"
+        accent="--foreground"
       >
         {WORDS[index] ?? ""}
       </DissolveText>

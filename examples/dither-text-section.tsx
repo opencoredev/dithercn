@@ -8,10 +8,10 @@ export default function DitherTextSection() {
       </span>
       <DitherText
         as="h3"
-        angle={90}
+        direction="right"
         from={1}
-        to={0.3}
-        palette={["transparent", "--foreground"]}
+        to={0.55}
+        color="--foreground"
         animate={false}
         className="text-3xl leading-tight font-semibold tracking-[-0.035em] text-balance sm:text-4xl"
       >
@@ -19,7 +19,7 @@ export default function DitherTextSection() {
       </DitherText>
       <p className="text-muted-foreground text-sm text-pretty">
         PNG, SVG and CSS exports from the maker, with the palette and cell size
-        you picked. The heading fades left to right in the page&apos;s own
+        you picked. The heading thins out left to right in the page&apos;s own
         foreground colour, so it works on light and dark themes.
       </p>
     </section>

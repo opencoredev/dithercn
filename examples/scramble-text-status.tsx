@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 
-import { ScrambleText } from "@/components/dithercn/scramble-text";
+import {
+  ScrambleText,
+  SCRAMBLE_HEX,
+} from "@/components/dithercn/scramble-text";
+import { cssColor } from "@/lib/dither";
 
 const STATES = [
-  { detail: "eu-west · 38 ms", label: "Deploying" },
-  { detail: "all checks passed", label: "Verifying" },
-  { detail: "rev 7f3a2c", label: "Live" },
-];
+  { color: "orange", detail: "build 7f3a2c1 · eu-west", label: "Deploying" },
+  { color: "blue", detail: "checks 42 of 42 passed", label: "Verifying" },
+  { color: "green", detail: "rev 7f3a2c1 · 38 ms p50", label: "Live" },
+] as const;
 
 export default function ScrambleTextStatus() {
   const [step, setStep] = useState(0);
@@ -24,30 +28,39 @@ export default function ScrambleTextStatus() {
   const state = STATES[step] ?? STATES[0];
 
   return (
-    <div className="bg-background flex w-full max-w-xs flex-col gap-2 rounded-2xl p-5">
-      <span className="text-muted-foreground text-xs">Production</span>
-      <span className="flex items-center gap-2">
+    <div className="bg-background flex w-full max-w-xs flex-col gap-3 rounded-2xl p-5">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground text-xs">Production</span>
+        <span className="text-muted-foreground font-mono text-[11px]">
+          main
+        </span>
+      </div>
+      <span className="flex items-center gap-2.5">
         <span
           aria-hidden="true"
-          className="bg-dither-ink size-2 rounded-full"
+          className="size-2 rounded-[1px] transition-colors duration-500"
+          style={{ backgroundColor: cssColor(state.color) }}
         />
         <ScrambleText
-          trigger="mount"
-          duration={520}
-          delay={80}
-          className="font-mono text-lg font-medium tracking-tight"
+          trigger="change"
+          color={state.color}
+          caret="running"
+          className="text-xl font-medium tracking-tight"
+          aria-live="polite"
         >
-          {state?.label ?? ""}
+          {state.label}
         </ScrambleText>
       </span>
       <ScrambleText
-        trigger="mount"
-        duration={700}
-        delay={160}
-        characters="0123456789abcdef"
+        trigger="change"
+        mode="glyphs"
+        characters={SCRAMBLE_HEX}
+        color="grey"
+        delay={120}
+        stagger={14}
         className="text-muted-foreground font-mono text-xs"
       >
-        {state?.detail ?? ""}
+        {state.detail}
       </ScrambleText>
     </div>
   );
