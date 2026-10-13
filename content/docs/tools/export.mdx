@@ -19,11 +19,11 @@ Export comes in two parts. `dither-export-panel` is the panel above, the same on
 
 ## Which format
 
-| Format | Use it for |
-| --- | --- |
-| PNG | Photos and diffusion dithers. Pixel-exact, 1× to 4×. |
-| SVG | Ordered dithers and flat art. Sharp at any size. |
-| CSS | Backgrounds in a stylesheet: the whole image, or a tile. |
+| Format | Use it for                                               |
+| ------ | -------------------------------------------------------- |
+| PNG    | Photos and diffusion dithers. Pixel-exact, 1× to 4×.     |
+| SVG    | Ordered dithers and flat art. Sharp at any size.         |
+| CSS    | Backgrounds in a stylesheet: the whole image, or a tile. |
 
 ## Installation
 
@@ -228,7 +228,8 @@ Returns one CSS rule. The default `tile` kind repeats one matrix tile; the `imag
       name: "mode",
       type: '"background" | "mask"',
       default: '"background"',
-      description: "Tile kind. Bake the ink into the tile, or mask the element.",
+      description:
+        "Tile kind. Bake the ink into the tile, or mask the element.",
     },
     {
       name: "kind",
