@@ -139,9 +139,9 @@ const LOGO_SHAPES = [
 ] as const;
 
 const LogoWallArt = () => (
-  <div className="absolute inset-0 grid grid-cols-3 place-items-center gap-y-2 px-6 py-4">
+  <div className="absolute inset-0 grid grid-cols-3 place-items-center content-center gap-y-3 px-6 py-4">
     {LOGO_SHAPES.map((shape) => (
-      <div key={shape} className="relative size-9">
+      <div key={shape} className="relative size-7 sm:size-9">
         <Dots level={10} className={cn("inset-0", shape)} />
       </div>
     ))}
