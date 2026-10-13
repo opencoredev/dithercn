@@ -54,5 +54,19 @@
         "target": "components/dithercn/aurora.tsx"
       }
     ]
+  },
+  {
+    "name": "waves",
+    "type": "registry:component",
+    "title": "Waves",
+    "description": "Layered swells under a glowing horizon, or thin lines like a sound wave.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/waves.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/waves.tsx"
+      }
+    ]
   }
 ]
