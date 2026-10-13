@@ -17,15 +17,8 @@ const PieceLink = ({
       transitionTypes={["nav-forward"]}
       className="group/piece focus-visible:ring-ring/50 -mx-2 flex flex-col gap-0.5 rounded-md px-2 py-1.5 outline-none focus-visible:ring-[3px]"
     >
-      <span className="flex items-baseline gap-2">
-        <span className="decoration-primary/40 group-hover/piece:decoration-primary font-medium underline decoration-1 underline-offset-4 transition-colors">
-          {piece.name}
-        </span>
-        {isFull && piece.status === "planned" && (
-          <span className="text-muted-foreground font-mono text-[0.7rem]">
-            soon
-          </span>
-        )}
+      <span className="decoration-primary/40 group-hover/piece:decoration-primary font-medium underline decoration-1 underline-offset-4 transition-colors">
+        {piece.name}
       </span>
       {isFull && piece.description && (
         <span className="text-muted-foreground text-sm text-pretty">
@@ -65,16 +58,18 @@ export const CatalogIndex = ({
               {category.description}
             </p>
           </div>
-          <ul
-            className={cn(
-              "grid gap-x-8",
-              isFull ? "gap-y-2 sm:grid-cols-2" : "gap-y-0.5 sm:grid-cols-3"
-            )}
-          >
-            {category.pieces.map((piece) => (
-              <PieceLink key={piece.url} piece={piece} isFull={isFull} />
-            ))}
-          </ul>
+          {category.pieces.length > 0 ? (
+            <ul
+              className={cn(
+                "grid gap-x-8",
+                isFull ? "gap-y-2 sm:grid-cols-2" : "gap-y-0.5 sm:grid-cols-3"
+              )}
+            >
+              {category.pieces.map((piece) => (
+                <PieceLink key={piece.url} piece={piece} isFull={isFull} />
+              ))}
+            </ul>
+          ) : null}
         </section>
       ))}
     </div>

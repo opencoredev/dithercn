@@ -2,13 +2,12 @@
   "root": true,
   "pages": [
     "(root)",
-    "foundations",
+    "concepts",
     "backgrounds",
-    "dashboard",
-    "ui",
-    "type",
+    "charts",
+    "interface",
+    "text",
     "images",
-    "logos",
     "tools"
   ]
 }

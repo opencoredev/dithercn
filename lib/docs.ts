@@ -3,8 +3,11 @@ import { formatLabelFromSlug } from "@/lib/utils";
 
 export const DOCS_DIR = `content${ROUTES.DOCS}`;
 
-/** The "Get started" folder. Everything else in the page tree is catalog. */
-export const GUIDE_FOLDER_ID = "(root)";
+/**
+ * Folders of guides rather than components: "Get started" and "Concepts".
+ * Every other folder in the page tree is a catalog group.
+ */
+export const GUIDE_FOLDER_IDS: readonly string[] = ["(root)", "concepts"];
 
 const TITLE_OVERRIDES: Record<string, string> = {
   ai: "AI",

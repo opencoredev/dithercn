@@ -1,24 +1,49 @@
 ---
 title: Usage
-description: Use the dither tokens today, and see how catalog pieces will plug into your app.
+description: Render a dithercn component, change how it looks, and build your own on dither-core.
 ---
 
-## Use the tokens today
+## Render a component
 
-After you [install `dither-tokens`](/docs/installation), Tailwind gets two colour utilities: `dither-ink` and `dither-paper`. Use them anywhere you would use a theme colour:
+Components are full-bleed by default: they fill the box you give them. Put one behind your content with `absolute inset-0`:
 
 ```tsx
-export function Stat() {
+import { DitherGradient } from "@/components/dithercn/dither-gradient";
+
+export function Hero() {
   return (
-    <div className="bg-dither-paper text-dither-ink rounded-md border p-4">
-      <p className="text-sm">Weekly active</p>
-      <p className="text-3xl font-semibold tabular-nums">12,480</p>
-    </div>
+    <section className="relative isolate min-h-[480px]">
+      <DitherGradient angle={160} className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
   );
 }
 ```
 
-Read `--dither-cell` when you need the shared cell size, for example to line up a hand-made pattern with future dithercn pieces:
+## Shared props
+
+Components built on `DitherShader` share these props, so once you know one you know them all:
+
+| Prop      | What it controls                                                            | Default                          |
+| --------- | --------------------------------------------------------------------------- | -------------------------------- |
+| `matrix`  | The threshold pattern: `"bayer2"`, `"bayer4"`, `"bayer8"` or `"blue-noise"` | `"bayer4"`                       |
+| `levels`  | How many tones to snap to before dithering                                  | Every tone the matrix can draw   |
+| `cell`    | Cell size in CSS pixels                                                     | `--dither-cell`                  |
+| `palette` | Colours from paper to ink, two or more                                      | `--dither-paper`, `--dither-ink` |
+| `animate` | Whether it moves                                                            | `true`                           |
+| `speed`   | How fast it moves                                                           | `1`                              |
+
+Each component page lists its own props as well. [Dither engine](/docs/concepts/dither-engine) explains what the matrix and levels do.
+
+## Use the tokens directly
+
+Tailwind gets two colour utilities from `dither-tokens`: `dither-ink` and `dither-paper`. Use them anywhere you would use a theme colour:
+
+```tsx
+<div className="bg-dither-paper text-dither-ink rounded-md p-4">12,480</div>
+```
+
+Read `--dither-cell` when you need the shared cell size, for example to line up a hand-made pattern with the components:
 
 ```css
 .pattern {
@@ -26,20 +51,22 @@ Read `--dither-cell` when you need the shared cell size, for example to line up 
 }
 ```
 
-## How pieces will work
+## Build your own
 
-<Callout title="Planned API">
-  No catalog piece has shipped yet. The shape below is the plan the pieces are
-  being built towards, so details may still change.
-</Callout>
+Every component is a thin layer over `dither-core` in `lib/dither`. To make a background of your own, write a GLSL field and hand it to `DitherShader`:
 
-Every piece will be a single component that you install by name and render like any other shadcn component. Pieces share the props described in [Foundations](/docs/foundations/dither-engine):
+```tsx
+import { DitherShader } from "@/lib/dither";
 
-| Prop        | What it controls                                         | Default                          |
-| ----------- | -------------------------------------------------------- | -------------------------------- |
-| `algorithm` | Which dither to use, such as `"bayer-4"` or `"atkinson"` | Depends on the piece             |
-| `scale`     | Cell size in CSS pixels                                  | `--dither-cell`                  |
-| `palette`   | Ink and paper colours, or a multi-step palette           | `--dither-ink`, `--dither-paper` |
-| `animate`   | Whether the piece moves, and how fast                    | Off                              |
+const FIELD = `
+float field(vec2 uv, vec2 res, float t) {
+  return fbm(uv * 3.0 + vec2(t * 0.05, 0.0));
+}
+`;
 
-Pieces will render on the client into a canvas sized to their container, with a server-rendered placeholder at the same size so the page doesn't shift while they load.
+export function Clouds() {
+  return <DitherShader field={FIELD} className="absolute inset-0" />;
+}
+```
+
+It already handles resizing, the theme, reduced motion and pausing offscreen. [Concepts](/docs/concepts/dither-engine) covers the rest of the engine.

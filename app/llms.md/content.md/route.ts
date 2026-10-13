@@ -19,7 +19,7 @@ ${AGENT_DOCS_DIRECTIVE_MARKDOWN}
 
 - [Introduction](${base}${ROUTES.DOCS}.md)
 - [Installation](${base}${ROUTES.DOCS_INSTALLATION}.md)
-- [Catalog of planned pieces](${base}${ROUTES.DOCS_CATALOG}.md)
+- [Catalog of components](${base}${ROUTES.DOCS_CATALOG}.md)
 - [Registry index](${base}${ROUTES.REGISTRY})
 - [LLM index (llms.txt)](${base}${ROUTES.LLMS})
 - [API catalog](${base}${ROUTES.API_CATALOG})

@@ -1,4 +1,4 @@
-import { GUIDE_FOLDER_ID } from "@/lib/docs";
+import { GUIDE_FOLDER_IDS } from "@/lib/docs";
 import { getPagesFromFolder } from "@/lib/page-tree";
 import type { PageTreeFolder } from "@/lib/page-tree";
 import { source } from "@/lib/source";
@@ -7,7 +7,6 @@ export interface CatalogPiece {
   name: string;
   url: string;
   description: string;
-  status: "planned" | "available";
 }
 
 export interface CatalogCategory {
@@ -21,11 +20,12 @@ const text = (node: React.ReactNode): string =>
   typeof node === "string" ? node : "";
 
 const isCatalogFolder = (folder: PageTreeFolder) =>
-  folder.$id !== GUIDE_FOLDER_ID;
+  !GUIDE_FOLDER_IDS.includes(folder.$id ?? "");
 
 /**
  * The catalog, derived from the docs page tree so content/docs stays the
- * single source of truth for what exists and in what order.
+ * single source of truth for what exists and in what order. A group with
+ * no pages yet still appears, with an empty `pieces` list.
  */
 export const getCatalog = (): CatalogCategory[] =>
   source.pageTree.children.flatMap((node) => {
@@ -42,7 +42,6 @@ export const getCatalog = (): CatalogCategory[] =>
         {
           description: page.data.description ?? "",
           name: page.data.title,
-          status: page.data.status ?? "planned",
           url: page.url,
         } satisfies CatalogPiece,
       ];

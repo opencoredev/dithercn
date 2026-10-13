@@ -1,9 +1,9 @@
 ---
 title: Installation
-description: Add the dithercn tokens to a shadcn project with npx shadcn add.
+description: Add dithercn components to a shadcn project with npx shadcn add.
 ---
 
-dithercn installs with the shadcn CLI, like any other registry. Today the registry has one item, `dither-tokens`. Catalog pieces will install the same way as they land, and each will pull in `dither-tokens` automatically.
+dithercn installs with the shadcn CLI, like any other registry. Each component pulls in two shared items on its first install: `dither-core`, the engine in `lib/dither`, and `dither-tokens`, the CSS variables it reads.
 
 ## Before you start
 
@@ -15,15 +15,17 @@ You need a project that already uses shadcn/ui, with a `components.json` file an
   install` and `pnpm dev`, then run the commands from your own project.
 </Callout>
 
-## Add the tokens
+## Add a component
 
 <Steps>
 
 ### Run the add command
 
 ```bash
-npx shadcn@latest add http://localhost:3000/r/dither-tokens.json
+npx shadcn@latest add http://localhost:3000/r/dither-gradient.json
 ```
+
+This writes `components/dithercn/dither-gradient.tsx`, the engine files in `lib/dither/`, and the CSS variables below. To install only the variables, add `dither-tokens.json` instead.
 
 ### Check your CSS
 
@@ -68,7 +70,7 @@ To install by name instead of by URL, add dithercn to the `registries` field of 
 Then install with the `@dithercn` prefix:
 
 ```bash
-npx shadcn@latest add @dithercn/dither-tokens
+npx shadcn@latest add @dithercn/dither-gradient
 ```
 
 See the shadcn docs on [namespaced registries](https://ui.shadcn.com/docs/registry/namespace) for more options, including authentication.
@@ -76,4 +78,5 @@ See the shadcn docs on [namespaced registries](https://ui.shadcn.com/docs/regist
 ## Next steps
 
 - [Theming](/docs/theming) explains what each variable does and how to override it.
-- [Usage](/docs/usage) shows how to use the tokens today and how catalog pieces will work.
+- [Usage](/docs/usage) shows how to render a component and change its look.
+- [Dither engine](/docs/concepts/dither-engine) explains `dither-core`, if you want to build your own.

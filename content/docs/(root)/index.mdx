@@ -5,31 +5,24 @@ description: Beautiful dithers for landing pages and dashboards, installed with 
 
 dithercn is a [shadcn registry](https://ui.shadcn.com/docs/registry) of dithered backgrounds, charts, interface pieces, type and images. Each piece is copied into your project as source, reads its colours from your shadcn theme, and works in light and dark mode.
 
-<Callout title="Early preview">
-  The docs and the catalog plan are up, and one registry item ships today:
-  [`dither-tokens`](/docs/theming), the CSS variables every piece will share.
-  Every catalog page is marked as coming soon until its piece lands.
-</Callout>
-
 ## What a dither is
 
 A dither draws a smooth tone using only a few colours. It places dots of ink at a density that matches the tone, so your eye blends them into a gradient. Dithering began as a workaround for limited screens and printers. It now reads as a deliberate texture, a little like risograph print, and it's what dithercn is for.
 
-## How the catalog is organised
+## How the docs are organised
 
-- [Foundations](/docs/foundations/dither-engine) cover the engine and the rules every piece follows: algorithms, theme palettes, pixel scale, motion and performance.
-- [Backgrounds](/docs/backgrounds/dithered-gradient) are full-bleed surfaces for heroes and section breaks.
-- [Dashboard](/docs/dashboard/area-chart) pieces are charts and status displays with a dithered fill.
-- [UI](/docs/ui/skeleton) pieces are skeletons, loaders, dividers, card surfaces, empty states and a 404 page.
-- [Type](/docs/type/big-text) and [Images](/docs/images/image-dither) dither your headings and pictures.
-- [Logos](/docs/logos/dithered-logo) give a logo wall one consistent look.
-- [Tools](/docs/tools/dither-maker) let you make and export dithers without writing code.
+- [Concepts](/docs/concepts/dither-engine) explain `dither-core`, the engine every component shares: threshold matrices, palettes, cell size, motion and performance.
+- [Backgrounds](/docs/catalog#catalog-backgrounds) are full-bleed surfaces for heroes, sections and cards.
+- [Charts](/docs/catalog#catalog-charts) are charts and status displays with a dithered fill.
+- [Interface](/docs/catalog#catalog-interface) pieces are skeletons, loaders, dividers, cards, empty states and a 404 block.
+- [Text](/docs/catalog#catalog-text) and [Images](/docs/catalog#catalog-images) dither your headings, pictures and logos.
+- [Tools](/docs/catalog#catalog-tools) let you make and export dithers without writing code.
 
-The [catalog](/docs/catalog) lists every planned piece on one page.
+The [catalog](/docs/catalog) lists every component on one page.
 
 ## Principles
 
 - **Your theme, not ours.** Dithers read your `--primary` and `--background` tokens through the [`--dither-*` variables](/docs/theming), so they change when your theme changes.
 - **Quiet by default.** Motion is opt-in and slow, and every animated piece holds still when the visitor prefers reduced motion.
-- **Cheap on dashboards.** Pieces render once and re-render only when their inputs change, so twenty sparklines on one screen stay fast.
+- **Cheap on dashboards.** Charts are static SVG patterns, and animated backgrounds draw one cell per pixel and stop when they scroll out of view.
 - **Real text stays text.** Dithered headings are still HTML, so they can be selected, read aloud and indexed.

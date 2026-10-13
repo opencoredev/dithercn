@@ -55,7 +55,7 @@ export default async function IndexPage() {
                 style={stagger(0)}
                 className="rise-in bg-card/80 hover:bg-accent focus-visible:ring-ring/50 inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium backdrop-blur-sm transition-colors duration-150 outline-none focus-visible:ring-[3px]"
               >
-                <span className="text-primary font-mono">dither-tokens</span>
+                <span className="text-primary font-mono">dither-core</span>
                 is out
                 <Icon
                   icon={ArrowRight01Icon}
@@ -98,11 +98,11 @@ export default async function IndexPage() {
             <div className="scroll-reveal flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
               <div className="flex flex-col gap-2">
                 <h2 id="catalog-heading" className={H2_CLS}>
-                  What&apos;s coming
+                  The catalog
                 </h2>
                 <p className="text-muted-foreground max-w-xl text-pretty">
-                  {`${pieceCount} pieces in ${catalog.length} groups.`} None has
-                  shipped yet; each has a page that says what it will do.
+                  {`${pieceCount === 1 ? "1 component" : `${pieceCount} components`} in ${catalog.length} groups.`}{" "}
+                  Each has a live demo, its props and one install command.
                 </p>
               </div>
               <Link
@@ -140,8 +140,9 @@ export default async function IndexPage() {
                   Start with the tokens
                 </h2>
                 <p className="text-muted-foreground max-w-lg text-pretty">
-                  One item ships today: the CSS variables every piece will read,
-                  mapped to your theme&apos;s primary and background colours.
+                  Every component reads three CSS variables, mapped to your
+                  theme&apos;s primary and background colours. Install them on
+                  their own, or let your first component bring them along.
                 </p>
                 <CommandBox
                   itemUrl={`${SITE.REGISTRY}/dither-tokens.json`}
