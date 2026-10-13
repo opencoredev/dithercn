@@ -12,9 +12,9 @@ export const GET = (request: Request) => {
       skills: [
         {
           description:
-            "Install and use components from this public shadcn registry starter and documentation site.",
+            "Discover and install dithercn pieces: dithered backgrounds, charts and UI for shadcn projects.",
           digest: siteAgentSkillDigest(),
-          name: "registry-starter",
+          name: "dithercn",
           type: "skill-md",
           url: `${base}${ROUTES.AGENT_SKILLS_SITE_SKILL}`,
         },

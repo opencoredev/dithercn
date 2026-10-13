@@ -8,24 +8,33 @@ export const SITE_AGENT_SKILL_MD = `# ${SITE.NAME}
 
 ## Summary
 
-Help users discover, inspect, and install components from this public shadcn registry starter and its documentation site.
+${SITE.NAME} is a shadcn registry of dithered backgrounds, dashboard charts, UI pieces, type and images for landing pages and dashboards. Help users discover pieces and install them with the shadcn CLI.
+
+## Status
+
+One item ships today: \`dither-tokens\`, the CSS variables every piece reads (\`--dither-ink\`, \`--dither-paper\`, \`--dither-cell\`). Catalog pages with \`status: planned\` describe pieces that are not in the registry yet. Do not try to install them.
 
 ## Registry
 
-- Registry JSON: \`${ROUTES.REGISTRY}\`
-- Docs: ${ROUTES.DOCS}
-
-## MCP
-
-This site is a shadcn-compatible registry. For MCP workflows, use the maintained shadcn MCP server documentation: ${LINK.SHADCN_MCP_DOCS}
+- Registry index: \`${SITE.URL}${ROUTES.REGISTRY}\`
+- Item URL pattern: \`${SITE.REGISTRY}/{name}.json\`
+- Docs index for agents: \`${SITE.URL}${ROUTES.LLMS}\`
 
 ## Install
 
 \`\`\`bash
-npx shadcn@latest add ${SITE.URL}/r/your-component.json
+npx shadcn@latest add ${SITE.REGISTRY}/dither-tokens.json
 \`\`\`
 
-Prefer following the on-site installation guide: ${ROUTES.DOCS_INSTALLATION}
+Or add \`"@dithercn": "${SITE.REGISTRY}/{name}.json"\` to the \`registries\` field of the user's components.json and run \`npx shadcn@latest add @dithercn/dither-tokens\`.
+
+## MCP
+
+Once the namespace is configured, the shadcn MCP server can browse and install from it: ${LINK.SHADCN_MCP_DOCS}
+
+## Theming
+
+Pieces read \`--dither-ink\` (default \`var(--primary)\`) and \`--dither-paper\` (default \`var(--background)\`). To retint one section, set those variables on a wrapper element. See ${SITE.URL}${ROUTES.DOCS_THEMING}.md
 `;
 
 export const siteAgentSkillDigest = (): string => {

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "dither-tokens",
+  "title": "Dither tokens",
+  "description": "CSS variables every dithercn piece reads: ink, paper and cell size, mapped to your shadcn theme tokens.",
+  "cssVars": {
+    "theme": {
+      "color-dither-ink": "var(--dither-ink)",
+      "color-dither-paper": "var(--dither-paper)"
+    },
+    "light": {
+      "dither-ink": "var(--primary)",
+      "dither-paper": "var(--background)",
+      "dither-cell": "3px"
+    },
+    "dark": {
+      "dither-ink": "var(--primary)",
+      "dither-paper": "var(--background)",
+      "dither-cell": "3px"
+    }
+  },
+  "type": "registry:item"
+}
