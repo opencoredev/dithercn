@@ -1,13 +1,19 @@
 ---
 title: "Dither text"
-description: "A display headline whose letters are filled with a dither, from hero size down to section headings."
+description: "A display headline whose letters are filled with a dithered gradient, noise, dots or hatching, in any palette colour, from hero size down to section headings."
 ---
 
 import DitherTextDemo from "@/examples/dither-text-demo";
+import { controls as ditherTextControls } from "@/examples/dither-text-controls";
+import DitherTextHatched from "@/examples/dither-text-hatched";
 import DitherTextNoise from "@/examples/dither-text-noise";
 import DitherTextSection from "@/examples/dither-text-section";
 
-<ComponentPreview src="examples/dither-text-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/dither-text-demo.tsx"
+  size="lg"
+  controls={ditherTextControls}
+>
   <DitherTextDemo />
 </ComponentPreview>
 
@@ -22,22 +28,41 @@ import { DitherText } from "@/components/dithercn/dither-text";
 
 export function Hero() {
   return (
-    <DitherText as="h1" className="text-8xl font-semibold tracking-tight">
+    <DitherText
+      as="h1"
+      color="blue"
+      className="text-8xl font-bold tracking-tight"
+    >
       Your headline
     </DitherText>
   );
 }
 ```
 
-The text stays a real element: people can select and copy it, screen readers read it, and search engines index it. The dither is a small image drawn on the client and clipped to the letters with `background-clip: text`. By default it runs from solid ink at the top to a sparse dither at the bottom, with a slow drift that bends the bands.
+The text stays a real element: people can select and copy it, screen readers read it, and search engines index it. The dither is a small image drawn on the client and clipped to the letters with `background-clip: text`.
 
-Set the size with your own classes. The cell size follows the font size, about 1/24 of it and never below 2px, so the same component reads well as a hero and as a section heading.
+`fill` picks what goes inside the letters:
+
+- `gradient` (the default) runs from solid ink on one side to a sparse dither on the other, with a slow drift that bends the bands. `direction` is the way it thins out: `"down"` is solid at the top.
+- `noise` fills the letters with drifting blobs of density. `scale` sets their size and `direction` the way they drift.
+- `dotted` and `hatched` use the same textures as the charts and buttons, drifting a cell at a time in `direction`. A faint `ghost` of the ink fills the gaps so the letters keep their shape.
+- `solid` is flat colour, useful with `bloom` alone.
+
+Set the size with your own classes. The cell size follows the font size, about 1/24 of it and never below 2px, so the same component reads well as a hero and as a section heading. Pass `cell` to fix it.
 
 ## Examples
 
-### Noise fill with a palette
+### Hatched and dotted
 
-`fill="noise"` fills the letters with drifting noise instead of a gradient. Here blue noise and a three-colour palette, from transparent through `--chart-4` to the ink, give a soft grain.
+Two words in heavy type, one `hatched` in orange with a low bloom and one `dotted` in pink drifting left.
+
+<ComponentPreview src="examples/dither-text-hatched.tsx" size="lg">
+  <DitherTextHatched />
+</ComponentPreview>
+
+### Noise with a palette
+
+`palette` takes over from `color` for a multi-tone fill. Here blue noise and a palette from transparent through blue to purple give a soft grain.
 
 <ComponentPreview src="examples/dither-text-noise.tsx" size="lg">
   <DitherTextNoise />
@@ -45,7 +70,7 @@ Set the size with your own classes. The cell size follows the font size, about 1
 
 ### Section heading in the foreground colour
 
-A smaller heading that fades left to right (`angle={90}`), drawn in `--foreground` so it matches body text on light and dark themes. `animate={false}` draws it once.
+A smaller heading that thins out to the right, drawn in `--foreground` so it matches body text on light and dark themes. `to={0.55}` keeps the last word readable and `animate={false}` draws it once.
 
 <ComponentPreview src="examples/dither-text-section.tsx">
   <DitherTextSection />
@@ -69,16 +94,23 @@ A smaller heading that fades left to right (`angle={90}`), drawn in `--foregroun
     },
     {
       name: "fill",
-      type: '"gradient" | "noise"',
+      type: '"gradient" | "noise" | "dotted" | "hatched" | "solid"',
       default: '"gradient"',
-      description: "A gradient across the text, or drifting noise.",
+      description: "What fills the letters.",
     },
     {
-      name: "angle",
-      type: "number",
-      default: "180",
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
       description:
-        "Gradient only. Direction in degrees, as in CSS: 180 runs top to bottom, 90 left to right.",
+        'Ink colour: a palette name such as "green" or any CSS colour.',
+    },
+    {
+      name: "direction",
+      type: '"down" | "up" | "left" | "right" | number',
+      default: '"down"',
+      description:
+        "Gradient: the way it thins out from its solid side. Noise, dotted and hatched: the way it drifts. A number is an angle in degrees, as in CSS.",
     },
     {
       name: "scale",
@@ -91,27 +123,39 @@ A smaller heading that fades left to right (`angle={90}`), drawn in `--foregroun
       type: "number",
       default: "1",
       description:
-        "Tone at the start, from 0 (no ink) to 1 (solid). For noise, the tone of the lightest blobs.",
+        "Gradient and noise: tone at the dense end, from 0 (no ink) to 1 (solid).",
     },
     {
       name: "to",
       type: "number",
       default: "0.4",
       description:
-        "Tone at the end. Keep it above about 0.3 so the letters stay readable.",
+        "Gradient and noise: tone at the sparse end. Keep it above about 0.3 so the letters stay readable.",
+    },
+    {
+      name: "ghost",
+      type: "number",
+      default: "0.2 for dotted and hatched, else 0",
+      description: "Opacity of the ink in the gaps between dots, 0 to 1.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "A soft glow in the ink colour that follows the dots.",
     },
     {
       name: "palette",
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
-      default: '["transparent", "--dither-ink"]',
       description:
-        "Colours from the lightest tone to the darkest. Start with transparent so the page shows between the dots.",
+        "Colours from the lightest tone to the darkest, for a multi-tone fill. Overrides color and ghost.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description: "The threshold pattern. See Dither engine.",
+      description:
+        "The threshold pattern for gradient and noise. See Dither engine.",
     },
     {
       name: "cell",
@@ -129,7 +173,7 @@ A smaller heading that fades left to right (`angle={90}`), drawn in `--foregroun
       name: "speed",
       type: "number",
       default: "1",
-      description: "How fast the fill drifts.",
+      description: "How fast the fill drifts. 0 holds it still.",
     },
   ]}
 />
@@ -139,5 +183,4 @@ A smaller heading that fades left to right (`angle={90}`), drawn in `--foregroun
 - The text is the accessible content. The fill is a background image, so assistive technology ignores it.
 - Before the client draws the fill, the letters show in the ink colour through a plain dither mask, so there is no flash of unstyled text. In forced-colours mode the fill is removed and the text uses the system colour.
 - Selected text shows in the site's selection colours, solid, so it stays readable while highlighted.
-- With reduced motion turned on, or `animate={false}`, it draws one frame. It redraws at 12 fps only while on screen, at one pixel per dither cell, and pauses in hidden tabs.
-- Keep `to` high enough for the letters to read: below about 0.3 the bottom of each letter breaks into scattered dots.
+- With reduced motion turned on, or `animate={false}`, it draws one frame. It redraws at 12 fps only while on screen, at one pixel per dither cell, and pauses in hidden tabs. `solid` never animates.
