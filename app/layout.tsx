@@ -22,6 +22,7 @@ const RootLayout = ({
   <html lang="en" suppressHydrationWarning>
     <head>
       <JsonLdScripts />
+      <meta name="theme-color" content={META_THEME_COLORS.dark} />
       <Script
         id="theme-color"
         strategy="beforeInteractive"
@@ -35,7 +36,6 @@ const RootLayout = ({
             `,
         }}
       />
-      <meta name="theme-color" content={META_THEME_COLORS.dark} />
     </head>
     <body
       className={cn(
