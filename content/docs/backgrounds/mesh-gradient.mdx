@@ -1,0 +1,126 @@
+---
+title: "Mesh gradient"
+description: "Three to five colour blobs that drift and melt into each other, drawn as a dither, for heroes and sign-up screens."
+---
+
+import MeshGradientDemo from "@/examples/mesh-gradient-demo";
+import MeshGradientSunset from "@/examples/mesh-gradient-sunset";
+import MeshGradientSignup from "@/examples/mesh-gradient-signup";
+
+<ComponentPreview
+  src="examples/mesh-gradient-demo.tsx"
+  size="full"
+  align="stretch"
+>
+  <MeshGradientDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="mesh-gradient" />
+
+## Usage
+
+```tsx
+import { MeshGradient } from "@/components/dithercn/mesh-gradient";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <MeshGradient className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+Each blob drifts on its own slow orbit. Where two meet, their colours blend through the palette before the dither, so the seams read as soft gradients instead of edges. The default palette uses tints of your theme's `--dither-ink` with a touch of violet.
+
+## Examples
+
+### Five blobs, warm palette
+
+`palette` starts with paper and then takes one colour per blob. Pass `blobs + 1` colours to give each blob its own; the order sets which colours sit next to each other where blobs meet. Blue noise, the default, keeps the grain even across so many tones.
+
+<ComponentPreview
+  src="examples/mesh-gradient-sunset.tsx"
+  size="lg"
+  align="stretch"
+>
+  <MeshGradientSunset />
+</ComponentPreview>
+
+### Behind a form
+
+Three large blobs, bigger cells and a slower `speed` make a calm backdrop. The form sits on a translucent panel so the colour shows around it without hurting the text.
+
+<ComponentPreview
+  src="examples/mesh-gradient-signup.tsx"
+  size="lg"
+  align="stretch"
+>
+  <MeshGradientSignup />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "blobs",
+      type: "3 | 4 | 5",
+      default: "4",
+      description: "How many colour blobs drift across the box.",
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "0.6",
+      description: "Size of each blob as a share of the box height.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: "Paper, then four tints of --dither-ink",
+      description:
+        "Colours from paper to ink. CSS variable names or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"blue-noise"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast it moves.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The background fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a CSS approximation in the same colours.
+- It costs one small draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/concepts/performance).

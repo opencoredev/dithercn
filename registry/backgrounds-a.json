@@ -12,5 +12,19 @@
         "target": "components/dithercn/dither-glow.tsx"
       }
     ]
+  },
+  {
+    "name": "mesh-gradient",
+    "type": "registry:component",
+    "title": "Mesh gradient",
+    "description": "Three to five colour blobs that drift and blend, drawn as a dither.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/mesh-gradient.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/mesh-gradient.tsx"
+      }
+    ]
   }
 ]
