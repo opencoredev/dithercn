@@ -178,8 +178,8 @@
     }
   }
 
-  a:active,
-  button:active {
+  a:active:not([data-slot="button"]),
+  button:active:not([data-slot="button"]) {
     @apply opacity-60 md:opacity-100;
   }
 }

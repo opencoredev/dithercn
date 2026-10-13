@@ -24,7 +24,7 @@ export const MainNav = ({
           key={item.href}
           href={item.href}
           aria-current={isActive(pathname, item.href) ? "page" : undefined}
-          className="text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground focus-visible:ring-ring/50 relative rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-[3px] aria-[current=page]:after:absolute aria-[current=page]:after:inset-x-2.5 aria-[current=page]:after:-bottom-[calc((var(--header-height)-2rem)/2+1px)] aria-[current=page]:after:h-0.5 aria-[current=page]:after:bg-primary"
+          className="text-muted-foreground hover:bg-accent/60 hover:text-foreground aria-[current=page]:bg-accent aria-[current=page]:text-foreground focus-visible:ring-ring/50 rounded-full px-3 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-[3px]"
           transitionTypes={["nav-forward"]}
         >
           {item.label}

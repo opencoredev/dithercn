@@ -181,7 +181,7 @@ export const DocsCopyPage = ({
 
   return (
     <Popover>
-      <div className="group/buttons relative flex rounded-lg bg-secondary *:data-[slot=button]:focus-visible:relative *:data-[slot=button]:focus-visible:z-10">
+      <div className="group/buttons relative flex rounded-full bg-secondary *:data-[slot=button]:focus-visible:relative *:data-[slot=button]:focus-visible:z-10">
         <PopoverAnchor />
         <CopyButton
           value={copyValue}
@@ -223,7 +223,7 @@ export const DocsCopyPage = ({
               size="lg"
               asChild
               key={key}
-              className="w-full justify-start text-base font-normal *:[svg]:text-muted-foreground"
+              className="w-full justify-start rounded-md text-base font-normal *:[svg]:text-muted-foreground"
             >
               {render(url)}
             </Button>
