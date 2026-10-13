@@ -1,0 +1,106 @@
+---
+title: "Scramble text"
+description: "A decode effect that cycles glyphs and settles into the final text, on mount, in view or on hover."
+---
+
+import ScrambleTextDemo from "@/examples/scramble-text-demo";
+import ScrambleTextHover from "@/examples/scramble-text-hover";
+import ScrambleTextStatus from "@/examples/scramble-text-status";
+
+<ComponentPreview src="examples/scramble-text-demo.tsx" size="lg">
+  <ScrambleTextDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="scramble-text" />
+
+## Usage
+
+```tsx
+import { ScrambleText } from "@/components/dithercn/scramble-text";
+
+export function Title() {
+  return <ScrambleText as="h2">Decoding the signal</ScrambleText>;
+}
+```
+
+Characters cycle through glyphs, then settle left to right into the final text. The default glyphs are shade blocks and quadrants (`░▒▓▚▞`), so the text decodes out of a dither. Pass `characters` for letters, digits, hex or anything else.
+
+Each scrambled glyph sits in the slot of the character it will become, so the width never changes and nothing around it moves. Kerning and ligatures are turned off on the text to keep those slots exact.
+
+## Examples
+
+### On hover
+
+With `trigger="hover"`, the text replays whenever the closest link or button is hovered or receives keyboard focus, not only the text itself.
+
+<ComponentPreview src="examples/scramble-text-hover.tsx">
+  <ScrambleTextHover />
+</ComponentPreview>
+
+### Changing status
+
+Changing `children` plays the effect again into the new text. This card steps through deploy states with hex digits for the detail line.
+
+<ComponentPreview src="examples/scramble-text-status.tsx">
+  <ScrambleTextStatus />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "children",
+      type: "string",
+      required: true,
+      description: "The final text.",
+    },
+    {
+      name: "as",
+      type: '"h1" | "h2" | "h3" | "h4" | "p" | "span" | "div"',
+      default: '"span"',
+      description: "The element to render.",
+    },
+    {
+      name: "trigger",
+      type: '"mount" | "in-view" | "hover"',
+      default: '"in-view"',
+      description:
+        "When to play. Hover also listens to the closest link or button, including keyboard focus.",
+    },
+    {
+      name: "characters",
+      type: "string",
+      default: "SCRAMBLE_DITHER",
+      description:
+        "Glyphs to cycle through. SCRAMBLE_ALPHANUMERIC and SCRAMBLE_BINARY are exported too.",
+    },
+    {
+      name: "duration",
+      type: "number",
+      default: "900",
+      description: "Milliseconds until the last character settles.",
+    },
+    {
+      name: "delay",
+      type: "number",
+      default: "240",
+      description: "Milliseconds before the first character settles.",
+    },
+    {
+      name: "rate",
+      type: "number",
+      default: "18",
+      description: "How many times a second each unsettled glyph changes.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The final text is always in the page as real text. While the effect plays it turns transparent and an overlay hidden from assistive technology draws the glyphs on top, so screen readers, search engines and copy and paste only ever see the final text.
+- Unsettled glyphs use the ink colour; settled ones use the text colour.
+- With reduced motion turned on, the text never scrambles.
+- The overlay exists only while the effect plays, and the loop stops as soon as every character settles.
