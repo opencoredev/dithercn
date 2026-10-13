@@ -1,6 +1,11 @@
-export const FALLBACK_SITE_ORIGIN = "https://startercn.vercel.app" as const;
+// No domain yet. Set SITE_URL (or deploy on Vercel) to get real canonical URLs.
+export const FALLBACK_SITE_ORIGIN = "http://localhost:3000" as const;
 
 const getBaseUrl = () => {
+  if (process.env.SITE_URL) {
+    return process.env.SITE_URL;
+  }
+
   if (process.env.NODE_ENV !== "production") {
     return "http://localhost:3000";
   }
@@ -9,38 +14,42 @@ const getBaseUrl = () => {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
   }
 
-  return process.env.SITE_URL ?? FALLBACK_SITE_ORIGIN;
+  return FALLBACK_SITE_ORIGIN;
 };
 
 const baseUrl = getBaseUrl();
 
 export const SITE = {
   AUTHOR: {
-    NAME: "Aniket Pawar",
-    TWITTER: "@alaymanguy",
+    NAME: "Leo",
+    URL: "https://github.com/leoisadev1",
   },
   DESCRIPTION: {
-    LONG: "A starter kit for building and publishing your own shadcn registry components.",
-    SHORT: "Build your own shadcn registry",
+    LONG: "Beautiful dithers for landing pages and dashboards. Dithered backgrounds, charts, loaders, type and images that follow your shadcn theme, installed with npx shadcn add.",
+    SHORT: "Beautiful dithers for landing pages and dashboards",
   },
   KEYWORDS: [
+    "dither",
+    "dithering",
+    "bayer dither",
+    "ordered dithering",
+    "floyd-steinberg",
     "shadcn",
     "shadcn registry",
-    "component registry",
-    "shadcn components",
-    "next.js",
-    "tailwindcss",
+    "dithered gradient",
+    "dashboard charts",
+    "landing page background",
     "npx shadcn add",
   ] as const,
-  NAME: "startercn",
+  NAME: "dithercn",
   OG_IMAGE: `${baseUrl}/og`,
-  REGISTRY: baseUrl,
+  REGISTRY: `${baseUrl}/r`,
   URL: baseUrl,
 };
 
 export const META_THEME_COLORS = {
-  dark: "#09090b",
-  light: "#ffffff",
+  dark: "#14161c",
+  light: "#eef0f3",
 };
 
 export const UTM_PARAMS = {

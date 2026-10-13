@@ -1,7 +1,6 @@
 import {
-  Geist_Mono as FontMono,
-  Geist as FontSans,
-  Inter,
+  JetBrains_Mono as FontMono,
+  Schibsted_Grotesk as FontSans,
 } from "next/font/google";
 
 import { cn } from "@/lib/utils";
@@ -14,16 +13,7 @@ const fontSans = FontSans({
 const fontMono = FontMono({
   subsets: ["latin"],
   variable: "--font-mono",
-  weight: ["400"],
+  weight: ["400", "500"],
 });
 
-const fontInter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-export const fontVariables = cn(
-  fontSans.variable,
-  fontMono.variable,
-  fontInter.variable
-);
+export const fontVariables = cn(fontSans.variable, fontMono.variable);

@@ -31,17 +31,16 @@ export const SoftwareSourceCodeJsonLd = () => (
       author: {
         "@type": "Person",
         name: SITE.AUTHOR.NAME,
-        url: LINK.PORTFOLIO,
+        url: SITE.AUTHOR.URL,
       },
-      codeRepository: LINK.GITHUB,
       description: SITE.DESCRIPTION.LONG,
       isAccessibleForFree: true,
       keywords: SITE.KEYWORDS,
-      license: LINK.LICENSE,
+      license: LINK.MIT_LICENSE,
       maintainer: {
         "@type": "Person",
         name: SITE.AUTHOR.NAME,
-        url: LINK.PORTFOLIO,
+        url: SITE.AUTHOR.URL,
       },
       name: SITE.NAME,
       offers: {
@@ -65,11 +64,11 @@ export const OrganizationJsonLd = () => (
       founder: {
         "@type": "Person",
         name: SITE.AUTHOR.NAME,
-        url: LINK.PORTFOLIO,
+        url: SITE.AUTHOR.URL,
       },
       logo: SITE.OG_IMAGE,
       name: SITE.NAME,
-      sameAs: [LINK.GITHUB, LINK.PORTFOLIO, LINK.X],
+      sameAs: [SITE.AUTHOR.URL],
       url: SITE.URL,
     }}
   />

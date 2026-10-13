@@ -1,45 +1,45 @@
-"use client";
+import Link from "next/link";
 
+import { LogoMark } from "@/components/logo";
 import { LINK } from "@/constants/links";
-import { SITE, UTM_PARAMS } from "@/constants/site";
-import { useFeedback } from "@/hooks/use-feedback";
-import { addQueryParams } from "@/lib/url";
+import { ROUTES } from "@/constants/routes";
+import { SITE } from "@/constants/site";
 
-export const SiteFooter = () => {
-  const playClick = useFeedback({ sound: "click" });
-
-  return (
-    <footer
-      className="group-has-[.section-soft]/body:bg-surface/40 3xl:fixed:bg-transparent group-has-[.docs-nav]/body:pb-20 group-has-[.docs-nav]/body:sm:pb-0 dark:bg-transparent"
-      style={{ viewTransitionName: "site-footer" }}
-    >
-      <div className="container-wrapper px-4 xl:px-6">
-        <div className="flex h-(--footer-height) items-center justify-between">
-          <div className="text-muted-foreground w-full px-1 text-center text-xs leading-loose sm:text-sm">
-            Built by{" "}
-            <a
-              href={addQueryParams(LINK.PORTFOLIO, UTM_PARAMS)}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium underline underline-offset-4"
-              onClick={playClick}
-            >
-              {SITE.AUTHOR.NAME}
-            </a>
-            . The source code is available on{" "}
-            <a
-              href={addQueryParams(LINK.GITHUB, UTM_PARAMS)}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium underline underline-offset-4"
-              onClick={playClick}
-            >
-              GitHub
-            </a>
-            .
-          </div>
-        </div>
+export const SiteFooter = () => (
+  <footer
+    className="border-t border-dashed group-has-[.docs-nav]/body:pb-20 group-has-[.docs-nav]/body:sm:pb-0"
+    style={{ viewTransitionName: "site-footer" }}
+  >
+    <div className="container-wrapper px-4 xl:px-6">
+      <div className="text-muted-foreground flex min-h-(--footer-height) flex-col items-start justify-center gap-2 px-1 py-4 text-xs leading-relaxed sm:flex-row sm:items-center sm:justify-between sm:text-sm">
+        <p className="flex items-center gap-2">
+          <LogoMark className="text-primary size-3.5" />
+          {SITE.NAME} is MIT licensed. Built on{" "}
+          <a
+            href={LINK.STARTERCN}
+            target="_blank"
+            rel="noreferrer"
+            className="text-foreground underline decoration-dotted underline-offset-4 hover:decoration-solid"
+          >
+            startercn
+          </a>
+          .
+        </p>
+        <nav className="flex gap-4" aria-label="Machine-readable docs">
+          <Link
+            href={ROUTES.LLMS}
+            className="hover:text-foreground font-mono transition-colors"
+          >
+            llms.txt
+          </Link>
+          <Link
+            href={ROUTES.REGISTRY}
+            className="hover:text-foreground font-mono transition-colors"
+          >
+            registry.json
+          </Link>
+        </nav>
       </div>
-    </footer>
-  );
-};
+    </div>
+  </footer>
+);

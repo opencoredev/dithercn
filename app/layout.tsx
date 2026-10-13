@@ -1,4 +1,3 @@
-import { SoundProvider } from "@web-kits/audio/react";
 import type { Metadata } from "next";
 
 import { Analytics } from "@/components/analytics";
@@ -37,17 +36,15 @@ const RootLayout = ({
     </head>
     <body
       className={cn(
-        "text-foreground group/body overscroll-none font-sans antialiased [--footer-height:--spacing(14)] [--header-height:--spacing(14)] xl:[--footer-height:--spacing(24)]",
+        "text-foreground group/body overscroll-none font-sans antialiased [font-feature-settings:'ss01','cv11'] [--footer-height:--spacing(14)] [--header-height:--spacing(14)] xl:[--footer-height:--spacing(24)]",
         fontVariables
       )}
     >
-      <SoundProvider>
-        <ThemeProvider>
-          {children}
-          <Toaster position="top-center" />
-          <Analytics />
-        </ThemeProvider>
-      </SoundProvider>
+      <ThemeProvider>
+        {children}
+        <Toaster position="top-center" />
+        <Analytics />
+      </ThemeProvider>
     </body>
   </html>
 );

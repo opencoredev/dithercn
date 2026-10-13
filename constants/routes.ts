@@ -4,8 +4,11 @@ export const ROUTES = {
   API_CATALOG: "/.well-known/api-catalog",
   API_STATUS: "/api/status",
   DOCS: "/docs",
-  DOCS_COMPONENTS: "/docs/components",
+  DOCS_AI_AGENTS: "/docs/ai-agents",
+  DOCS_CATALOG: "/docs/catalog",
   DOCS_INSTALLATION: "/docs/installation",
+  DOCS_THEMING: "/docs/theming",
+  DOCS_USAGE: "/docs/usage",
   HOME: "/",
   LLMS: "/llms.txt",
   LLMS_FULL: "/llms-full.txt",
@@ -18,5 +21,4 @@ export const ROUTES = {
   ROBOTS: "/robots.txt",
   RSS: "/rss.xml",
   SITEMAP: "/sitemap.xml",
-  SPONSOR: "/sponsor",
 } as const;
