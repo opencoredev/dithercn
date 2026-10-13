@@ -1,0 +1,199 @@
+---
+title: "Export"
+description: "Save any dither as a PNG, a compact SVG, or a CSS rule, from your own code."
+---
+
+import ExportDemo from "@/examples/export-demo";
+import ExportTile from "@/examples/export-tile";
+
+<ComponentPreview src="examples/export-demo.tsx">
+  <ExportDemo />
+</ComponentPreview>
+
+`dither-export` is a small library next to `dither-core`. It takes the `ImageData` that `ditherImage` returns, one pixel per cell, and turns it into files. The [Dither maker](/docs/tools/dither-maker) is built on it.
+
+## Installation
+
+<InstallBlock name="dither-export" />
+
+## Usage
+
+```tsx
+import { ditherImage } from "@/lib/dither";
+import { download, toCSS, toPNG, toSVG } from "@/lib/dither/export";
+
+const dither = ditherImage(pixels, {
+  method: "atkinson",
+  palette: [
+    [0.04, 0.04, 0.05],
+    [0.95, 0.94, 0.91],
+  ],
+});
+
+// A full-size PNG: every cell becomes a crisp 4 × 4 block.
+download({ data: await toPNG(dither, { scale: 4 }), filename: "dither.png" });
+
+// An SVG drawn in cells, 4px each.
+const svg = toSVG(dither, { cell: 4 });
+
+// A CSS rule with the dither as a covering background.
+const css = toCSS({ kind: "image", image: dither, selector: ".hero" });
+```
+
+`toSVG` and `toCSS` are plain functions that return strings. `toPNG`, `download` and the PNG form of `toCSS` need a browser, because they draw to a canvas.
+
+## Examples
+
+### A tile in pure CSS
+
+The default kind of `toCSS` repeats one matrix tile at a coverage `level`, from 0 to 1. In `mask` mode it paints the element with `ink` and masks it to the dither, so the ink can be a CSS variable and follows your theme. These rules are built on the server; the page runs no script for them.
+
+<ComponentPreview src="examples/export-tile.tsx">
+  <ExportTile />
+</ComponentPreview>
+
+```ts
+toCSS({ level: 0.25, cell: 4, ink: "--dither-ink", mode: "mask" });
+```
+
+```css
+.dither {
+  background-color: var(--dither-ink);
+  -webkit-mask: url("data:image/svg+xml,…") 0 0 / 16px 16px repeat;
+  mask: url("data:image/svg+xml,…") 0 0 / 16px 16px repeat;
+}
+```
+
+In the default `background` mode the ink is baked into the tile and `paper` fills the gaps. An SVG inside a data URI can't read CSS variables, so pass a literal colour for `ink` in that mode.
+
+### Indexed bitmaps
+
+If you work out the dither yourself, pass `toSVG` one palette index per cell instead of pixels. Any index without a colour is left transparent.
+
+```ts
+const svg = toSVG(
+  { width: 64, height: 32, indices },
+  { cell: 3, palette: ["#0a0a0b", "#3d6bff", "#dfe7ff"] }
+);
+```
+
+## API
+
+### toPNG
+
+```ts
+toPNG(
+  source: HTMLCanvasElement | PixelBuffer,
+  options?: { scale?: number }
+): Promise<Blob>
+```
+
+Encodes a canvas or pixels as a PNG. `scale` is a whole-number upscale with no smoothing, so pass the cell size to turn one pixel per cell into a full-size image.
+
+### toSVG
+
+```ts
+toSVG(
+  source: PixelBuffer | IndexedBitmap,
+  options?: {
+    cell?: number;
+    palette?: DitherColor[];
+    background?: boolean;
+  }
+): string
+```
+
+An SVG in cell units, scaled to `cell` pixels per cell (default 1). Runs of one colour merge into rectangles, one `<path>` per colour. The most used colour becomes a single background rectangle unless `background` is `false`. `palette` colours an `IndexedBitmap` by index.
+
+### toCSS
+
+```ts
+toCSS(options: CSSOptions): string
+```
+
+Returns one CSS rule. The default `tile` kind repeats one matrix tile; the `image` kind embeds a whole dither. Options:
+
+<PropsTable
+  rows={[
+    {
+      name: "level",
+      type: "number",
+      description: "Tile kind. Share of cells inked, 0 to 1.",
+      required: true,
+    },
+    {
+      name: "matrix",
+      type: "DitherMatrix",
+      default: '"bayer4"',
+      description: "Tile kind. The threshold pattern.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "3",
+      description: "Tile kind. Cell size in CSS pixels.",
+    },
+    {
+      name: "ink",
+      type: "DitherColor",
+      default: '"#3b82f6"',
+      description:
+        "Tile kind. Use a literal colour in background mode; any colour in mask mode.",
+    },
+    {
+      name: "paper",
+      type: "DitherColor",
+      default: '"transparent"',
+      description: "Tile kind, background mode. The colour behind the ink.",
+    },
+    {
+      name: "mode",
+      type: '"background" | "mask"',
+      default: '"background"',
+      description:
+        "Tile kind. Bake the ink into the tile, or mask the element.",
+    },
+    {
+      name: "kind",
+      type: '"tile" | "image"',
+      default: '"tile"',
+      description: '"image" embeds a whole dither as a covering background.',
+    },
+    {
+      name: "image",
+      type: "PixelBuffer",
+      description: "Image kind. The dither, one pixel per cell.",
+      required: true,
+    },
+    {
+      name: "format",
+      type: '"png" | "svg"',
+      default: '"png"',
+      description: "Image kind. PNG needs a browser; SVG is a pure string.",
+    },
+    {
+      name: "selector",
+      type: "string",
+      default: '".dither"',
+      description: "The rule's selector.",
+    },
+  ]}
+/>
+
+### download
+
+```ts
+download(options: {
+  data: Blob | string;
+  filename: string;
+  type?: string;
+}): void
+```
+
+Saves a Blob or a string through the browser's download flow. Strings are saved with `type`, default `text/plain`. `svgDataUrl(svg)` is exported too: it wraps an SVG string in a CSS `url()`.
+
+## Notes
+
+- Choose the format by the picture. Ordered dithers of gradients and shapes have long runs, so their SVG is tiny. Error-diffusion dithers of photos have almost none, and PNG compresses them better.
+- PNG exports are capped at 16,384 pixels on the longest side, the most every current browser can draw.
+- The functions never change their input.

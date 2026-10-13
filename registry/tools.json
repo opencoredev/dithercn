@@ -1,1 +1,36 @@
-[]
+[
+  {
+    "name": "dither-export",
+    "type": "registry:lib",
+    "title": "Dither export",
+    "description": "Save dithers as files: PNG through a canvas, compact SVG with merged runs, and CSS backgrounds or masks from a data-URI tile.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "lib/dither/export.ts",
+        "type": "registry:lib",
+        "target": "lib/dither/export.ts"
+      }
+    ]
+  },
+  {
+    "name": "dither-maker",
+    "type": "registry:component",
+    "title": "Dither maker",
+    "description": "A dither playground: drop in an image or pick a pattern, tune method, levels, cell size and colours, and export PNG, SVG or CSS.",
+    "registryDependencies": [
+      "button",
+      "native-select",
+      "tabs",
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/dither-export.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/dither-maker.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-maker.tsx"
+      }
+    ]
+  }
+]

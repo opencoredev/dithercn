@@ -1,0 +1,120 @@
+---
+title: "Dither maker"
+description: "Dither an image or a generated pattern in the browser, then download it as PNG or SVG, or copy it as CSS."
+---
+
+import DitherMakerDemo from "@/examples/dither-maker-demo";
+
+<DitherMakerDemo />
+
+Drop an image on the preview, or choose one, to dither a photo or logo. Images never leave your device. The exports use the colours you see, so a theme palette is saved as the exact paper and ink of the current light or dark mode.
+
+## What the controls do
+
+- **Method.** Bayer and blue noise are ordered dithers: a fixed pattern that tiles cleanly and suits gradients and flat shapes. Floyd–Steinberg, Atkinson and Sierra Lite spread each cell's error to its neighbours, which keeps more detail in photos. See [Dither engine](/docs/concepts/dither-engine).
+- **Cell size.** How many output pixels one dither cell covers. The output size stays the same, so a bigger cell means fewer, chunkier cells.
+- **Levels.** How many colours the result uses. With two, every cell is paper or ink. With more, the extra colours are mixed evenly between your palette's stops.
+- **Contrast and brightness.** Applied to the tones before dithering. Raise contrast to push a soft photo towards clean shapes.
+- **Palette.** Theme uses `--dither-paper` and `--dither-ink`, with the darker one on the shadows. Custom takes two to four colours, darkest first.
+
+The PNG is full size, one block of pixels per cell. The SVG is drawn in cells with neighbouring cells merged into rectangles, so flat areas cost almost nothing. Copy CSS gives you a rule with the dither embedded as a background image that covers the element.
+
+## Installation
+
+The maker is also a component you can put in your own app, for example in an admin tool or a brand page.
+
+<InstallBlock name="dither-maker" />
+
+## Usage
+
+```tsx
+import { DitherMaker } from "@/components/dithercn/dither-maker";
+
+export default function Page() {
+  return <DitherMaker />;
+}
+```
+
+It fills the width of its container and switches to a side-by-side layout when it has 48rem or more.
+
+## Examples
+
+### Start from your own image
+
+`defaultImage` loads a picture on first render and sets the output to the image's own size. Images on another origin need CORS headers, or the browser won't let the canvas read them.
+
+```tsx
+<DitherMaker defaultImage="/team-photo.jpg" defaultMethod="atkinson" />
+```
+
+### Start on a brand palette
+
+`defaultPalette` opens the Custom palette with your colours, darkest first, and sets the levels to match. `filename` names the downloads.
+
+```tsx
+<DitherMaker
+  defaultPattern="noise"
+  defaultPalette={["#081226", "#3d6bff", "#dfe7ff"]}
+  defaultCell={3}
+  filename="brand-texture"
+/>
+```
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "defaultImage",
+      type: "string",
+      default: "–",
+      description:
+        "URL of an image to start with. Without it, the maker starts on a generated pattern.",
+    },
+    {
+      name: "defaultPattern",
+      type: '"orb" | "linear" | "radial" | "noise"',
+      default: '"orb"',
+      description: "The generated pattern to start with.",
+    },
+    {
+      name: "defaultMethod",
+      type: "DitherMethod",
+      default: '"bayer4"',
+      description:
+        '"bayer4", "bayer8", "blue-noise", "floyd-steinberg", "atkinson" or "sierra-lite".',
+    },
+    {
+      name: "defaultCell",
+      type: "number",
+      default: "4",
+      description: "Cell size in pixels to start with, from 1 to 16.",
+    },
+    {
+      name: "defaultPalette",
+      type: "[HexColor, HexColor, ...HexColor[]]",
+      default: "Theme",
+      description:
+        "Two to four #rrggbb colours, darkest first. Starts the maker on the Custom palette.",
+    },
+    {
+      name: "filename",
+      type: "string",
+      default: '"dither"',
+      description:
+        "Name for downloads, without the extension. Also the class name in copied CSS.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Classes for the outer element.",
+    },
+  ]}
+/>
+
+## Notes
+
+- Every control is a native input or a labelled button, so the whole maker works from the keyboard. Export results are announced in a status line under the preview.
+- Dithering runs on the main thread, on the frame after a control changes. A 1600 × 900 output at 4px cells is about 90,000 cells and redraws in a few milliseconds; 1px cells on a large image take noticeably longer.
+- The maker uses the [export helpers](/docs/tools/export), so anything it saves you can also produce in code.
