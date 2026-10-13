@@ -1,5 +1,13 @@
 {
   "title": "Interface",
   "description": "Everyday interface pieces with a dithered finish.",
-  "pages": []
+  "pages": [
+    "dither-button",
+    "dither-card",
+    "divider",
+    "skeleton",
+    "loader",
+    "empty-state",
+    "not-found"
+  ]
 }

@@ -1,0 +1,112 @@
+---
+title: "Dither card"
+description: "A card surface with a dithered glow in a corner or along an edge, which can grow through the levels on hover."
+---
+
+import DitherCardDemo from "@/examples/dither-card-demo";
+import DitherCardGlows from "@/examples/dither-card-glows";
+import DitherCardPalette from "@/examples/dither-card-palette";
+
+<ComponentPreview src="examples/dither-card-demo.tsx" size="lg">
+  <DitherCardDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-card" />
+
+## Usage
+
+```tsx
+import { DitherCard } from "@/components/dithercn/dither-card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export function Revenue() {
+  return (
+    <DitherCard glow="top-right" interactive>
+      <CardHeader>
+        <CardTitle>Monthly revenue</CardTitle>
+      </CardHeader>
+      <CardContent>$48,210</CardContent>
+    </DitherCard>
+  );
+}
+```
+
+`DitherCard` has the same spacing, border and colours as shadcn's `Card`, so `CardHeader`, `CardContent` and `CardFooter` fit inside it. It does not depend on them: plain markup works too.
+
+The glow is a stack of rings, each filled with a denser dither than the one below it. With `interactive`, a second, larger stack switches on ring by ring when the card is hovered or something inside it has focus, so the glow grows outward through the levels.
+
+## Examples
+
+### Corners and edges
+
+`glow` takes any corner, or `top` and `bottom` for a wide glow along an edge. Hover each card to see it grow.
+
+<ComponentPreview src="examples/dither-card-glows.tsx" size="lg">
+  <DitherCardGlows />
+</ComponentPreview>
+
+### Colour and grain
+
+Any colour works, including chart colours and `--foreground` for a neutral light. Blue noise with 2 pixel cells gives a fine, even grain; Bayer 8×8 gives the smoothest falloff.
+
+<ComponentPreview src="examples/dither-card-palette.tsx" size="lg">
+  <DitherCardPalette />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "glow",
+      type: '"top-left" | "top-right" | "bottom-left" | "bottom-right" | "top" | "bottom"',
+      default: '"top-left"',
+      description: "Where the glow sits.",
+    },
+    {
+      name: "reach",
+      type: "number",
+      default: "200",
+      description: "How far the glow spreads from its origin, in pixels.",
+    },
+    {
+      name: "strength",
+      type: "number",
+      default: "0.45",
+      description: "Densest dither level, at the origin, from 0 to 1.",
+    },
+    {
+      name: "interactive",
+      type: "boolean",
+      default: "false",
+      description: "Grow the glow on hover and when the card has focus inside.",
+    },
+    {
+      name: "color",
+      type: "string",
+      default: '"--dither-ink"',
+      description: "Glow colour. A CSS variable name or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "3",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The glow is decorative and hidden from assistive technology. The card itself is a plain `div`; make the content inside it, not the card, the link or button.
+- The hover glow only runs on devices that can hover. Keyboard users get the same effect when focus moves inside the card.
+- With reduced motion turned on, the hover glow switches on in one step instead of ring by ring.
+- The glow is static SVG, so it renders on the server and costs nothing while idle.

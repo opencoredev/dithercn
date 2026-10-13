@@ -1,0 +1,96 @@
+---
+title: "Dither button"
+description: "A button whose hover and press fill dissolves in through the Bayer levels."
+---
+
+import DitherButtonDemo from "@/examples/dither-button-demo";
+import DitherButtonSizes from "@/examples/dither-button-sizes";
+import DitherButtonLinks from "@/examples/dither-button-links";
+
+<ComponentPreview src="examples/dither-button-demo.tsx" size="sm">
+  <DitherButtonDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-button" />
+
+## Usage
+
+```tsx
+import { DitherButton } from "@/components/dithercn/dither-button";
+
+export function Actions() {
+  return (
+    <>
+      <DitherButton>Get started</DitherButton>
+      <DitherButton variant="outline" href="/docs">
+        Read the docs
+      </DitherButton>
+    </>
+  );
+}
+```
+
+Behind the label sit eight copies of the hover fill, each masked to one Bayer level. On hover they switch on lightest first, about 25 milliseconds apart, so the fill dissolves in through the matrix. When the pointer leaves, they switch off densest first. Pressing runs the same dissolve twice as fast, which also gives touch screens feedback.
+
+## Examples
+
+### Sizes and icons
+
+Three sizes, with icons on either side. Disabled buttons drop to half opacity and ignore the pointer.
+
+<ComponentPreview src="examples/dither-button-sizes.tsx">
+  <DitherButtonSizes />
+</ComponentPreview>
+
+### As links
+
+Give the button `href` and it renders an `<a>` with the same look, no `asChild` needed. Here `--dither-cell: 2px` on the parent makes the dissolve finer.
+
+<ComponentPreview src="examples/dither-button-links.tsx">
+  <DitherButtonLinks />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "variant",
+      type: '"solid" | "outline" | "ghost"',
+      default: '"solid"',
+      description:
+        "Solid fills with a lighter primary in dark mode and a darker one in light mode. Outline fills with a light tint of the ink; ghost with the accent colour.",
+    },
+    {
+      name: "size",
+      type: '"sm" | "md" | "lg"',
+      default: '"md"',
+      description: "Heights of 32, 36 and 44 pixels.",
+    },
+    {
+      name: "href",
+      type: "string",
+      default: "–",
+      description:
+        "Render a link instead of a button. Every other anchor attribute passes through.",
+    },
+    {
+      name: "type",
+      type: '"button" | "submit" | "reset"',
+      default: '"button"',
+      description: "Button only. Set submit inside forms.",
+    },
+  ]}
+/>
+
+All other props pass through to the `<button>` or `<a>`.
+
+## Notes
+
+- Focus shows a 3 pixel ring with `:focus-visible`, so it appears for the keyboard and not for clicks.
+- The hover fill only runs on devices that can hover. With reduced motion turned on, the fill changes in one step and the press does not scale.
+- Every copy switches with a zero-length transition and its own delay, so a hover that ends halfway reverses from where it got to instead of restarting.
+- The masks ship in one small hoisted `<style>` tag shared by every button on the page. The button needs no client JavaScript.
+- With `href`, the button renders a plain `<a>`, so navigation is a full page load. For client-side navigation in Next.js, call `router.push` from `onClick` on a button instead.

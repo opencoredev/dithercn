@@ -1,0 +1,102 @@
+---
+title: "Loader"
+description: "A small dithered loading indicator: a ring, a pulsing dot matrix, a bar scanner or a dissolving square."
+---
+
+import LoaderDemo from "@/examples/loader-demo";
+import LoaderSizes from "@/examples/loader-sizes";
+import LoaderInContext from "@/examples/loader-in-context";
+
+<ComponentPreview src="examples/loader-demo.tsx" size="lg">
+  <LoaderDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="loader" />
+
+## Usage
+
+```tsx
+import { Loader } from "@/components/dithercn/loader";
+
+export function Saving() {
+  return <Loader variant="ring" size="sm" label="Saving changes" />;
+}
+```
+
+Each variant is a tone field on a small grid of cells. Every frame, the loader thresholds the field with the Bayer matrix and paints the inked cells into a canvas at one pixel per cell, so the tail of the ring and the fade of the bar step through real dither levels.
+
+## Examples
+
+### Sizes
+
+`sm`, `md` and `lg` are 20, 32 and 48 pixels tall. The bar is three times as wide as it is tall. Cells are 2 pixels unless you set `cell`.
+
+<ComponentPreview src="examples/loader-sizes.tsx">
+  <LoaderSizes />
+</ComponentPreview>
+
+### In context
+
+A ring next to a deploy, a bar under a build step, and neutral dots for an infinite list. Give each one a `label` that says what is loading.
+
+<ComponentPreview src="examples/loader-in-context.tsx" size="lg">
+  <LoaderInContext />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "variant",
+      type: '"ring" | "dots" | "bar" | "square"',
+      default: '"ring"',
+      description: "Which animation to draw.",
+    },
+    {
+      name: "size",
+      type: '"sm" | "md" | "lg"',
+      default: '"md"',
+      description: "Height of 20, 32 or 48 pixels.",
+    },
+    {
+      name: "label",
+      type: "string",
+      default: '"Loading"',
+      description: "What screen readers announce.",
+    },
+    {
+      name: "color",
+      type: "string",
+      default: '"--dither-ink"',
+      description: "Ink colour. A CSS variable name or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "Speed multiplier.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The root has `role="status"` and a visually hidden `label`, so screen readers announce it politely when it appears. The canvas is hidden from them.
+- With reduced motion turned on, each variant draws one still frame that still reads as a loader.
+- It pauses when scrolled out of view or when the tab is hidden. A `md` ring is 256 cells, so a frame is cheap, and it uses a 2D canvas rather than WebGL, so loaders never count against the page's WebGL budget.
+- Cells snap to whole device pixels, so a loader stays crisp at any zoom level.
