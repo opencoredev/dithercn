@@ -4,6 +4,8 @@ import { LRUCache } from "lru-cache";
 import type { ShikiTransformer } from "shiki";
 import { codeToHtml } from "shiki";
 
+import { dithercnDark, dithercnLight } from "@/lib/shiki-themes";
+
 const highlightCache = new LRUCache<string, string>({
   max: 500,
   ttl: 1000 * 60 * 60,
@@ -60,8 +62,8 @@ export const highlightCode = async (code: string, language = "tsx") => {
   const html = await codeToHtml(code, {
     lang: language,
     themes: {
-      dark: "min-dark",
-      light: "min-light",
+      dark: dithercnDark,
+      light: dithercnLight,
     },
     transformers: [
       {
