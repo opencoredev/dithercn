@@ -1,13 +1,18 @@
 ---
 title: "Empty state"
-description: "A dithered illustration with a title, a description and an action, for views with nothing in them yet."
+description: "A glyph tile in a dithered scene, with a title, a description and an action, for views with nothing in them yet."
 ---
 
 import EmptyStateDemo from "@/examples/empty-state-demo";
-import EmptyStateMotifs from "@/examples/empty-state-motifs";
+import { controls as emptyStateControls } from "@/examples/empty-state-controls";
 import EmptyStateIcon from "@/examples/empty-state-icon";
+import EmptyStateSearch from "@/examples/empty-state-search";
 
-<ComponentPreview src="examples/empty-state-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/empty-state-demo.tsx"
+  size="lg"
+  controls={emptyStateControls}
+>
   <EmptyStateDemo />
 </ComponentPreview>
 
@@ -18,13 +23,15 @@ import EmptyStateIcon from "@/examples/empty-state-icon";
 ## Usage
 
 ```tsx
+import { FolderIcon } from "lucide-react";
+
 import { EmptyState } from "@/components/dithercn/empty-state";
 import { Button } from "@/components/ui/button";
 
 export function NoProjects() {
   return (
     <EmptyState
-      motif="folder"
+      icon={<FolderIcon />}
       title="No projects yet"
       description="Create a project to start building."
       action={<Button>New project</Button>}
@@ -33,24 +40,30 @@ export function NoProjects() {
 }
 ```
 
-The illustration is pixel art on a 44 by 32 grid of cells. Outlines are solid cells in `lineColor`; shading has a tone, and the Bayer matrix inks each of its cells or leaves it blank, so the shading is real dither at whole-pixel sizes.
+The glyph sits on a raised tile in the middle of a scene drawn in dither cells. Bring the glyph from your own icon set with `icon`; without one, the tile shows a dashed square.
+
+- `rings`: four bands around the tile, each lighter than the one inside it. They ripple outward by brightening one after another. `fill` sets their texture.
+- `grid`: a lattice of single cells that thins out towards the edges, like a floor under the tile. Quieter, for search results and side panels.
+- `none`: just the tile.
+
+Both scenes dissolve at the top and bottom through blue noise, so they melt into whatever surface they sit on.
 
 ## Examples
 
-### Built-in motifs
+### Inside a settings panel
 
-Four motifs cover the common cases: `search` for no results, `folder` for no files, `chart` for no data and `inbox` for no messages. Here they use 2 pixel cells for a smaller drawing.
-
-<ComponentPreview src="examples/empty-state-motifs.tsx" size="lg">
-  <EmptyStateMotifs />
-</ComponentPreview>
-
-### Your own icon
-
-Pass `icon` instead of `motif` and your glyph sits on a tile over the dithered halo. This one fills an empty table in a settings page.
+A first-run state for API keys, in green with dotted rings, using a dither button for the action.
 
 <ComponentPreview src="examples/empty-state-icon.tsx" size="lg">
   <EmptyStateIcon />
+</ComponentPreview>
+
+### No search results
+
+The `grid` scene in grey, for a state the user will see often. Keep these quiet and give a way out.
+
+<ComponentPreview src="examples/empty-state-search.tsx" size="lg">
+  <EmptyStateSearch />
 </ComponentPreview>
 
 ## Props
@@ -66,58 +79,54 @@ Pass `icon` instead of `motif` and your glyph sits on a tile over the dithered h
     {
       name: "description",
       type: "ReactNode",
-      default: "–",
-      description: "Why it is empty and what to do next.",
+      description: "One or two sentences: why it is empty and what to do next.",
     },
     {
       name: "action",
       type: "ReactNode",
-      default: "–",
-      description: "Buttons or links under the text.",
-    },
-    {
-      name: "motif",
-      type: '"inbox" | "search" | "folder" | "chart"',
-      default: '"inbox"',
-      description: "A built-in illustration. Not with icon.",
+      description: "Buttons or links, under the text.",
     },
     {
       name: "icon",
       type: "ReactNode",
-      default: "–",
-      description: "Your own glyph, shown over the halo. Not with motif.",
+      description: "The glyph in the tile. Default: a dashed square.",
+    },
+    {
+      name: "scene",
+      type: '"rings" | "grid" | "none"',
+      default: '"rings"',
+      description: "What surrounds the tile.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description: "Texture of the rings.",
     },
     {
       name: "color",
-      type: "string",
-      default: '"--dither-ink"',
+      type: "DitherColor",
+      default: '"ink"',
       description:
-        "Colour of the dithered shading and the halo. A CSS variable name or any CSS colour.",
+        "Colour of the scene: a palette name, a CSS variable name or any CSS colour.",
     },
     {
-      name: "lineColor",
-      type: "string",
-      default: '"--foreground"',
-      description: "Colour of the motif's solid outlines.",
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Ripple the rings outward.",
     },
     {
-      name: "matrix",
-      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
-      default: '"bayer4"',
-      description: "The threshold pattern.",
-    },
-    {
-      name: "cell",
-      type: "number",
-      default: "3",
-      description:
-        "Size of one cell in CSS pixels. The drawing is 44 by 32 cells.",
+      name: "titleAs",
+      type: '"h2" | "h3" | "h4"',
+      default: '"h3"',
+      description: "Heading level of the title.",
     },
   ]}
 />
 
 ## Notes
 
-- The illustration is hidden from assistive technology. The title is an `h3`; wrap the component or adjust it if your page needs another level.
-- Write the title as a plain statement of what is empty, and the description as what to do about it.
-- Each motif is rasterised once and cached, and the result is a single SVG path. It renders on the server and has no motion.
+- The scene is decorative and hidden from assistive technology. The title is a real heading; set `titleAs` to fit the page outline.
+- The ripple fades each ring's opacity with CSS, and stops under reduced motion. The scene is a few SVG paths, cached per fill, so it costs no JavaScript at runtime.
+- The scene keeps an 84 by 52 aspect ratio up to 336 pixels wide and shrinks on narrow screens.
