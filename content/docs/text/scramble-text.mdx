@@ -1,13 +1,19 @@
 ---
 title: "Scramble text"
-description: "A decode effect that cycles glyphs and settles into the final text, on mount, in view or on hover."
+description: "Text that resolves character by character through dithered blocks and glyphs, with no layout shift. Plays on mount, in view, on hover or when the text changes."
 ---
 
 import ScrambleTextDemo from "@/examples/scramble-text-demo";
+import { controls as scrambleControls } from "@/examples/scramble-text-controls";
+import ScrambleTextHero from "@/examples/scramble-text-hero";
 import ScrambleTextHover from "@/examples/scramble-text-hover";
 import ScrambleTextStatus from "@/examples/scramble-text-status";
 
-<ComponentPreview src="examples/scramble-text-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/scramble-text-demo.tsx"
+  size="lg"
+  controls={scrambleControls}
+>
   <ScrambleTextDemo />
 </ComponentPreview>
 
@@ -21,27 +27,39 @@ import ScrambleTextStatus from "@/examples/scramble-text-status";
 import { ScrambleText } from "@/components/dithercn/scramble-text";
 
 export function Title() {
-  return <ScrambleText as="h2">Decoding the signal</ScrambleText>;
+  return <ScrambleText as="h2">Every frame accounted for</ScrambleText>;
 }
 ```
 
-Characters cycle through glyphs, then settle left to right into the final text. The default glyphs are shade blocks and quadrants (`░▒▓▚▞`), so the text decodes out of a dither. Pass `characters` for letters, digits, hex or anything else.
+Each character resolves on its own, a few milliseconds after the one before it. In the default `dither` mode a block in the accent colour thickens through the levels of a 4×4 Bayer matrix, a few glyphs flicker, and the letter lands, fading from the accent colour to the text colour. `blocks` skips the glyphs and `glyphs` skips the blocks.
 
-Each scrambled glyph sits in the slot of the character it will become, so the width never changes and nothing around it moves. Kerning and ligatures are turned off on the text to keep those slots exact.
+The glyphs come from the text itself, so a headline scrambles in its own typeface instead of falling back to a terminal font. Pass `characters` for a specific set: `SCRAMBLE_MONO` and `SCRAMBLE_HEX` are exported.
+
+Change `children` and only the characters that differ scramble, from the old text to the new one. In the demo above, the last words change every few seconds.
+
+Every placeholder sits in the slot of the character it becomes, and the real text stays underneath, so the width never changes and nothing around it moves.
 
 ## Examples
 
-### On hover
+### Hero reveal
 
-With `trigger="hover"`, the text replays whenever the closest link or button is hovered or receives keyboard focus, not only the text itself.
+`mode="blocks"` with a colour: each letter fills in from a sparse dither to solid before it appears. The paragraph uses a short `duration` and a small `stagger` so a long line still resolves quickly.
+
+<ComponentPreview src="examples/scramble-text-hero.tsx" size="lg">
+  <ScrambleTextHero />
+</ComponentPreview>
+
+### Nav links on hover
+
+With `trigger="hover"`, the text replays whenever the closest link or button is hovered or receives keyboard focus. `mode="glyphs"` and a short `duration` keep it quick enough for something people hover often.
 
 <ComponentPreview src="examples/scramble-text-hover.tsx">
   <ScrambleTextHover />
 </ComponentPreview>
 
-### Changing status
+### Status that changes
 
-Changing `children` plays the effect again into the new text. This card steps through deploy states with hex digits for the detail line.
+`trigger="change"` never plays on its own; it plays when the text changes. The status label scrambles only the letters that differ and picks up the colour of each state, with a caret while it resolves. The detail line uses hex glyphs.
 
 <ComponentPreview src="examples/scramble-text-status.tsx">
   <ScrambleTextStatus />
@@ -55,7 +73,8 @@ Changing `children` plays the effect again into the new text. This card steps th
       name: "children",
       type: "string",
       required: true,
-      description: "The final text.",
+      description:
+        "The final text. Change it to scramble from the old text to the new one.",
     },
     {
       name: "as",
@@ -65,42 +84,86 @@ Changing `children` plays the effect again into the new text. This card steps th
     },
     {
       name: "trigger",
-      type: '"mount" | "in-view" | "hover"',
+      type: '"mount" | "in-view" | "hover" | "change"',
       default: '"in-view"',
       description:
-        "When to play. Hover also listens to the closest link or button, including keyboard focus.",
+        "When to play. Hover also listens to the closest link or button, including keyboard focus. Change plays only when the text changes.",
+    },
+    {
+      name: "mode",
+      type: '"dither" | "blocks" | "glyphs"',
+      default: '"dither"',
+      description:
+        "How unsettled characters look: blocks then glyphs, only blocks, or only glyphs.",
     },
     {
       name: "characters",
       type: "string",
-      default: "SCRAMBLE_DITHER",
+      default: "the text's own letters",
       description:
-        "Glyphs to cycle through. SCRAMBLE_ALPHANUMERIC and SCRAMBLE_BINARY are exported too.",
+        "Glyphs to cycle through. SCRAMBLE_MONO and SCRAMBLE_HEX are exported.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        "Colour of blocks, glyphs and the caret: a palette name or any CSS colour. Settled letters fade from it to the text colour.",
     },
     {
       name: "duration",
       type: "number",
-      default: "900",
-      description: "Milliseconds until the last character settles.",
+      default: "520",
+      description: "Milliseconds one character takes to resolve.",
+    },
+    {
+      name: "stagger",
+      type: "number",
+      default: "34",
+      description: "Milliseconds between one character starting and the next.",
     },
     {
       name: "delay",
       type: "number",
-      default: "240",
-      description: "Milliseconds before the first character settles.",
+      default: "0",
+      description: "Milliseconds before the first character starts.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "Multiplies every timing. 2 plays twice as fast.",
     },
     {
       name: "rate",
       type: "number",
-      default: "18",
-      description: "How many times a second each unsettled glyph changes.",
+      default: "20",
+      description: "Glyph changes per second while a character is unsettled.",
+    },
+    {
+      name: "caret",
+      type: '"none" | "running" | "always"',
+      default: '"none"',
+      description:
+        "A caret at the leading edge while the text resolves. Always keeps it blinking after the last character.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "font size / 22",
+      description: "Dither cell size in CSS pixels, at least 1.",
+    },
+    {
+      name: "onComplete",
+      type: "() => void",
+      description: "Called when every character has settled.",
     },
   ]}
 />
 
 ## Notes
 
-- The final text is always in the page as real text. While the effect plays it turns transparent and an overlay hidden from assistive technology draws the glyphs on top, so screen readers, search engines and copy and paste only ever see the final text.
-- Unsettled glyphs use the ink colour; settled ones use the text colour.
-- With reduced motion turned on, the text never scrambles.
-- The overlay exists only while the effect plays, and the loop stops as soon as every character settles.
+- The final text is always in the page as real text. While the effect plays it turns transparent and an overlay hidden from assistive technology draws the blocks and glyphs on top, so screen readers, search engines and copy and paste only ever see the final text. For a status that changes, add `aria-live="polite"` yourself.
+- With `mount` or `in-view`, the text waits hidden until it plays. Without JavaScript it shows normally.
+- With reduced motion turned on, the text never scrambles and the caret does not blink.
+- The overlay exists only while the effect plays (or while an `always` caret is shown), and the frame loop stops as soon as every character settles.
