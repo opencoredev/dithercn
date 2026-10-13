@@ -1,0 +1,141 @@
+---
+title: "Dither image"
+description: "Any photo or illustration dithered to your theme's palette, for covers, galleries and editorial pages."
+---
+
+import DitherImageDemo from "@/examples/dither-image-demo";
+import DitherImageMethods from "@/examples/dither-image-methods";
+import DitherImagePalette from "@/examples/dither-image-palette";
+import DitherImageCover from "@/examples/dither-image-cover";
+
+<ComponentPreview src="examples/dither-image-demo.tsx" size="lg">
+  <DitherImageDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-image" />
+
+## Usage
+
+```tsx
+import { DitherImage } from "@/components/dithercn/dither-image";
+
+export function Cover() {
+  return (
+    <DitherImage
+      src="/photos/launch.jpg"
+      alt="The launch pad at dawn"
+      className="aspect-video w-full rounded-xl"
+    />
+  );
+}
+```
+
+The image fills its box like `object-fit: cover`. Give the box a width and either a height or an aspect ratio; with only a width, it takes the image's own ratio once it loads, or `ratio` if you set it.
+
+Dark parts of the image take the darkest palette colour and light parts the lightest. On a black page with the default palette the highlights are drawn in ink; on a white page the shadows are. Either way the picture reads as a positive.
+
+## Examples
+
+### Six methods
+
+`method` picks the algorithm. The ordered matrices (`bayer4`, `bayer8`, `blue-noise`) give a regular texture that stays stable if the image changes. Error diffusion (`floyd-steinberg`, `atkinson`, `sierra-lite`) keeps finer detail. Atkinson, the default, drops a little of the error, which gives clean highlights and deep shadows.
+
+<ComponentPreview src="examples/dither-image-methods.tsx" size="lg">
+  <DitherImageMethods />
+</ComponentPreview>
+
+### Four colours
+
+`palette` takes two to four colours. Here blue noise spreads the Hubble photo over the page colour and three chart blues, sorted from dark to light.
+
+<ComponentPreview src="examples/dither-image-palette.tsx" size="lg">
+  <DitherImagePalette />
+</ComponentPreview>
+
+### Article cover
+
+A larger `cell` and the `bayer8` matrix give a bolder print. Setting `--dither-paper` on the image matches the paper to the card it sits in.
+
+<ComponentPreview src="examples/dither-image-cover.tsx" size="lg">
+  <DitherImageCover />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "src",
+      type: "string",
+      description:
+        "Image URL. Images from another origin need CORS headers, because the pixels are read from a canvas.",
+      required: true,
+    },
+    {
+      name: "alt",
+      type: "string",
+      description:
+        'Describes the image for screen readers. Pass "" when it is decorative.',
+      required: true,
+    },
+    {
+      name: "method",
+      type: '"bayer4" | "bayer8" | "blue-noise" | "floyd-steinberg" | "atkinson" | "sierra-lite"',
+      default: '"atkinson"',
+      description: "The dither algorithm.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        'Two to four colours, in any order. They are sorted from dark to light. Use "transparent" to let the background show through.',
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description:
+        "Size of one dither cell in CSS pixels. Finer than the site's --dither-cell, as photos need the detail.",
+    },
+    {
+      name: "contrast",
+      type: "number",
+      default: "1.2",
+      description: "1 leaves contrast alone. Higher values push tones apart.",
+    },
+    {
+      name: "brightness",
+      type: "number",
+      default: "0",
+      description: "Added to every tone, from -1 to 1.",
+    },
+    {
+      name: "invert",
+      type: "boolean",
+      default: "false",
+      description: "Swap light and dark.",
+    },
+    {
+      name: "fit",
+      type: '"cover" | "contain"',
+      default: '"cover"',
+      description: "How the image fills its box, as in object-fit.",
+    },
+    {
+      name: "ratio",
+      type: "number",
+      default: "The image's ratio",
+      description:
+        "Width over height. Set it to reserve space before the image loads. A height in className wins.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The root has `role="img"` and your `alt` text as its label. With `alt=""` it is hidden from assistive technology.
+- The image loads when it comes within about 300px of the viewport, then fades in. It redraws when the box resizes, the page zooms or the theme changes.
+- Dithering runs once per change on the main thread, at one pixel per cell. A 1200 by 800 pixel box at the default 2px cell is 600 by 400 cells, 240,000 pixels.
