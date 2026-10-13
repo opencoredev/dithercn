@@ -40,5 +40,19 @@
         "target": "components/dithercn/halftone.tsx"
       }
     ]
+  },
+  {
+    "name": "dither-grid",
+    "type": "registry:component",
+    "title": "Dither grid",
+    "description": "A perspective grid floor that fades into a glowing horizon and scrolls slowly.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-grid.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-grid.tsx"
+      }
+    ]
   }
 ]
