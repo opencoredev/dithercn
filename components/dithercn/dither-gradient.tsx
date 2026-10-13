@@ -127,12 +127,15 @@ const fallbackImage = (
   const span = to - from;
   // Radial stops scale with the radius; the others span the whole box.
   const scale = mode === "radial" ? radius : 1;
+  // CSS needs ascending stop positions; `from > to` reverses the ramp.
   const stops = palette
     .map((color, index) => {
       const tone = index / (palette.length - 1);
       const at = span === 0 ? 0 : (tone - from) / span;
-      return `${cssColor(color)} ${percent(at * scale)}`;
+      return { at: at * scale, color };
     })
+    .toSorted((a, b) => a.at - b.at)
+    .map(({ at, color }) => `${cssColor(color)} ${percent(at)}`)
     .join(", ");
   const at = `${percent(center[0])} ${percent(center[1])}`;
   switch (mode) {
