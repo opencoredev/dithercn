@@ -4,6 +4,7 @@ import { BookOpen01Icon, GridViewIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 
 import { Icon } from "@/components/icon";
+import { RollLabel } from "@/components/roll-label";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 
@@ -14,16 +15,16 @@ import { ROUTES } from "@/constants/routes";
  */
 export const HeroActions = () => (
   <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-    <Button asChild size="lg">
+    <Button asChild size="lg" className="group/roll">
       <Link href={ROUTES.DOCS} transitionTypes={["nav-forward"]}>
         <Icon icon={BookOpen01Icon} />
-        Read the docs
+        <RollLabel>Read the docs</RollLabel>
       </Link>
     </Button>
-    <Button asChild size="lg" variant="inverse">
+    <Button asChild size="lg" variant="inverse" className="group/roll">
       <Link href={ROUTES.DOCS_CATALOG} transitionTypes={["nav-forward"]}>
         <Icon icon={GridViewIcon} />
-        Browse the catalog
+        <RollLabel>Browse the catalog</RollLabel>
       </Link>
     </Button>
   </div>

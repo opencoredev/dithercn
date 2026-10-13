@@ -189,31 +189,36 @@ export const CatalogTiles = ({
   catalog: CatalogCategory[];
   className?: string;
 }) => (
-  <ul className={cn("grid grid-cols-2 gap-2 lg:grid-cols-4", className)}>
+  <ul
+    className={cn("grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4", className)}
+  >
     {catalog.map((category) => (
-      <li key={category.id} className="flex">
+      <li key={category.id} className="scroll-reveal flex">
         <Link
           href={tileHref(category)}
           transitionTypes={["nav-forward"]}
-          className="group/tile bg-card hover:border-primary/35 focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 flex-col overflow-hidden rounded-xl border transition-[border-color,box-shadow] duration-150 outline-none focus-visible:ring-[3px]"
+          className="group/tile bg-card focus-visible:ring-ring/60 flex flex-1 flex-col overflow-hidden rounded-[20px] outline-none focus-visible:ring-[3px]"
         >
           <div
             aria-hidden="true"
-            className="text-dither-ink/70 group-hover/tile:text-dither-ink group-focus-visible/tile:text-dither-ink relative h-28 overflow-hidden border-b border-dashed transition-colors duration-150 sm:h-36"
+            className="text-dither-ink/65 group-hover/tile:text-dither-ink group-focus-visible/tile:text-dither-ink relative h-36 overflow-hidden transition-colors duration-500 ease-(--ease-out) sm:h-48"
           >
-            <TileArt id={category.id} />
+            {/* The art zooms inside the frame; the tile itself holds still. */}
+            <div className="absolute inset-0 transition-transform duration-700 ease-(--ease-out) group-hover/tile:scale-[1.06] group-focus-visible/tile:scale-[1.06] motion-reduce:transition-none">
+              <TileArt id={category.id} />
+            </div>
           </div>
-          <div className="flex flex-1 flex-col gap-1 p-3 sm:p-4">
+          <div className="flex flex-1 flex-col gap-1.5 p-4 sm:p-5">
             <span className="text-muted-foreground font-mono text-xs tabular-nums">
               ({category.pieces.length}) planned
             </span>
             <span className="flex items-center justify-between gap-2">
-              <span className="font-semibold tracking-tight">
+              <span className="text-base font-medium tracking-[-0.01em] sm:text-lg">
                 {category.name}
               </span>
               <Icon
                 icon={ArrowRight01Icon}
-                className="text-muted-foreground group-hover/tile:text-foreground size-4 shrink-0 transition-[color,translate] duration-150 group-hover/tile:translate-x-0.5"
+                className="text-muted-foreground group-hover/tile:text-foreground size-4 shrink-0 transition-[color,translate] duration-300 ease-(--ease-out) group-hover/tile:translate-x-1 motion-reduce:transition-none"
               />
             </span>
             <span className="text-muted-foreground text-xs text-pretty sm:text-sm">

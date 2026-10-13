@@ -571,3 +571,49 @@
     transition: none;
   }
 }
+
+/* Lenis drives scrolling on the landing page; native smooth scrolling
+ * would fight it. */
+html.lenis {
+  scroll-behavior: auto;
+}
+
+/* Landing entrance: hero content rises in on load, staggered by --i.
+ * A CSS animation, so it plays without JS and ends visible. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+    filter: blur(6px);
+  }
+}
+
+.rise-in {
+  animation: rise-in 800ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 80ms + 60ms);
+}
+
+/* Sections ease up as they scroll into view. Only where scroll-driven
+ * animation exists; elsewhere the content is simply there. */
+@keyframes scroll-reveal {
+  from {
+    opacity: 0;
+    translate: 0 28px;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-reveal {
+      animation: scroll-reveal var(--ease-out) both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
+}
