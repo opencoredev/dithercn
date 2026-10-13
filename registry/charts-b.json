@@ -17,7 +17,7 @@
     "name": "progress-bar",
     "type": "registry:component",
     "title": "Progress bar",
-    "description": "A linear progress bar with a dithered fill, determinate or indeterminate.",
+    "description": "A progress bar built from dither cells: any fill texture with a solid leading edge, stacked parts, step segments and an indeterminate comet.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {

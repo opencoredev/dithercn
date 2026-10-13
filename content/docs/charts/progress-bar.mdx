@@ -1,13 +1,18 @@
 ---
 title: "Progress bar"
-description: "A linear progress bar with a dithered fill, for uploads, deploys and usage quotas."
+description: "A progress bar built from dither cells: any fill texture with a solid leading edge, stacked parts, step segments and an indeterminate comet."
 ---
 
 import ProgressBarDemo from "@/examples/progress-bar-demo";
-import ProgressBarQuota from "@/examples/progress-bar-quota";
+import { controls as progressBarControls } from "@/examples/progress-bar-controls";
+import ProgressBarUsage from "@/examples/progress-bar-usage";
 import ProgressBarUploads from "@/examples/progress-bar-uploads";
+import ProgressBarSteps from "@/examples/progress-bar-steps";
 
-<ComponentPreview src="examples/progress-bar-demo.tsx">
+<ComponentPreview
+  src="examples/progress-bar-demo.tsx"
+  controls={progressBarControls}
+>
   <ProgressBarDemo />
 </ComponentPreview>
 
@@ -25,9 +30,9 @@ export function Upload({ percent }: { percent: number }) {
 }
 ```
 
-`value` runs from 0 to `max`, which is 100 unless you set it. The fill is a half-density dither with a head that gets denser toward the value, over a track of faint dots.
+`value` runs from 0 to `max`, which is 100 unless you set it. The fill sits on a faint track in the same colour. With `fill="gradient"` it is solid at the leading edge and thins out behind it; `dotted`, `hatched` and `solid` fill evenly. Every texture ends in a solid one-cell cap, so the exact value is always readable. The fill grows in on mount and eases between values.
 
-Leave `value` out when you can't measure progress. The bar becomes indeterminate: a band of ink sweeps across the track, turning cells on and off as it passes.
+Leave `value` out when you can't measure progress. The bar becomes indeterminate: a comet with a dense head and a dithered tail sweeps across the track.
 
 ```tsx
 <ProgressBar label="Indexing repository" />
@@ -35,20 +40,28 @@ Leave `value` out when you can't measure progress. The bar becomes indeterminate
 
 ## Examples
 
-### Usage quotas
+### Usage card
 
-`valueText` replaces the percentage, both on screen and for screen readers. Here it reads "7.2 of 10 GB", and a bar past 90% switches its `color` to `--destructive`.
+`parts` stacks several values in one bar, each in its own colour, with a legend underneath. Here storage is split by file type. Build minutes are close to the limit, so that bar uses `color="red"`, `fill="hatched"` and a low bloom.
 
-<ComponentPreview src="examples/progress-bar-quota.tsx">
-  <ProgressBarQuota />
+<ComponentPreview src="examples/progress-bar-usage.tsx">
+  <ProgressBarUsage />
 </ComponentPreview>
 
 ### Upload list
 
-Three states in a file list at `size="lg"`: finished, in progress, and an indeterminate step while the server transcodes.
+Three states at `size="lg"`: a finished file in solid green, one in progress, and an indeterminate step while the server transcodes.
 
 <ComponentPreview src="examples/progress-bar-uploads.tsx">
   <ProgressBarUploads />
+</ComponentPreview>
+
+### Onboarding steps
+
+`segments` cuts the bar into blocks a cell apart. With one block per task, three of five tasks fill three blocks.
+
+<ComponentPreview src="examples/progress-bar-steps.tsx">
+  <ProgressBarSteps />
 </ComponentPreview>
 
 ## Props
@@ -58,22 +71,31 @@ Three states in a file list at `size="lg"`: finished, in progress, and an indete
     {
       name: "label",
       type: "string",
+      required: true,
       description:
         "What is in progress. Shown above the bar and used as its accessible name.",
-      required: true,
     },
     {
       name: "value",
       type: "number | null",
-      default: "–",
+      description: "Progress from 0 to max. Leave it out for an indeterminate bar.",
+    },
+    {
+      name: "parts",
+      type: "ProgressPart[]",
       description:
-        "Progress from 0 to max. Leave it out for an indeterminate bar.",
+        "{ label: string; value: number; color?: DitherColor; fill?: FillVariant }, stacked left to right instead of value.",
+    },
+    {
+      name: "unit",
+      type: "string",
+      description: 'With parts: shown after each value in the legend, such as " GB".',
     },
     {
       name: "max",
       type: "number",
       default: "100",
-      description: "The value that means done.",
+      description: "The value that means done, or the capacity for parts.",
     },
     {
       name: "valueText",
@@ -85,27 +107,42 @@ Three states in a file list at `size="lg"`: finished, in progress, and an indete
       name: "hideLabel",
       type: "boolean",
       default: "false",
-      description:
-        "Hide the label and readout visually. Screen readers still get them.",
+      description: "Hide the label and readout visually. Screen readers still get them.",
     },
     {
       name: "size",
       type: '"sm" | "md" | "lg"',
       default: '"md"',
-      description: "Bar height: 2, 4 or 8 cells.",
+      description: "Bar height: 2, 4 or 6 cells.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description: "Texture of the fill. Gradient is densest at the leading edge.",
     },
     {
       name: "color",
       type: "DitherColor",
-      default: '"--dither-ink"',
-      description:
-        "Ink colour of the track and fill. A CSS variable name or any CSS colour.",
+      default: '"ink"',
+      description: "Colour of the fill and its track, a palette name or any CSS colour.",
     },
     {
-      name: "matrix",
-      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
-      default: '"bayer4"',
-      description: "The threshold pattern.",
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "Soft glow in the fill's colour.",
+    },
+    {
+      name: "segments",
+      type: "number",
+      description: "Cut the bar into this many blocks a cell apart, for step meters.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Grow in on mount and ease between values.",
     },
     {
       name: "cell",
@@ -118,6 +155,6 @@ Three states in a file list at `size="lg"`: finished, in progress, and an indete
 
 ## Notes
 
-- The bar has `role="progressbar"` with `aria-valuenow`, `aria-valuemax` and `aria-valuetext`. An indeterminate bar leaves `aria-valuenow` out, which is how assistive technology knows progress is unknown.
-- The fill eases to each new value over 600ms. With reduced motion turned on it jumps, and the indeterminate band holds still in the middle of the track.
-- The indeterminate sweep runs at 30 fps, only while the bar is on screen and the tab is visible. Each frame updates the 48 columns whose density changed and nothing else.
+- The root has `role="progressbar"`, is named by the label and reports the value (or `valueText`). An indeterminate bar leaves out the value, as assistive technology expects.
+- Width changes ease over 600ms; the comet moves only by transform. With reduced motion the fill jumps to its value and the comet rests in the middle of the track.
+- It is plain HTML with CSS masks: no SVG, canvas or animation loop.
