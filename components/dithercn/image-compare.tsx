@@ -244,17 +244,20 @@ const useHint = ({
     if (phase !== "running") {
       return;
     }
-    const timers = HINT_STOPS.map((offset, index) =>
-      window.setTimeout(
-        () => {
-          setPosition(start + offset);
-          if (index === HINT_STOPS.length - 1) {
-            window.setTimeout(() => setPhase("done"), HINT_STEP);
-          }
-        },
-        index * HINT_STEP + 120
-      )
-    );
+    const timers: number[] = [];
+    for (const [index, offset] of HINT_STOPS.entries()) {
+      timers.push(
+        window.setTimeout(
+          () => {
+            setPosition(start + offset);
+            if (index === HINT_STOPS.length - 1) {
+              timers.push(window.setTimeout(() => setPhase("done"), HINT_STEP));
+            }
+          },
+          index * HINT_STEP + 120
+        )
+      );
+    }
     return () => {
       for (const timer of timers) {
         window.clearTimeout(timer);
