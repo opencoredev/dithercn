@@ -3,7 +3,7 @@
     "name": "skeleton",
     "type": "registry:component",
     "title": "Skeleton",
-    "description": "Loading placeholders for blocks, text lines and avatars, with a shimmer that sweeps through the dither levels.",
+    "description": "Loading placeholders for blocks, text lines and avatars, drawn in dither, with a dense band that sweeps across or a pulse that steps through the Bayer levels.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -17,7 +17,7 @@
     "name": "avatar",
     "type": "registry:component",
     "title": "Avatar",
-    "description": "A generative avatar drawn from a string as a mirrored dither face, with an overlapping avatar group.",
+    "description": "A generative avatar drawn from a string as a mirrored dither face on a lit, dithered disc, with an overlapping avatar group.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -31,7 +31,7 @@
     "name": "loader",
     "type": "registry:component",
     "title": "Loader",
-    "description": "A small dithered loading indicator: ring, dot matrix, bar scanner or dissolving square.",
+    "description": "A small dithered loading indicator: a ring with a comet tail, three dissolving dots, a pulse or a bar.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -59,7 +59,7 @@
     "name": "dither-card",
     "type": "registry:component",
     "title": "Dither card",
-    "description": "A card surface with a dithered glow in a corner or along an edge, which can grow on hover.",
+    "description": "A card with a dithered glow in a corner or along an edge and a dithered rim on its border, which can grow on hover.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -73,7 +73,7 @@
     "name": "empty-state",
     "type": "registry:component",
     "title": "Empty state",
-    "description": "A dithered illustration with a title, a description and an action, for views with nothing in them yet.",
+    "description": "A lit, dithered illustration (box, magnifier, folder or planet) with a title, a description and an action, for views with nothing in them yet.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -101,7 +101,7 @@
     "name": "dither-button",
     "type": "registry:component",
     "title": "Dither button",
-    "description": "A button filled with a dither texture in any palette colour that grows denser on hover and press, with sizes, loading and asChild.",
+    "description": "A button with a lit, dithered surface that brightens on hover and presses in on click, in four fills, two variants and any palette colour.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
