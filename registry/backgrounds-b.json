@@ -26,5 +26,19 @@
         "target": "components/dithercn/starfield.tsx"
       }
     ]
+  },
+  {
+    "name": "halftone",
+    "type": "registry:component",
+    "title": "Halftone",
+    "description": "Print-style round dots on a rotated grid that grow with a noise, radial or linear source.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/halftone.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/halftone.tsx"
+      }
+    ]
   }
 ]

@@ -1,0 +1,169 @@
+---
+title: "Halftone"
+description: "Print-style halftone: round dots on a rotated grid that grow with a noise, radial or linear source."
+---
+
+import HalftoneDemo from "@/examples/halftone-demo";
+import HalftoneSpotlight from "@/examples/halftone-spotlight";
+import HalftoneCard from "@/examples/halftone-card";
+import HalftoneCoarse from "@/examples/halftone-coarse";
+
+<ComponentPreview src="examples/halftone-demo.tsx" size="full" align="stretch">
+  <HalftoneDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="halftone" />
+
+## Usage
+
+```tsx
+import { Halftone } from "@/components/dithercn/halftone";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Halftone className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+Unlike the other backgrounds, halftone is not an ordered dither. Each square of a rotated grid holds one solid dot, sized by the value of the source at its centre, the way a printing screen works. The default source is slow, warped noise.
+
+It uses one-pixel cells by default so the dots stay round, and 12 cells between dot centres.
+
+## Examples
+
+### Spotlight behind a headline
+
+`source="radial"` grows the dots towards `center`. With the centre below the bottom edge and a `radius` under 1, the dots swell up from the bottom and run out before the text.
+
+<ComponentPreview
+  src="examples/halftone-spotlight.tsx"
+  size="lg"
+  align="stretch"
+>
+  <HalftoneSpotlight />
+</ComponentPreview>
+
+### Linear ramp in a card
+
+`source="linear"` grows the dots towards `direction`. With a palette of more than two colours, bigger dots take later colours. This one is held still, at a shallow 15° screen angle.
+
+<ComponentPreview src="examples/halftone-card.tsx">
+  <HalftoneCard />
+</ComponentPreview>
+
+### Coarse screen
+
+Two-pixel cells, wide spacing and a square grid at 0° give a bold, poster-like screen.
+
+<ComponentPreview
+  src="examples/halftone-coarse.tsx"
+  size="full"
+  align="stretch"
+>
+  <HalftoneCoarse />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "source",
+      type: '"noise" | "radial" | "linear"',
+      default: '"noise"',
+      description:
+        "What sizes the dots: drifting noise, distance from a point, or a ramp.",
+    },
+    {
+      name: "center",
+      type: "[x: number, y: number]",
+      default: "[0.5, 0.5]",
+      description:
+        "Radial only. Where the dots are largest, as fractions of the box from the top left.",
+    },
+    {
+      name: "radius",
+      type: "number",
+      default: "1",
+      description:
+        "Radial only. Where the dots run out. 1 reaches the farthest corner.",
+    },
+    {
+      name: "direction",
+      type: "number",
+      default: "0",
+      description:
+        "Linear only. Direction the dots grow towards, in degrees as in CSS.",
+    },
+    {
+      name: "spacing",
+      type: "number",
+      default: "12",
+      description: "Distance between dot centres, in cells.",
+    },
+    {
+      name: "rotation",
+      type: "number",
+      default: "45",
+      description: "Rotation of the dot grid in degrees.",
+    },
+    {
+      name: "intensity",
+      type: "number",
+      default: "1",
+      description:
+        "Size of the largest dot. At 1, full dots overlap their neighbours slightly.",
+    },
+    {
+      name: "scale",
+      type: "number",
+      default: "1",
+      description: "Noise only. Size of the noise features.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        "Colours from paper to ink. CSS variable names or any CSS colour.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "1",
+      description:
+        "Size of one cell in CSS pixels. Smaller cells give rounder dots.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the source drifts.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The halftone fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The halftone is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a CSS dot screen.
+- `matrix` is not a prop here: dots are solid, so there is nothing to threshold.
