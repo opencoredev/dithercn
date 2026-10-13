@@ -56,6 +56,34 @@
     ]
   },
   {
+    "name": "empty-state",
+    "type": "registry:component",
+    "title": "Empty state",
+    "description": "A dithered illustration with a title, a description and an action, for views with nothing in them yet.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/empty-state.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/empty-state.tsx"
+      }
+    ]
+  },
+  {
+    "name": "not-found",
+    "type": "registry:component",
+    "title": "Not found",
+    "description": "A complete 404 block with a big dithered code, a message and actions.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/not-found.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/not-found.tsx"
+      }
+    ]
+  },
+  {
     "name": "dither-button",
     "type": "registry:component",
     "title": "Dither button",

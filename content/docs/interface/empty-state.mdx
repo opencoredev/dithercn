@@ -1,0 +1,123 @@
+---
+title: "Empty state"
+description: "A dithered illustration with a title, a description and an action, for views with nothing in them yet."
+---
+
+import EmptyStateDemo from "@/examples/empty-state-demo";
+import EmptyStateMotifs from "@/examples/empty-state-motifs";
+import EmptyStateIcon from "@/examples/empty-state-icon";
+
+<ComponentPreview src="examples/empty-state-demo.tsx" size="lg">
+  <EmptyStateDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="empty-state" />
+
+## Usage
+
+```tsx
+import { EmptyState } from "@/components/dithercn/empty-state";
+import { Button } from "@/components/ui/button";
+
+export function NoProjects() {
+  return (
+    <EmptyState
+      motif="folder"
+      title="No projects yet"
+      description="Create a project to start building."
+      action={<Button>New project</Button>}
+    />
+  );
+}
+```
+
+The illustration is pixel art on a 44 by 32 grid of cells. Outlines are solid cells in `lineColor`; shading has a tone, and the Bayer matrix inks each of its cells or leaves it blank, so the shading is real dither at whole-pixel sizes.
+
+## Examples
+
+### Built-in motifs
+
+Four motifs cover the common cases: `search` for no results, `folder` for no files, `chart` for no data and `inbox` for no messages. Here they use 2 pixel cells for a smaller drawing.
+
+<ComponentPreview src="examples/empty-state-motifs.tsx" size="lg">
+  <EmptyStateMotifs />
+</ComponentPreview>
+
+### Your own icon
+
+Pass `icon` instead of `motif` and your glyph sits on a tile over the dithered halo. This one fills an empty table in a settings page.
+
+<ComponentPreview src="examples/empty-state-icon.tsx" size="lg">
+  <EmptyStateIcon />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "title",
+      type: "ReactNode",
+      required: true,
+      description: "The heading. Say what is empty, plainly.",
+    },
+    {
+      name: "description",
+      type: "ReactNode",
+      default: "–",
+      description: "Why it is empty and what to do next.",
+    },
+    {
+      name: "action",
+      type: "ReactNode",
+      default: "–",
+      description: "Buttons or links under the text.",
+    },
+    {
+      name: "motif",
+      type: '"inbox" | "search" | "folder" | "chart"',
+      default: '"inbox"',
+      description: "A built-in illustration. Not with icon.",
+    },
+    {
+      name: "icon",
+      type: "ReactNode",
+      default: "–",
+      description: "Your own glyph, shown over the halo. Not with motif.",
+    },
+    {
+      name: "color",
+      type: "string",
+      default: '"--dither-ink"',
+      description:
+        "Colour of the dithered shading and the halo. A CSS variable name or any CSS colour.",
+    },
+    {
+      name: "lineColor",
+      type: "string",
+      default: '"--foreground"',
+      description: "Colour of the motif's solid outlines.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "3",
+      description:
+        "Size of one cell in CSS pixels. The drawing is 44 by 32 cells.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The illustration is hidden from assistive technology. The title is an `h3`; wrap the component or adjust it if your page needs another level.
+- Write the title as a plain statement of what is empty, and the description as what to do about it.
+- Each motif is rasterised once and cached, and the result is a single SVG path. It renders on the server and has no motion.

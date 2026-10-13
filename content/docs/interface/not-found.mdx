@@ -1,0 +1,122 @@
+---
+title: "Not found"
+description: "A complete 404 block with a big dithered code, a message and actions, ready for app/not-found.tsx."
+---
+
+import NotFoundDemo from "@/examples/not-found-demo";
+import NotFoundError from "@/examples/not-found-error";
+import NotFoundCompact from "@/examples/not-found-compact";
+
+<ComponentPreview src="examples/not-found-demo.tsx" size="lg">
+  <NotFoundDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="not-found" />
+
+## Usage
+
+```tsx title="app/not-found.tsx"
+import Link from "next/link";
+
+import { NotFound } from "@/components/dithercn/not-found";
+import { Button } from "@/components/ui/button";
+
+export default function NotFoundPage() {
+  return (
+    <main className="grid min-h-svh place-items-center">
+      <NotFound
+        actions={
+          <Button asChild>
+            <Link href="/">Back to home</Link>
+          </Button>
+        }
+      />
+    </main>
+  );
+}
+```
+
+The digits are drawn eight times, once per dither level. The denser copies cover less of the height, so the code is solid at the top and thins towards the baseline. When the block mounts, the copies appear one after another and the code prints in through the levels.
+
+## Examples
+
+### Other errors
+
+`code`, `title` and `description` are all yours. This one is a server error in `--destructive`, with 3 pixel cells.
+
+<ComponentPreview src="examples/not-found-error.tsx" size="lg">
+  <NotFoundError />
+</ComponentPreview>
+
+### Inside a panel, without motion
+
+Smaller, neutral and still: `animate={false}` shows the finished code at once, which suits a not-found state inside an app rather than a whole page.
+
+<ComponentPreview src="examples/not-found-compact.tsx" size="lg">
+  <NotFoundCompact />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "code",
+      type: "string",
+      default: '"404"',
+      description: "The big code.",
+    },
+    {
+      name: "title",
+      type: "ReactNode",
+      default: '"Page not found"',
+      description: "The heading.",
+    },
+    {
+      name: "description",
+      type: "ReactNode",
+      default: '"The link may be broken, or the page may have moved."',
+      description: "A sentence under the heading.",
+    },
+    {
+      name: "actions",
+      type: "ReactNode",
+      default: "–",
+      description: "Buttons or links, such as a way home.",
+    },
+    {
+      name: "titleAs",
+      type: '"h1" | "h2"',
+      default: '"h1"',
+      description:
+        'Heading level. Keep "h1" on a page of its own; use "h2" inside another page.',
+    },
+    {
+      name: "color",
+      type: "string",
+      default: '"--dither-ink"',
+      description: "Colour of the code. A CSS variable name or any CSS colour.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "4",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Print the code in on mount.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The big code is hidden from assistive technology; the heading carries the meaning.
+- With reduced motion turned on, the code appears finished.
+- It is plain HTML and CSS with no client JavaScript, so it works in a server component such as `app/not-found.tsx`.
+- The digits use your page's font. A heavy weight shows the dither best.
