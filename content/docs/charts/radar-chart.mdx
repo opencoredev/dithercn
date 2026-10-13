@@ -41,7 +41,7 @@ export function Evals() {
 
 Axes run clockwise from 12 o'clock. Each series lists one value per axis in the same order. Without `max`, the outer ring sits at a round number above the largest value.
 
-Every series is a polygon of whole dither cells with a solid one-cell outline and square markers on its corners. With `fill="gradient"` the density steps up once per ring, thin at the centre and dense near the rim, so the grid reads straight through the shape. Later series draw on top of earlier ones and each takes the next palette colour.
+Every series is a polygon of whole dither cells with a solid one-cell outline and square markers on its corners. With `fill="gradient"` the density steps up once per ring, thin at the centre and dense near the rim, so the grid reads straight through the shape. Each series takes the next palette colour. Where series overlap their cells interleave, so neither hides the other, and every outline stays on top.
 
 Move the pointer around the chart and the readout snaps to the nearest axis, with every series' value there. Focus the chart and the arrow keys step around the axes. Hover a legend entry to spotlight a series, click to keep it lit, and press Escape to let go.
 
