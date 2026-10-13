@@ -77,5 +77,19 @@
         "target": "components/dithercn/sparkline.tsx"
       }
     ]
+  },
+  {
+    "name": "heatmap",
+    "type": "registry:component",
+    "title": "Heatmap",
+    "description": "A calendar heatmap where each day's dither density encodes its value.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/heatmap.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/heatmap.tsx"
+      }
+    ]
   }
 ]

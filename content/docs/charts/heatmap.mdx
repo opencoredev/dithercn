@@ -1,0 +1,124 @@
+---
+title: "Heatmap"
+description: "A calendar heatmap where each day's dither density is its value, for deploys, activity and incidents."
+---
+
+import HeatmapDemo from "@/examples/heatmap-demo";
+import HeatmapYear from "@/examples/heatmap-year";
+import HeatmapQuarter from "@/examples/heatmap-quarter";
+
+<ComponentPreview src="examples/heatmap-demo.tsx" size="lg">
+  <HeatmapDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="heatmap" />
+
+## Usage
+
+```tsx
+import { Heatmap } from "@/components/dithercn/heatmap";
+
+const data = [
+  { date: "2026-10-10", value: 3 },
+  { date: "2026-10-11", value: 0 },
+  { date: "2026-10-12", value: 7 },
+];
+
+export function Deploys() {
+  return <Heatmap data={data} unit={{ one: "deploy", other: "deploys" }} />;
+}
+```
+
+Each column is a week and each row a weekday. The grid ends with the latest day in `data` and goes back `weeks` weeks, 53 by default. Days missing from `data` count as 0, and entries that share a day add up. Dates are read in UTC, so a square never moves with the visitor's time zone.
+
+Every day is a square of 4×4 dither cells, which is exactly one Bayer tile. A value at a quarter of the maximum inks 4 of its 16 cells, and the largest value fills the square solid. When the grid is wider than its box it scrolls sideways and starts at the latest week.
+
+## Examples
+
+### A full year, every density
+
+`steps={16}` maps values to all 16 densities a tile can draw instead of 4 buckets, so close values stay apart. `cell={2}` makes 8px squares that fit a year in a narrower card, and `weekStart={1}` starts weeks on Monday.
+
+<ComponentPreview src="examples/heatmap-year.tsx">
+  <HeatmapYear />
+</ComponentPreview>
+
+### Capping outliers
+
+One outage week would make every other day look empty. `max={4}` draws 4 or more as solid and spreads the levels over the usual range. A different `color` sets it apart from the other charts on a page.
+
+<ComponentPreview src="examples/heatmap-quarter.tsx">
+  <HeatmapQuarter />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "data",
+      type: "readonly { date: string | Date; value: number }[]",
+      required: true,
+      description:
+        'Values by day. date is "YYYY-MM-DD" or a Date, read in UTC.',
+    },
+    {
+      name: "weeks",
+      type: "number",
+      default: "53",
+      description: "Weeks shown, ending with the latest day in data.",
+    },
+    {
+      name: "weekStart",
+      type: "0 | 1",
+      default: "0",
+      description: "The first row: 0 for Sunday, 1 for Monday.",
+    },
+    {
+      name: "steps",
+      type: "number",
+      default: "4",
+      description:
+        "How many densities values map to, above empty. Up to 16 with the default matrix.",
+    },
+    {
+      name: "max",
+      type: "number",
+      default: "The largest value",
+      description: "The value drawn solid. Larger values are drawn solid too.",
+    },
+    {
+      name: "unit",
+      type: "string | { one: string; other: string }",
+      default: "–",
+      description: 'What a value counts, for the readout, as in "3 deploys".',
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"--dither-ink"',
+      description: "Ink colour of the squares.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description:
+        "Size of one dither cell in px, rounded to whole device pixels. A day is 4 cells wide.",
+    },
+    {
+      name: "legend",
+      type: "boolean",
+      default: "true",
+      description: "Show the Less to More key.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The heatmap is a focusable group labelled with a summary: the date range, the total and the busiest day. Hover a square, or focus the heatmap and use the arrow keys (left and right move a week, up and down a day), to read a day below the grid. Screen readers hear each reading.
+- On entrance every square steps up through the dither levels together. With reduced motion it appears finished.
+- It is one SVG with a pattern per density, so a full year costs about 370 small rectangles and no animation loop after the entrance.
