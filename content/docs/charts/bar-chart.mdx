@@ -1,0 +1,156 @@
+---
+title: "Bar chart"
+description: "Dithered bars with a solid cap, grouped or stacked, for weekly counts and period comparisons."
+---
+
+import BarChartDemo from "@/examples/bar-chart-demo";
+import BarChartStacked from "@/examples/bar-chart-stacked";
+import BarChartGrouped from "@/examples/bar-chart-grouped";
+
+<ComponentPreview src="examples/bar-chart-demo.tsx" size="lg">
+  <BarChartDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="bar-chart" />
+
+## Usage
+
+```tsx
+import { BarChart } from "@/components/dithercn/bar-chart";
+
+const data = [
+  { week: "W36", deploys: 61 },
+  { week: "W37", deploys: 68 },
+  { week: "W38", deploys: 74 },
+];
+
+export function Deploys() {
+  return (
+    <BarChart
+      data={data}
+      x="week"
+      series={[{ label: "Deploys", value: "deploys" }]}
+    />
+  );
+}
+```
+
+Each bar is a dithered body under a solid 2px cap. One bar is drawn solid, the last by default, with its value above it. When the pointer or keyboard focus moves to another bar, that one fills in instead. `x` and each series' `value` name fields of your data, or take a function when you render from a Client Component.
+
+## Examples
+
+### Stacked
+
+`variant="stacked"` puts the series on top of each other with a 2px gap between segments, and the axis covers the totals. `highlight="max"` picks the tallest stack.
+
+<ComponentPreview src="examples/bar-chart-stacked.tsx" size="lg">
+  <BarChartStacked />
+</ComponentPreview>
+
+### Grouped comparison
+
+Grouped bars sit side by side, one per series. `highlight="none"` leaves every bar dithered until you hover one, and a lighter `level` with `matrix="bayer8"` gives a finer, quieter texture.
+
+<ComponentPreview src="examples/bar-chart-grouped.tsx" size="lg">
+  <BarChartGrouped />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "data",
+      type: "readonly T[]",
+      required: true,
+      description: "One entry per bar or group of bars, in order.",
+    },
+    {
+      name: "x",
+      type: "keyof T | ((datum: T) => string | number)",
+      required: true,
+      description: "The field (or function) holding each bar's category label.",
+    },
+    {
+      name: "series",
+      type: "[ChartSeries<T>, ...ChartSeries<T>[]]",
+      required: true,
+      description:
+        "Each series is { label, value, color? }, where value is a numeric field of T or a function.",
+    },
+    {
+      name: "variant",
+      type: '"grouped" | "stacked"',
+      default: '"grouped"',
+      description: "How several series share a category.",
+    },
+    {
+      name: "highlight",
+      type: 'number | "last" | "max" | "none"',
+      default: '"last"',
+      description:
+        "The bar drawn solid, with its value, while nothing is hovered.",
+    },
+    {
+      name: "height",
+      type: "number",
+      default: "240",
+      description: "Height in px, axes included.",
+    },
+    {
+      name: "level",
+      type: "number",
+      default: "0.5",
+      description: "Coverage of the dithered bar body, from 0 to 1.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description:
+        "Dither texture of the first series. Later series switch texture.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description:
+        "Size of one dither cell in px, rounded to whole device pixels.",
+    },
+    {
+      name: "axes",
+      type: "boolean",
+      default: "true",
+      description: "Show the value and category axes.",
+    },
+    {
+      name: "tooltip",
+      type: "boolean",
+      default: "true",
+      description: "Show the readout on hover and keyboard focus.",
+    },
+    {
+      name: "legend",
+      type: "boolean",
+      default: "Two or more series",
+      description: "Show a legend under the chart.",
+    },
+    {
+      name: "format",
+      type: "Intl.NumberFormatOptions | ((value: number) => string)",
+      default: "Compact, as in 1.2K",
+      description:
+        "How values are written on the axis, in the readout and in the table.",
+    },
+  ]}
+/>
+
+Series colours default to `--dither-ink`, then `--muted-foreground`, `--chart-3` and `--chart-5`.
+
+## Notes
+
+- The chart is a focusable group with a short summary, and every value is in a visually hidden table. The arrow keys, Home and End move between bars; Escape hides the readout.
+- Bars rise from the baseline one after another on entrance. With reduced motion they appear in place.
+- Bars are capped at 36px wide and snapped to whole pixels, and the dither cell to whole device pixels, so edges and cells stay sharp.

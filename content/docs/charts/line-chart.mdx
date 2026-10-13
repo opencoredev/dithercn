@@ -1,0 +1,165 @@
+---
+title: "Line chart"
+description: "Crisp lines with dithered range bands and point markers, for latency, conversion and period-over-period comparisons."
+---
+
+import LineChartDemo from "@/examples/line-chart-demo";
+import LineChartCompare from "@/examples/line-chart-compare";
+import LineChartPoints from "@/examples/line-chart-points";
+
+<ComponentPreview src="examples/line-chart-demo.tsx" size="lg">
+  <LineChartDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="line-chart" />
+
+## Usage
+
+```tsx
+import { LineChart } from "@/components/dithercn/line-chart";
+
+const data = [
+  { time: "12:00", p10: 160, p50: 188, p90: 238 },
+  { time: "12:30", p10: 164, p50: 184, p90: 230 },
+  { time: "13:00", p10: 167, p50: 191, p90: 245 },
+];
+
+export function Latency() {
+  return (
+    <LineChart
+      data={data}
+      x="time"
+      series={[
+        { label: "p50", value: "p50", range: { low: "p10", high: "p90" } },
+      ]}
+    />
+  );
+}
+```
+
+Each series is a 2px line. Give it a `range` and the space between `low` and `high` fills with a light dither, which suits percentiles, forecasts and min/max envelopes. The readout lists the value with its range.
+
+## Examples
+
+### This week against last week
+
+A `dashed` series reads as a reference: a previous period or a target. The legend repeats the dash, so the two lines never rely on colour alone. Here this week's `range` runs from last week's value to its own, so the dither fills exactly the gap between the two.
+
+<ComponentPreview src="examples/line-chart-compare.tsx" size="lg">
+  <LineChartCompare />
+</ComponentPreview>
+
+### Few points, every one marked
+
+With sparse data, `markers="all"` puts a dot on each point and `curve="linear"` keeps straight segments between them, so nobody reads a curve the data does not have. The band is a sector benchmark in its own `color`, and `zero` starts the axis at 0 because a score's distance from zero matters here.
+
+<ComponentPreview src="examples/line-chart-points.tsx">
+  <LineChartPoints />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "data",
+      type: "readonly T[]",
+      required: true,
+      description: "One entry per point along the x axis, in order.",
+    },
+    {
+      name: "x",
+      type: "keyof T | ((datum: T) => string | number)",
+      required: true,
+      description: "The field (or function) holding each point's x axis label.",
+    },
+    {
+      name: "series",
+      type: "[LineSeries<T>, ...LineSeries<T>[]]",
+      required: true,
+      description:
+        "Each series is { label, value, color?, range?: { low, high, color? }, dashed? }. value, low and high are numeric fields of T or functions.",
+    },
+    {
+      name: "markers",
+      type: '"all" | "last" | "none"',
+      default: '"last"',
+      description: "Which points get a dot.",
+    },
+    {
+      name: "zero",
+      type: "boolean",
+      default: "false",
+      description:
+        "Start the value axis at zero. By default it fits the data, so small changes stay visible.",
+    },
+    {
+      name: "height",
+      type: "number",
+      default: "240",
+      description: "Height in px, axes included.",
+    },
+    {
+      name: "curve",
+      type: '"smooth" | "linear"',
+      default: '"smooth"',
+      description:
+        "smooth is a monotone curve that never overshoots a data point.",
+    },
+    {
+      name: "level",
+      type: "number",
+      default: "0.25",
+      description: "Coverage of the range bands, from 0 to 1.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description:
+        "Dither texture of the first band. Later series switch texture.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description:
+        "Size of one dither cell in px, rounded to whole device pixels.",
+    },
+    {
+      name: "axes",
+      type: "boolean",
+      default: "true",
+      description: "Show the value and category axes.",
+    },
+    {
+      name: "tooltip",
+      type: "boolean",
+      default: "true",
+      description: "Show the readout on hover and keyboard focus.",
+    },
+    {
+      name: "legend",
+      type: "boolean",
+      default: "Two or more series",
+      description: "Show a legend under the chart.",
+    },
+    {
+      name: "format",
+      type: "Intl.NumberFormatOptions | ((value: number) => string)",
+      default: "Compact, as in 1.2K",
+      description:
+        "How values are written on the axis, in the readout and in the table.",
+    },
+  ]}
+/>
+
+Series colours default to `--dither-ink`, then `--muted-foreground`, `--chart-3` and `--chart-5`.
+
+## Notes
+
+- The chart is a focusable group with a short summary, and every value, including ranges, is in a visually hidden table. The arrow keys, Home and End move the readout; Escape hides it.
+- On entrance solid lines draw from left to right, dashed lines fade in, and bands step up through the dither levels. With reduced motion the finished chart appears at once.
+- Markers carry a 2px ring in `--dither-paper` so they stay legible where lines cross. Set `--dither-paper` to your card's background if it differs from the page.

@@ -1,0 +1,95 @@
+[
+  {
+    "name": "cartesian-chart",
+    "type": "registry:component",
+    "title": "Cartesian chart",
+    "description": "The shared frame behind the area, line and bar charts: scales, axes, the hover readout, the legend and an accessible data table.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/cartesian-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/cartesian-chart.tsx"
+      }
+    ]
+  },
+  {
+    "name": "area-chart",
+    "type": "registry:component",
+    "title": "Area chart",
+    "description": "One or more series drawn as a crisp line over a dithered fill that is densest under the line.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/cartesian-chart.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/area-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/area-chart.tsx"
+      }
+    ]
+  },
+  {
+    "name": "bar-chart",
+    "type": "registry:component",
+    "title": "Bar chart",
+    "description": "Vertical bars, grouped or stacked, each filled with a dither and capped with a solid edge.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/cartesian-chart.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/bar-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/bar-chart.tsx"
+      }
+    ]
+  },
+  {
+    "name": "line-chart",
+    "type": "registry:component",
+    "title": "Line chart",
+    "description": "Lines for one or more series, with optional dithered range bands and point markers.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/cartesian-chart.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/line-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/line-chart.tsx"
+      }
+    ]
+  },
+  {
+    "name": "sparkline",
+    "type": "registry:component",
+    "title": "Sparkline",
+    "description": "A tiny inline trend for tables and stat cards: a line, a dithered area and a dot on the latest value.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/sparkline.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/sparkline.tsx"
+      }
+    ]
+  },
+  {
+    "name": "heatmap",
+    "type": "registry:component",
+    "title": "Heatmap",
+    "description": "A calendar heatmap where each day's dither density encodes its value.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/heatmap.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/heatmap.tsx"
+      }
+    ]
+  }
+]

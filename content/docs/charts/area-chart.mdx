@@ -1,0 +1,157 @@
+---
+title: "Area chart"
+description: "A line over a dithered fill that is densest at the line, for revenue, traffic and other totals over time."
+---
+
+import AreaChartDemo from "@/examples/area-chart-demo";
+import AreaChartLayered from "@/examples/area-chart-layered";
+import AreaChartCompact from "@/examples/area-chart-compact";
+
+<ComponentPreview src="examples/area-chart-demo.tsx" size="lg">
+  <AreaChartDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="area-chart" />
+
+## Usage
+
+```tsx
+import { AreaChart } from "@/components/dithercn/area-chart";
+
+const data = [
+  { month: "Jan", revenue: 18400 },
+  { month: "Feb", revenue: 21900 },
+  { month: "Mar", revenue: 26300 },
+];
+
+export function Revenue() {
+  return (
+    <AreaChart
+      data={data}
+      x="month"
+      series={[{ label: "Revenue", value: "revenue" }]}
+    />
+  );
+}
+```
+
+`data` can hold any objects. `x` names the field with each point's label and every series names the field with its value. Both also accept a function, such as `(datum) => datum.total / 100`, when you render the chart from a Client Component. The chart fills its container's width and redraws when the container resizes.
+
+## Examples
+
+### Two layered series
+
+With two or more series the chart adds a legend, and every series after the first draws in a different colour and dither texture (an 8×8 Bayer, then a 2×2). Each fill knocks out the ones behind it, so overlapping areas never mix and the lines always sit on top. Hover or focus the chart and use the arrow keys to read every series at one point.
+
+<ComponentPreview src="examples/area-chart-layered.tsx" size="lg">
+  <AreaChartLayered />
+</ComponentPreview>
+
+### Compact, inside a stat card
+
+`axes={false}` drops the axes and the padding around the plot, so the fill can run to the edges of a card. `fill="flat"` uses one even level, and `matrix="bayer8"` gives a finer texture.
+
+<ComponentPreview src="examples/area-chart-compact.tsx">
+  <AreaChartCompact />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "data",
+      type: "readonly T[]",
+      required: true,
+      description: "One entry per point along the x axis, in order.",
+    },
+    {
+      name: "x",
+      type: "keyof T | ((datum: T) => string | number)",
+      required: true,
+      description: "The field (or function) holding each point's x axis label.",
+    },
+    {
+      name: "series",
+      type: "[ChartSeries<T>, ...ChartSeries<T>[]]",
+      required: true,
+      description:
+        "Each series is { label, value, color? }, where value is a numeric field of T or a function. Later series draw on top.",
+    },
+    {
+      name: "height",
+      type: "number",
+      default: "240",
+      description: "Height in px, axes included.",
+    },
+    {
+      name: "fill",
+      type: '"density" | "flat"',
+      default: '"density"',
+      description:
+        "density makes the fill densest under the line and thinner toward the axis. flat uses one level.",
+    },
+    {
+      name: "level",
+      type: "number",
+      default: "0.5",
+      description: "Coverage of the densest part of the fill, from 0 to 1.",
+    },
+    {
+      name: "curve",
+      type: '"smooth" | "linear"',
+      default: '"smooth"',
+      description:
+        "smooth is a monotone curve that never overshoots a data point.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "Dither texture of the first series.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description:
+        "Size of one dither cell in px, rounded to whole device pixels.",
+    },
+    {
+      name: "axes",
+      type: "boolean",
+      default: "true",
+      description: "Show the value and category axes.",
+    },
+    {
+      name: "tooltip",
+      type: "boolean",
+      default: "true",
+      description: "Show the readout on hover and keyboard focus.",
+    },
+    {
+      name: "legend",
+      type: "boolean",
+      default: "Two or more series",
+      description: "Show a legend under the chart.",
+    },
+    {
+      name: "format",
+      type: "Intl.NumberFormatOptions | ((value: number) => string)",
+      default: "Compact, as in 1.2K",
+      description:
+        "How values are written on the axis, in the readout and in the table. Options work from Server Components.",
+    },
+  ]}
+/>
+
+Series colours default to `--dither-ink`, then `--muted-foreground`, `--chart-3` and `--chart-5`. Pass `color` on a series to set your own.
+
+## Notes
+
+- The chart is a focusable group labelled with a short summary, and the full data sits in a visually hidden table, so screen readers get every value. The arrow keys, Home and End move the readout; Escape hides it.
+- On entrance the line draws in and the fill steps up through the dither levels. With reduced motion the finished chart appears at once.
+- Cells are snapped to whole device pixels, so the dither stays sharp on any screen. Markers use a ring in `--dither-paper`; set it to your card's background if the card is not the page colour.
+- It is plain SVG with no chart library. The entrance re-renders the chart about 16 times, then it only redraws on hover.
