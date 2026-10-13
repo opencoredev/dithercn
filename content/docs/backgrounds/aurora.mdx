@@ -1,12 +1,13 @@
 ---
 title: "Aurora"
-description: "Slow vertical curtains of light that sway and shimmer, drawn as a dither, for launch pages and dark heroes."
+description: "Curtains of light that fold, sway and shimmer, drawn as a dither, with knobs for colour, rays, tilt and drift."
 ---
 
 import AuroraDemo from "@/examples/aurora-demo";
 import { controls as auroraControls } from "@/examples/aurora-controls";
 import AuroraHero from "@/examples/aurora-hero";
 import AuroraBorealis from "@/examples/aurora-borealis";
+import AuroraCta from "@/examples/aurora-cta";
 import AuroraBanner from "@/examples/aurora-banner";
 
 <ComponentPreview
@@ -37,13 +38,19 @@ export function Hero() {
 }
 ```
 
-Three curtains hang from the top of the box. Each has a bright lower edge that bends slowly and rays that fade as they rise. `height` sets where the lowest edge hangs, so you can keep the area under it clear for text.
+Each curtain has a bright lower edge that folds slowly, with rays that fade as they rise. Further curtains hang higher and dimmer. `height` sets where the lowest edge hangs, so you can keep the area under it clear for text.
+
+The props group into three jobs:
+
+- Shape: `curtains`, `height`, `spread`, `sway`, `turbulence`, `rays`, `length`.
+- Light and colour: `color` for the edges, `tipColor` for the tops of the rays, `background`, `glow`, `intensity`, `shimmer`. Pass `palette` to set every tone yourself.
+- Placement and motion: `tilt`, `scale`, `drift`, `direction`, `mask`, plus the engine's `speed`, `cell` and `matrix`.
 
 ## Examples
 
 ### Above a headline
 
-Raising `height` lifts the curtains off the lower third, where the headline sits on clean paper.
+Raising `height` lifts the curtains off the lower third, where the headline sits on clean paper. A `tipColor` of `"blue"` shifts the tops of the rays to a second, cooler hue, and `mask="edges"` fades the sides.
 
 <ComponentPreview src="examples/aurora-hero.tsx" size="lg" align="stretch">
   <AuroraHero />
@@ -51,10 +58,18 @@ Raising `height` lifts the curtains off the lower third, where the headline sits
 
 ### Northern lights
 
-A custom palette and paper turn it into the real thing: green curtains on a night sky. More `sway` gives the edges deeper folds.
+Your own colours turn it into the real thing: green edges, violet tips and a night-sky `background`. Four curtains, longer rays, a slight `tilt` and a little `drift` give it depth.
 
 <ComponentPreview src="examples/aurora-borealis.tsx" size="lg" align="stretch">
   <AuroraBorealis />
+</ComponentPreview>
+
+### Hanging over a call to action
+
+`direction="down"` flips the curtains so the rays fall from the top and the button sits on clear paper below. Few broad `rays` and 4px cells give it a coarser, poster-like grain.
+
+<ComponentPreview src="examples/aurora-cta.tsx" size="lg" align="stretch">
+  <AuroraCta />
 </ComponentPreview>
 
 ### Still, in a banner
@@ -70,6 +85,32 @@ With `animate={false}` it draws one frame. `stillTime` picks which moment, so yo
 <PropsTable
   rows={[
     {
+      name: "color",
+      type: "DitherColor",
+      default: '"--dither-ink"',
+      description: "The bright lower edge of each curtain.",
+    },
+    {
+      name: "tipColor",
+      type: "DitherColor",
+      default: "color",
+      description:
+        "The faint tops of the rays. Set a second colour for a two-tone sky.",
+    },
+    {
+      name: "background",
+      type: "DitherColor",
+      default: '"--dither-paper"',
+      description: "The sky behind.",
+    },
+    {
+      name: "curtains",
+      type: "number",
+      default: "3",
+      description:
+        "How many curtains, from 1 to 6. Each one hangs higher and dimmer.",
+    },
+    {
       name: "height",
       type: "number",
       default: "0.42",
@@ -77,10 +118,41 @@ With `animate={false}` it draws one frame. `stillTime` picks which moment, so yo
         "Where the lowest bright edge hangs, from 0 (bottom) to 1 (top).",
     },
     {
+      name: "spread",
+      type: "number",
+      default: "0.11",
+      description: "Vertical gap between curtains, from 0 to 0.3.",
+    },
+    {
       name: "sway",
       type: "number",
       default: "1",
-      description: "How far the curtains bend. 0 is straight, 2 is deep folds.",
+      description: "How far the edges fold. 0 is straight, 3 is deep folds.",
+    },
+    {
+      name: "turbulence",
+      type: "number",
+      default: "0.6",
+      description: "Fine ripples along each edge, from 0 to 2.",
+    },
+    {
+      name: "rays",
+      type: "number",
+      default: "8",
+      description:
+        "How many rays fit across. 2 gives broad bands, 20 fine needles.",
+    },
+    {
+      name: "length",
+      type: "number",
+      default: "0.45",
+      description: "How far the rays reach up, from 0 to 1.",
+    },
+    {
+      name: "glow",
+      type: "number",
+      default: "0.9",
+      description: "Brightness of the line along each edge, from 0 to 2.",
     },
     {
       name: "intensity",
@@ -89,24 +161,60 @@ With `animate={false}` it draws one frame. `stillTime` picks which moment, so yo
       description: "Brightness of the curtains, from 0 to 1.",
     },
     {
-      name: "stillTime",
+      name: "shimmer",
+      type: "number",
+      default: "0.2",
+      description: "A slow brightness ripple, from 0 to 1.",
+    },
+    {
+      name: "scale",
+      type: "number",
+      default: "1",
+      description: "Horizontal zoom. Higher values fit more folds across.",
+    },
+    {
+      name: "tilt",
       type: "number",
       default: "0",
-      description:
-        "The moment drawn when motion is off or reduced, in seconds.",
+      description: "Tilt of the curtains in degrees, from -45 to 45.",
+    },
+    {
+      name: "drift",
+      type: "number",
+      default: "0",
+      description: "Sideways travel, from -2 (left) to 2 (right).",
+    },
+    {
+      name: "direction",
+      type: '"up" | "down"',
+      default: '"up"',
+      description: '"down" flips it so the rays hang from a bright top edge.',
+    },
+    {
+      name: "mask",
+      type: '"none" | "top" | "bottom" | "edges"',
+      default: '"none"',
+      description: "Fades it to paper where your text sits.",
     },
     {
       name: "palette",
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
-      default: "Paper, then tints of --dither-ink",
+      default: "Built from the colour props",
       description:
-        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+        "Takes over the colours: paper first, brightest last. Palette names, CSS variable names or any CSS colour.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer8"',
       description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "levels",
+      type: "number",
+      default: "All the matrix can draw",
+      description:
+        "Tones the field snaps to before dithering. Low values give hard steps.",
     },
     {
       name: "cell",
@@ -127,9 +235,16 @@ With `animate={false}` it draws one frame. `stillTime` picks which moment, so yo
       description: "false draws one still frame.",
     },
     {
+      name: "stillTime",
+      type: "number",
+      default: "0",
+      description:
+        "The moment drawn when motion is off or reduced, in seconds.",
+    },
+    {
       name: "className",
       type: "string",
-      default: "–",
+      default: "\u2013",
       description: "Size and position. The background fills this box.",
     },
   ]}
@@ -140,4 +255,4 @@ With `animate={false}` it draws one frame. `stillTime` picks which moment, so yo
 - It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
 - With reduced motion turned on, it draws one still frame and stops.
 - It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a CSS approximation in the same colours.
-- It costs one small draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/concepts/performance).
+- It costs one small draw per frame at 30 fps, at one pixel per dither cell. More `curtains` cost a little more per pixel. See [Performance](/docs/concepts/performance).

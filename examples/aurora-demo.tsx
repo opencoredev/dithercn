@@ -3,26 +3,27 @@
 import { Aurora } from "@/components/dithercn/aurora";
 import { usePreviewValue } from "@/components/preview-controls";
 import * as knobs from "@/examples/aurora-controls";
-import { toward } from "@/examples/background-tint";
 
 export default function AuroraDemo() {
-  const tint = usePreviewValue(knobs.tint);
-  const height = usePreviewValue(knobs.height);
-  const sway = usePreviewValue(knobs.sway);
-  const animate = usePreviewValue(knobs.animate);
-
   return (
     <Aurora
-      palette={[
-        "--dither-paper",
-        toward(tint, 30),
-        toward(tint, 70),
-        tint,
-        toward(tint, 50, "--foreground"),
-      ]}
-      height={height}
-      sway={sway}
-      animate={animate}
+      color={usePreviewValue(knobs.tint)}
+      tipColor={usePreviewValue(knobs.tip)}
+      curtains={usePreviewValue(knobs.curtains)}
+      height={usePreviewValue(knobs.height)}
+      spread={usePreviewValue(knobs.spread)}
+      sway={usePreviewValue(knobs.sway)}
+      turbulence={usePreviewValue(knobs.turbulence)}
+      rays={usePreviewValue(knobs.rays)}
+      length={usePreviewValue(knobs.length)}
+      glow={usePreviewValue(knobs.glow)}
+      tilt={usePreviewValue(knobs.tilt)}
+      drift={usePreviewValue(knobs.drift)}
+      direction={usePreviewValue(knobs.direction)}
+      mask={usePreviewValue(knobs.mask)}
+      matrix={usePreviewValue(knobs.matrix)}
+      cell={usePreviewValue(knobs.cell)}
+      animate={usePreviewValue(knobs.animate)}
       className="absolute inset-0"
     />
   );
