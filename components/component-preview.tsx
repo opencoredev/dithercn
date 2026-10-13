@@ -1,20 +1,58 @@
 import type { ReactNode } from "react";
 
-import { ComponentSource } from "@/components/component-source";
+import { ComponentPreviewFrame } from "@/components/component-preview-frame";
+import type {
+  PreviewAlign,
+  PreviewSize,
+} from "@/components/component-preview-frame";
+import { formatCode } from "@/lib/format-code";
+import { highlightCode } from "@/lib/highlight-code";
+import { readOptionalFromRoot } from "@/lib/registry";
 
-export const ComponentPreview = ({
-  name,
+/**
+ * A demo on a framed stage with Preview and Code tabs.
+ *
+ * ```mdx
+ * <ComponentPreview src="examples/aurora-demo.tsx" size="lg" align="stretch">
+ *   <AuroraDemo />
+ * </ComponentPreview>
+ * ```
+ *
+ * `src` is the demo file shown on the Code tab, relative to the repo root.
+ * `size` sets the stage height (`full` is a fixed, taller stage for
+ * backgrounds); `align="stretch"` lets the demo fill the stage edge to edge
+ * instead of centring it with padding. The demo mounts when the stage
+ * nears the viewport, and Replay remounts it.
+ */
+export const ComponentPreview = async ({
   src,
-  title,
+  size = "md",
+  align = "center",
+  className,
   children,
 }: {
-  name?: string;
   src?: string;
-  title?: string;
-  children?: ReactNode;
-}) => (
-  <>
-    {children}
-    <ComponentSource name={name} src={src} title={title} />
-  </>
-);
+  size?: PreviewSize;
+  align?: PreviewAlign;
+  className?: string;
+  children: ReactNode;
+}) => {
+  const raw = src ? await readOptionalFromRoot(src) : null;
+  if (src && raw === null) {
+    throw new Error(`ComponentPreview: no file at "${src}"`);
+  }
+  const code = raw === null ? null : await formatCode(raw);
+  const codeHtml = code === null ? null : await highlightCode(code, "tsx");
+
+  return (
+    <ComponentPreviewFrame
+      code={code}
+      codeHtml={codeHtml}
+      size={size}
+      align={align}
+      className={className}
+    >
+      {children}
+    </ComponentPreviewFrame>
+  );
+};
