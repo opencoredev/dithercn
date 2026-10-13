@@ -491,8 +491,13 @@ const Section = ({
 
 const SEGMENT_LIST =
   "bg-muted/70 grid h-9 w-full auto-cols-fr grid-flow-col rounded-full p-0.5";
-const SEGMENT_TRIGGER =
-  "text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:bg-background h-full rounded-full border-0 px-3 text-[0.8rem] transition-colors duration-150 data-[state=active]:shadow-none dark:data-[state=active]:border-0";
+// Radix marks the selected tab with data-state="active", Base UI with
+// data-active; style both so either shadcn base works.
+const SEGMENT_TRIGGER = cn(
+  "text-muted-foreground hover:text-foreground h-full rounded-full border-0 px-3 text-[0.8rem] transition-colors duration-150",
+  "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:border-0 dark:data-[state=active]:bg-background",
+  "data-active:bg-background data-active:text-foreground data-active:shadow-none dark:data-active:border-0 dark:data-active:bg-background"
+);
 
 const ICON_CLASS = "size-4 shrink-0";
 
