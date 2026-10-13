@@ -18,7 +18,7 @@ const data = [
 export default function BarChartDemo() {
   return (
     <div className="bg-background border-border w-full max-w-xl rounded-2xl border p-5 [--dither-paper:var(--background)] sm:p-6">
-      <div className="mb-5 flex items-end justify-between gap-4">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
         <div className="flex flex-col gap-1">
           <span className="text-muted-foreground text-sm">
             Deploys to production

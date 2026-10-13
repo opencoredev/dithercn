@@ -34,6 +34,7 @@ export default function SparklineLine() {
             data={service.latency}
             label={`${service.name} p50 latency, last hour`}
             area={false}
+            domain={[0, 180]}
             color={service.spiked ? "--dither-ink" : "--muted-foreground"}
             height={20}
             className="flex-1"

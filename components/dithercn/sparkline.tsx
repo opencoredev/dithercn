@@ -29,6 +29,11 @@ export interface SparklineProps extends Omit<
   matrix?: DitherMatrix;
   /** Dither cell in px. Default 2, a step finer than `--dither-cell`. */
   cell?: number;
+  /**
+   * The value range the height covers, as `[min, max]`. Default: the
+   * data's own range. Give a row of sparklines one domain to compare them.
+   */
+  domain?: readonly [number, number];
   /** Formats values in the accessible summary. Default compact (1.2K). */
   format?: Intl.NumberFormatOptions;
 }
@@ -75,6 +80,7 @@ export const Sparkline = ({
   level = 0.5,
   matrix = "bayer4",
   cell,
+  domain,
   format = { maximumFractionDigits: 1, notation: "compact" },
   className,
   style,
@@ -102,7 +108,8 @@ export const Sparkline = ({
   const ink = cssColor(color);
   // Leave room for the stroke and the dot so neither is clipped.
   const inset = (dot ? DOT : 0) + STROKE;
-  const span = high - low || 1;
+  const [floor, ceiling] = domain ?? [low, high];
+  const span = ceiling - floor || 1;
   const points =
     width === null
       ? []
@@ -111,7 +118,7 @@ export const Sparkline = ({
             data.length === 1
               ? width / 2
               : inset + (index / (data.length - 1)) * (width - inset * 2),
-          y: inset + (1 - (value - low) / span) * (height - inset * 2),
+          y: inset + (1 - (value - floor) / span) * (height - inset * 2),
         }));
   const line = points
     .map(({ x, y }, index) => `${index === 0 ? "M" : "L"}${x} ${y}`)

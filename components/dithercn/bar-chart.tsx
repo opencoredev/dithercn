@@ -280,7 +280,7 @@ export const BarChart = <T,>({
             x={xAt(highlighted)}
             y={Math.min(labelBar.y, yAt(labelValue)) - 6}
             textAnchor="middle"
-            className="fill-foreground font-mono text-[10px] font-medium tabular-nums"
+            className="fill-foreground ease-(--ease-out) font-mono text-[10px] font-medium tabular-nums transition-opacity delay-700 duration-300 motion-reduce:transition-none starting:opacity-0"
           >
             {formatValue(labelValue)}
           </text>
