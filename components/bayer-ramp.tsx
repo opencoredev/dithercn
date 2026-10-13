@@ -42,15 +42,13 @@ export const BayerRamp = ({ className }: { className?: string }) => (
         <div
           key={level}
           className="bayer-ramp-step bg-dither-ink"
-          style={
-            {
-              "--i": level,
-              WebkitMaskImage: mask,
-              WebkitMaskSize: "calc(var(--dither-cell) * 4)",
-              maskImage: mask,
-              maskSize: "calc(var(--dither-cell) * 4)",
-            } as React.CSSProperties
-          }
+          style={{
+            WebkitMaskImage: mask,
+            WebkitMaskSize: "calc(var(--dither-cell) * 4)",
+            animationDelay: `${level * 24 + 120}ms`,
+            maskImage: mask,
+            maskSize: "calc(var(--dither-cell) * 4)",
+          }}
         />
       ))}
     </div>

@@ -173,6 +173,7 @@ export const DocsCopyPage = ({
       variant="secondary"
       size="sm"
       className="peer -ml-0.5 size-8 md:size-7 md:text-[0.8rem]"
+      aria-label="More ways to use this page"
     >
       <Icon icon={ArrowDown01Icon} className="rotate-180 sm:rotate-0" />
     </Button>

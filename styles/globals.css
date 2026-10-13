@@ -544,8 +544,8 @@
 }
 
 .bayer-ramp-step {
+  /* Per-step animation-delay is set inline by <BayerRamp />. */
   animation: bayer-ramp-in 520ms var(--ease-out) both;
-  animation-delay: calc(var(--i) * 24ms + 120ms);
 }
 
 @media (prefers-reduced-motion: reduce) {
