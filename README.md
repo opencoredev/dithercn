@@ -57,7 +57,7 @@ The site serves `/llms.txt`, `/llms-full.txt`, a Markdown version of every docs 
 
 ## Credits
 
-Built on [startercn](https://github.com/shadcn-labs/startercn) by Shadcn Labs (MIT). Docs run on [Fumadocs](https://fumadocs.dev), and icons come from [Hugeicons](https://hugeicons.com).
+Docs run on [Fumadocs](https://fumadocs.dev), and icons come from [Hugeicons](https://hugeicons.com).
 
 ## License
 
