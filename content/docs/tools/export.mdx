@@ -1,22 +1,53 @@
 ---
 title: "Export"
-description: "Save any dither as a PNG, a compact SVG, or a CSS rule, from your own code."
+description: "Save any dither as a PNG, a compact SVG or a CSS rule, with a ready-made export panel or from your own code."
 ---
 
 import ExportDemo from "@/examples/export-demo";
 import ExportTile from "@/examples/export-tile";
+import { controls as exportControls } from "@/examples/export-controls";
 
-<ComponentPreview src="examples/export-demo.tsx">
+<ComponentPreview
+  src="examples/export-demo.tsx"
+  size="lg"
+  controls={exportControls}
+>
   <ExportDemo />
 </ComponentPreview>
 
-`dither-export` is a small library next to `dither-core`. It takes the `ImageData` that `ditherImage` returns, one pixel per cell, and turns it into files. The [Dither maker](/docs/tools/dither-maker) is built on it.
+Export comes in two parts. `dither-export-panel` is the panel above, the same one the [Dither maker](/docs/tools/dither-maker) opens: pick PNG, SVG or CSS and a size, see the file and its weight, then copy or download it. Underneath, `dither-export` is a small library that turns the `ImageData` from `ditherImage`, one pixel per cell, into files.
+
+## Which format
+
+| Format | Best for | How it scales |
+| --- | --- | --- |
+| PNG | Photos and error-diffusion dithers, which have few long runs | Pixel-exact; pick 1× to 4× |
+| SVG | Ordered dithers, gradients and flat artwork | Vector cells, sharp at any size from one pixel per cell up |
+| CSS | Backgrounds you want in a stylesheet, with no extra request | The whole image as a covering background, or a repeating tile |
 
 ## Installation
+
+The panel brings the library with it.
+
+<InstallBlock name="dither-export-panel" />
+
+For the library alone:
 
 <InstallBlock name="dither-export" />
 
 ## Usage
+
+### The panel
+
+```tsx
+import { DitherExportPanel } from "@/components/dithercn/dither-export-panel";
+
+<DitherExportPanel image={dither} cell={4} filename="hero" />;
+```
+
+`image` is a dither with one pixel per cell, and `cell` is how many pixels each cell becomes at 1×. Pass `null` while the dither is being made; the panel shows itself disabled.
+
+### The library
 
 ```tsx
 import { ditherImage } from "@/lib/dither";
@@ -40,13 +71,13 @@ const svg = toSVG(dither, { cell: 4 });
 const css = toCSS({ kind: "image", image: dither, selector: ".hero" });
 ```
 
-`toSVG` and `toCSS` are plain functions that return strings. `toPNG`, `download` and the PNG form of `toCSS` need a browser, because they draw to a canvas.
+`toSVG` and `toCSS` with a tile return strings and run anywhere, including on the server. `toPNG`, `download` and the PNG form of `toCSS` need a browser, because they draw to a canvas.
 
 ## Examples
 
-### A tile in pure CSS
+### A fade in pure CSS
 
-The default kind of `toCSS` repeats one matrix tile at a coverage `level`, from 0 to 1. In `mask` mode it paints the element with `ink` and masks it to the dither, so the ink can be a CSS variable and follows your theme. These rules are built on the server; the page runs no script for them.
+The default kind of `toCSS` repeats one matrix tile at a coverage `level` from 0 to 1. In `mask` mode it paints the element with `ink` and masks it to the dither, so the ink can be a CSS variable that follows your theme. Four bands at falling levels make the stepped fade at the bottom of this card. The rules are built on the server; the page runs no script for them.
 
 <ComponentPreview src="examples/export-tile.tsx">
   <ExportTile />
@@ -79,6 +110,53 @@ const svg = toSVG(
 
 ## API
 
+### DitherExportPanel
+
+<PropsTable
+  rows={[
+    {
+      name: "image",
+      type: "ImageData | null",
+      description: "The dither, one pixel per cell. null disables the panel.",
+      required: true,
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "4",
+      description: "Pixels per cell at 1×. The size choice multiplies it.",
+    },
+    {
+      name: "filename",
+      type: "string",
+      default: '"dither"',
+      description:
+        "File name without the extension. 2× and up add @2x. Also the CSS class name.",
+    },
+    {
+      name: "defaultFormat",
+      type: '"png" | "svg" | "css"',
+      default: '"png"',
+      description: "The tab selected first.",
+    },
+    {
+      name: "matrix",
+      type: "DitherMatrix",
+      default: '"bayer4"',
+      description: "The pattern of the CSS tile.",
+    },
+    {
+      name: "onExport",
+      type: "(event: ExportEvent) => void",
+      default: "–",
+      description:
+        "Called after each copy or download with the format, action, file name and size in bytes.",
+    },
+  ]}
+/>
+
+The CSS tab writes the whole image by default, embedded as whichever of PNG or SVG comes out smaller. **Tile** writes a repeating tile instead, a few hundred bytes, using the image's lightest colour as ink and its darkest as paper.
+
 ### toPNG
 
 ```ts
@@ -103,7 +181,7 @@ toSVG(
 ): string
 ```
 
-An SVG in cell units, scaled to `cell` pixels per cell (default 1). Runs of one colour merge into rectangles, one `<path>` per colour. The most used colour becomes a single background rectangle unless `background` is `false`. `palette` colours an `IndexedBitmap` by index.
+An SVG in cell units, scaled to `cell` pixels per cell (default 1). The most used colour becomes one background rectangle unless `background` is `false`. Rows of same-coloured cells become short relative strokes and taller blocks become rectangles, at most two `<path>`s per colour, so a 400 × 225 ordered dither is about 150 KB before gzip. `palette` colours an `IndexedBitmap` by index.
 
 ### toCSS
 
@@ -111,7 +189,7 @@ An SVG in cell units, scaled to `cell` pixels per cell (default 1). Runs of one 
 toCSS(options: CSSOptions): string
 ```
 
-Returns one CSS rule. The default `tile` kind repeats one matrix tile; the `image` kind embeds a whole dither. Options:
+Returns one CSS rule. The default `tile` kind repeats one matrix tile; the `image` kind embeds a whole dither.
 
 <PropsTable
   rows={[
@@ -150,8 +228,7 @@ Returns one CSS rule. The default `tile` kind repeats one matrix tile; the `imag
       name: "mode",
       type: '"background" | "mask"',
       default: '"background"',
-      description:
-        "Tile kind. Bake the ink into the tile, or mask the element.",
+      description: "Tile kind. Bake the ink into the tile, or mask the element.",
     },
     {
       name: "kind",
@@ -194,6 +271,7 @@ Saves a Blob or a string through the browser's download flow. Strings are saved 
 
 ## Notes
 
-- Choose the format by the picture. Ordered dithers of gradients and shapes have long runs, so their SVG is tiny. Error-diffusion dithers of photos have almost none, and PNG compresses them better.
-- PNG exports are capped at 16,384 pixels on the longest side, the most every current browser can draw.
+- PNG and SVG exports match pixel for pixel at their own size. Shown smaller than one pixel per cell, an SVG drops cells in stripes, as any cell-based vector does; use PNG for thumbnails. The panel's SVG preview draws the file at full size and shrinks it smoothly, so it shows what you get.
+- Copying a PNG needs the async clipboard with image support (Chrome, Edge, Safari). Where it is missing, Copy is disabled for PNG and Download still works.
+- PNG exports are capped at 16,384 pixels on the longest side, the most every current browser can draw; larger sizes are disabled in the panel.
 - The functions never change their input.

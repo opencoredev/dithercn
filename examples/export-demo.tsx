@@ -1,140 +1,124 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
-import { Button } from "@/components/ui/button";
+import { DitherExportPanel } from "@/components/dithercn/dither-export-panel";
+import { usePreviewValue } from "@/components/preview-controls";
+import * as knobs from "@/examples/export-controls";
 import { ditherImage, useDitherColors } from "@/lib/dither";
 import type { Rgba } from "@/lib/dither";
-import { download, toCSS, toPNG, toSVG } from "@/lib/dither/export";
 
-const COLS = 144;
-const ROWS = 80;
-const CELL = 3;
+const COLS = 120;
+const ROWS = 72;
 
-// A soft glow rising from the bottom edge, as greys from 0 to 255.
-const glow = () => {
+const HORIZON = 0.64;
+
+// A sun setting on a horizon with its reflection, as greys from 0 to 255.
+const toneAt = (u: number, v: number) => {
+  const x = u * (COLS / ROWS);
+  if (v < HORIZON) {
+    const distance = Math.hypot(x, v - HORIZON + 0.02);
+    const disc = distance < 0.26 ? 1 : 0;
+    const glow = Math.exp(-((distance - 0.26) ** 2) * 22) * 0.6;
+    return Math.max(disc, 0.42 * (v / HORIZON) ** 3 + glow);
+  }
+  const depth = (v - HORIZON) / (1 - HORIZON);
+  const reflection = Math.exp(-((x / (0.16 + depth * 0.3)) ** 2)) * (1 - depth);
+  return 0.8 * reflection;
+};
+
+const TONES = Float32Array.from({ length: COLS * ROWS }, (_, index) =>
+  Math.min(
+    1,
+    toneAt(
+      ((index % COLS) + 0.5) / COLS - 0.5,
+      (Math.floor(index / COLS) + 0.5) / ROWS
+    )
+  )
+);
+
+const GREYS = (() => {
   const data = new Uint8ClampedArray(COLS * ROWS * 4);
-  for (let y = 0; y < ROWS; y += 1) {
-    for (let x = 0; x < COLS; x += 1) {
-      const dx = (x / COLS - 0.5) * (COLS / ROWS);
-      const dy = y / ROWS - 1.05;
-      const tone = Math.exp(-(dx * dx + dy * dy) * 2.2);
-      const offset = (y * COLS + x) * 4;
-      data.fill(Math.round(tone * 255), offset, offset + 3);
-      data[offset + 3] = 255;
-    }
+  for (let index = 0; index < TONES.length; index += 1) {
+    data.fill((TONES[index] ?? 0) * 255, index * 4, index * 4 + 3);
+    data[index * 4 + 3] = 255;
   }
   return { data, height: ROWS, width: COLS };
-};
+})();
 
-const paint = (paper: Rgba, ink: Rgba) => {
-  const result = ditherImage(glow(), {
-    method: "bayer4",
-    palette: [paper, ink],
+/**
+ * Dither the greys black and white, then paint black as paper and white
+ * as ink. Ordered dithers spread their threshold over the whole 0 to 1
+ * range, so dithering straight to two close colours leaves stray cells.
+ */
+const paint = (
+  method: (typeof knobs.method.options)[number],
+  paper: Rgba,
+  ink: Rgba
+) => {
+  const result = ditherImage(GREYS, {
+    method,
+    palette: [
+      [0, 0, 0],
+      [1, 1, 1],
+    ],
   });
+  const { data } = result;
+  for (let offset = 0; offset < data.length; offset += 4) {
+    const color = (data[offset] ?? 0) > 127 ? ink : paper;
+    data[offset] = color[0] * 255;
+    data[offset + 1] = color[1] * 255;
+    data[offset + 2] = color[2] * 255;
+  }
   return result;
 };
-
-const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KB`;
 
 export default function ExportDemo() {
   const root = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const colors = useDitherColors(root);
-  const [image, setImage] = useState<ImageData | null>(null);
-  const [sizes, setSizes] = useState<{
-    png: number;
-    svg: number;
-    css: number;
-  }>();
+  const tint = usePreviewValue(knobs.tint);
+  const method = usePreviewValue(knobs.method);
+  const cell = usePreviewValue(knobs.cell);
+  const colors = useDitherColors(root, [tint, "--card"]);
+
+  const image = useMemo(() => {
+    if (!colors) {
+      return null;
+    }
+    const [ink, paper]: readonly [Rgba, Rgba] = colors;
+    return paint(method, paper, ink);
+  }, [colors, method]);
 
   useEffect(() => {
-    if (!colors) {
-      return;
+    if (image) {
+      canvas.current?.getContext("2d")?.putImageData(image, 0, 0);
     }
-    const [ink, paper] = colors;
-    const next = paint(paper, ink);
-    canvas.current?.getContext("2d")?.putImageData(next, 0, 0);
-    setImage(next);
-    const measure = async () => {
-      const png = await toPNG(next, { scale: CELL });
-      setSizes({
-        css: toCSS({ image: next, kind: "image" }).length,
-        png: png.size,
-        svg: toSVG(next, { cell: CELL }).length,
-      });
-    };
-    measure();
-  }, [colors]);
+  }, [image]);
 
   return (
-    <div ref={root} className="grid w-[432px] max-w-full gap-4">
-      <canvas
-        ref={canvas}
-        width={COLS}
-        height={ROWS}
-        role="img"
-        aria-label="A dithered glow rising from the bottom edge"
-        className="bg-background aspect-[144/80] w-[432px] max-w-full rounded-xl [image-rendering:pixelated]"
+    <div
+      ref={root}
+      className="grid w-full max-w-2xl items-center gap-6 sm:grid-cols-[minmax(0,1fr)_19rem]"
+    >
+      <figure className="grid gap-2.5">
+        <canvas
+          ref={canvas}
+          width={COLS}
+          height={ROWS}
+          role="img"
+          aria-label="A dithered sun setting over a horizon"
+          className="aspect-[120/72] w-full rounded-xl outline-1 -outline-offset-1 outline-white/10 [image-rendering:pixelated]"
+        />
+        <figcaption className="text-muted-foreground font-mono text-[11px] tabular-nums">
+          {COLS} × {ROWS} cells · {cell}px each
+        </figcaption>
+      </figure>
+      <DitherExportPanel
+        image={image}
+        cell={cell}
+        filename="sunset"
+        className="bg-background/50 ring-border/60 rounded-[20px] p-4 ring-1"
       />
-      <div className="grid grid-cols-3 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!image}
-          onClick={async () => {
-            if (image) {
-              download({
-                data: await toPNG(image, { scale: CELL }),
-                filename: "glow.png",
-              });
-            }
-          }}
-        >
-          PNG{" "}
-          {sizes ? (
-            <span className="text-muted-foreground">{kb(sizes.png)}</span>
-          ) : null}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!image}
-          onClick={() => {
-            if (image) {
-              download({
-                data: toSVG(image, { cell: CELL }),
-                filename: "glow.svg",
-                type: "image/svg+xml",
-              });
-            }
-          }}
-        >
-          SVG{" "}
-          {sizes ? (
-            <span className="text-muted-foreground">{kb(sizes.svg)}</span>
-          ) : null}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!image}
-          onClick={() => {
-            if (image) {
-              download({
-                data: toCSS({ image, kind: "image", selector: ".glow" }),
-                filename: "glow.css",
-                type: "text/css",
-              });
-            }
-          }}
-        >
-          CSS{" "}
-          {sizes ? (
-            <span className="text-muted-foreground">{kb(sizes.css)}</span>
-          ) : null}
-        </Button>
-      </div>
     </div>
   );
 }
