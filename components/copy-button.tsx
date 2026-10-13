@@ -1,10 +1,11 @@
 "use client";
 
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { Copy01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import type { HTMLMotionProps, Variants } from "motion/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback } from "react";
 
+import { Icon } from "@/components/icon";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -86,7 +87,6 @@ export const CopyButton = ({
           : "bg-code absolute top-3 right-2 z-10 size-7 hover:opacity-100 focus-visible:opacity-100",
         className
       )}
-      sound="copy"
       onClick={handleCopy}
       {...props}
     >
@@ -94,11 +94,11 @@ export const CopyButton = ({
       <AnimatePresence mode="popLayout" initial={false}>
         {isCopied ? (
           <motion.span key="done" {...motionIconProps}>
-            <CheckIcon strokeWidth={3} />
+            <Icon icon={Tick02Icon} strokeWidth={3} />
           </motion.span>
         ) : (
           <motion.span key="idle" {...motionIconProps}>
-            <CopyIcon />
+            <Icon icon={Copy01Icon} />
           </motion.span>
         )}
       </AnimatePresence>

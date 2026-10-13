@@ -23,7 +23,6 @@ export const CodeCollapsibleWrapper = ({
 
   return (
     <Collapsible
-      sounds
       open={isOpened}
       onOpenChange={setIsOpened}
       className={cn("group/collapsible relative md:-mx-1", className)}

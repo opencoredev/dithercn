@@ -11,7 +11,7 @@ const buildDisplayConfig = () => ({
     ui: "@/components/ui",
     utils: "@/lib/utils",
   },
-  iconLibrary: "lucide",
+  iconLibrary: "hugeicons",
   resolvedPaths: {
     components: "@/components",
     cwd: "/",

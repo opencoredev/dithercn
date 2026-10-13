@@ -1,7 +1,7 @@
 "use client";
 
 import type { Transition, Variants } from "motion/react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Children, useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -29,15 +29,21 @@ export const TextFlip = ({
   className,
   children,
   interval = 2,
-  transition = { duration: 0.3 },
+  transition = { duration: 0.28, ease: [0.23, 1, 0.32, 1] },
   variants = defaultVariants,
   onIndexChange,
 }: TextFlipProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const prefersReducedMotion = useReducedMotion();
 
   const items = Children.toArray(children);
 
   useEffect(() => {
+    // Auto-rotating text is motion too: hold the first item still.
+    if (prefersReducedMotion) {
+      return;
+    }
+
     const timer = setInterval(() => {
       setCurrentIndex((prev) => {
         const next = (prev + 1) % items.length;
@@ -47,7 +53,7 @@ export const TextFlip = ({
     }, interval * 1000);
 
     return () => clearInterval(timer);
-  }, [items.length, interval, onIndexChange]);
+  }, [items.length, interval, onIndexChange, prefersReducedMotion]);
 
   return (
     <AnimatePresence mode="wait" initial={false}>

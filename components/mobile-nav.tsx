@@ -13,9 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ROUTES } from "@/constants/routes";
-import { useFeedback } from "@/hooks/use-feedback";
-import { EXCLUDED_SECTIONS, isComponentsFolder } from "@/lib/docs";
-import { getAllPagesFromFolder, getPagesFromFolder } from "@/lib/page-tree";
+import { getPagesFromFolder } from "@/lib/page-tree";
 import { cn } from "@/lib/utils";
 
 const MobileLink = ({
@@ -30,13 +28,11 @@ const MobileLink = ({
   className?: string;
 }) => {
   const router = useRouter();
-  const playClick = useFeedback({ sound: "click" });
 
   const handleClick = useCallback(() => {
-    playClick();
     router.push(href.toString());
     onOpenChange?.(false);
-  }, [router, href, onOpenChange, playClick]);
+  }, [router, href, onOpenChange]);
 
   return (
     <Link
@@ -88,7 +84,7 @@ export const MobileNav = ({
   const [open, setOpen] = useState(false);
 
   return (
-    <Popover sounds open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -150,15 +146,7 @@ export const MobileNav = ({
             if (item.type !== "folder") {
               return null;
             }
-            if (EXCLUDED_SECTIONS.has(item.$id ?? "")) {
-              return null;
-            }
-
-            const pages = isComponentsFolder(item)
-              ? getAllPagesFromFolder(item).filter(
-                  (page) => page.url !== ROUTES.DOCS_COMPONENTS
-                )
-              : getPagesFromFolder(item);
+            const pages = getPagesFromFolder(item);
 
             return (
               <MobileNavGroup

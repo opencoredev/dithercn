@@ -1,12 +1,7 @@
-"use client";
-
+import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
-import { useCallback, useRef } from "react";
 
-import type { ArrowLeftIconHandle } from "@/components/animated-icons/arrow-left";
-import { ArrowLeftIcon } from "@/components/animated-icons/arrow-left";
-import type { ArrowRightIconHandle } from "@/components/animated-icons/arrow-right";
-import { ArrowRightIcon } from "@/components/animated-icons/arrow-right";
+import { Icon } from "@/components/icon";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import {
@@ -15,6 +10,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+
+// Arrows nudge 2px toward the destination on hover, on hover-capable devices.
+const NUDGE_CLS =
+  "transition-transform duration-150 ease-(--ease-out) motion-reduce:transition-none";
 
 export const DocsNavLink = ({
   href,
@@ -31,34 +30,36 @@ export const DocsNavLink = ({
   tooltip?: { title: string; icon: React.ReactNode };
   transitionTypes?: string[];
 }) => {
-  const iconRef = useRef<ArrowLeftIconHandle | ArrowRightIconHandle>(null);
-
-  const handleMouseEnter = useCallback(() => {
-    iconRef.current?.startAnimation();
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    iconRef.current?.stopAnimation();
-  }, []);
+  const isBack = transitionTypes?.includes("nav-back") ?? false;
+  const isForward = transitionTypes?.includes("nav-forward") ?? false;
 
   const link = (
     <Button
       variant="secondary"
       size={size}
-      className={cn("shadow-none", className)}
+      className={cn("group/nav shadow-none", className)}
       asChild
-      sound="click"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       {...props}
     >
       <Link href={href} transitionTypes={transitionTypes}>
-        {transitionTypes?.includes("nav-back") && (
-          <ArrowLeftIcon ref={iconRef} />
+        {isBack && (
+          <Icon
+            icon={ArrowLeft01Icon}
+            className={cn(
+              NUDGE_CLS,
+              "[@media(hover:hover)]:group-hover/nav:-translate-x-0.5"
+            )}
+          />
         )}
         {children}
-        {transitionTypes?.includes("nav-forward") && (
-          <ArrowRightIcon ref={iconRef} />
+        {isForward && (
+          <Icon
+            icon={ArrowRight01Icon}
+            className={cn(
+              NUDGE_CLS,
+              "[@media(hover:hover)]:group-hover/nav:translate-x-0.5"
+            )}
+          />
         )}
       </Link>
     </Button>

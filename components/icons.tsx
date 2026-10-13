@@ -1,5 +1,6 @@
-import { FileIcon, TerminalSquareIcon } from "lucide-react";
+import { ComputerTerminal01Icon, File01Icon } from "@hugeicons/core-free-icons";
 
+import { Icon } from "@/components/icon";
 import type { PackageManager } from "@/hooks/use-package-manager";
 import { cn } from "@/lib/utils";
 
@@ -423,7 +424,7 @@ export const getIconForLanguageExtension = (language: string) => {
       return <TsIcon />;
     }
     default: {
-      return <FileIcon className="size-4" />;
+      return <Icon icon={File01Icon} className="size-4" />;
     }
   }
 };
@@ -443,7 +444,7 @@ export const getIconForPackageManager = (manager: PackageManager) => {
       return <BunIcon />;
     }
     default: {
-      return <TerminalSquareIcon />;
+      return <Icon icon={ComputerTerminal01Icon} />;
     }
   }
 };

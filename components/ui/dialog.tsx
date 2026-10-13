@@ -1,76 +1,16 @@
 "use client";
 
-import { XIcon } from "lucide-react";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { useCallback, useEffect, useRef } from "react";
 
-import { modalOpen, modalClose } from "@/audio/core";
-import { useFeedback } from "@/hooks/use-feedback";
+import { Icon } from "@/components/icon";
 import { cn } from "@/lib/utils";
 
 const Dialog = ({
-  onOpenChange,
-  sounds = false,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root> & {
-  sounds?: boolean;
-}) => {
-  const playOpen = useFeedback({ soundDef: modalOpen });
-  const playClose = useFeedback({ soundDef: modalClose });
-  const isControlled = props.open !== undefined;
-  const lastOpen = useRef(props.open ?? props.defaultOpen ?? false);
-
-  const playStateSound = useCallback(
-    (open: boolean) => {
-      if (!sounds || open === lastOpen.current) {
-        return;
-      }
-
-      if (open) {
-        playOpen();
-      } else {
-        playClose();
-      }
-
-      lastOpen.current = open;
-    },
-    [playClose, playOpen, sounds]
-  );
-
-  useEffect(() => {
-    if (!isControlled) {
-      return;
-    }
-
-    playStateSound(props.open ?? false);
-  }, [isControlled, playStateSound, props.open]);
-
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      playStateSound(open);
-      onOpenChange?.(open);
-    },
-    [onOpenChange, playStateSound]
-  );
-
-  if (!sounds) {
-    return (
-      <DialogPrimitive.Root
-        data-slot="dialog"
-        onOpenChange={onOpenChange}
-        {...props}
-      />
-    );
-  }
-
-  return (
-    <DialogPrimitive.Root
-      data-slot="dialog"
-      onOpenChange={handleOpenChange}
-      {...props}
-    />
-  );
-};
+}: React.ComponentProps<typeof DialogPrimitive.Root>) => (
+  <DialogPrimitive.Root data-slot="dialog" {...props} />
+);
 
 const DialogTrigger = ({
   ...props
@@ -128,7 +68,7 @@ const DialogContent = ({
           data-slot="dialog-close"
           className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
         >
-          <XIcon />
+          <Icon icon={Cancel01Icon} />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       )}

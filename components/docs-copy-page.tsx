@@ -1,9 +1,10 @@
 "use client";
 
-import { ChevronDownIcon } from "lucide-react";
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { useCallback } from "react";
 
 import { CopyButton } from "@/components/copy-button";
+import { Icon } from "@/components/icon";
 import {
   ChatGptIcon,
   ClaudeIcon,
@@ -173,24 +174,23 @@ export const DocsCopyPage = ({
       size="sm"
       className="peer -ml-0.5 size-8 md:size-7 md:text-[0.8rem]"
     >
-      <ChevronDownIcon className="rotate-180 sm:rotate-0" />
+      <Icon icon={ArrowDown01Icon} className="rotate-180 sm:rotate-0" />
     </Button>
   );
 
   return (
-    <Popover sounds>
+    <Popover>
       <div className="group/buttons relative flex rounded-lg bg-secondary *:data-[slot=button]:focus-visible:relative *:data-[slot=button]:focus-visible:z-10">
         <PopoverAnchor />
         <CopyButton
           value={copyValue}
           showTooltip={false}
-          sound="copy"
           variant="secondary"
           className="md:h-7 md:text-[0.8rem]"
         >
           Copy Page
         </CopyButton>
-        <DropdownMenu sounds>
+        <DropdownMenu>
           <DropdownMenuTrigger asChild className="hidden sm:flex">
             {trigger}
           </DropdownMenuTrigger>
@@ -199,7 +199,7 @@ export const DocsCopyPage = ({
             className="animate-none! rounded-lg shadow-none"
           >
             {MENU_ITEMS.map(([key, render]) => (
-              <DropdownMenuItem key={key} asChild sound="click">
+              <DropdownMenuItem key={key} asChild>
                 {render(url)}
               </DropdownMenuItem>
             ))}
@@ -222,7 +222,6 @@ export const DocsCopyPage = ({
               size="lg"
               asChild
               key={key}
-              sound="click"
               className="w-full justify-start text-base font-normal *:[svg]:text-muted-foreground"
             >
               {render(url)}

@@ -5,7 +5,6 @@ import type { VariantProps } from "class-variance-authority";
 import { Toggle as TogglePrimitive } from "radix-ui";
 import * as React from "react";
 
-import { useFeedback } from "@/hooks/use-feedback";
 import { cn } from "@/lib/utils";
 
 const toggleVariants = cva(
@@ -40,30 +39,14 @@ const Toggle = ({
   className,
   variant,
   size,
-  onPressedChange,
   ...props
 }: React.ComponentProps<typeof TogglePrimitive.Root> &
-  VariantProps<typeof toggleVariants>) => {
-  const playOn = useFeedback({ sound: "toggleOn" });
-  const playOff = useFeedback({ sound: "toggleOff" });
-
-  const handlePressedChange = (pressed: boolean) => {
-    if (pressed) {
-      playOn();
-    } else {
-      playOff();
-    }
-    onPressedChange?.(pressed);
-  };
-
-  return (
-    <TogglePrimitive.Root
-      data-slot="toggle"
-      className={cn(toggleVariants({ className, size, variant }))}
-      onPressedChange={handlePressedChange}
-      {...props}
-    />
-  );
-};
+  VariantProps<typeof toggleVariants>) => (
+  <TogglePrimitive.Root
+    data-slot="toggle"
+    className={cn(toggleVariants({ className, size, variant }))}
+    {...props}
+  />
+);
 
 export { Toggle, toggleVariants };

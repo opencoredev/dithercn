@@ -1,8 +1,9 @@
 "use client";
 
-import { MenuIcon } from "lucide-react";
+import { Menu01Icon } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { Icon } from "@/components/icon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,7 +11,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useFeedback } from "@/hooks/use-feedback";
 import { cn } from "@/lib/utils";
 
 const headingById = (id: string): Element | null =>
@@ -77,7 +77,6 @@ export const DocsTableOfContents = ({
     [toc]
   );
   const activeHeading = useActiveItem(itemIds);
-  const playTick = useFeedback({ sound: "tick" });
 
   if (!toc?.length) {
     return null;
@@ -85,14 +84,14 @@ export const DocsTableOfContents = ({
 
   if (variant === "dropdown") {
     return (
-      <DropdownMenu open={open} onOpenChange={setOpen} sounds>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
             size="sm"
             className={cn("h-8 md:h-7", className)}
           >
-            <MenuIcon /> On This Page
+            <Icon icon={Menu01Icon} /> On This Page
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -103,7 +102,6 @@ export const DocsTableOfContents = ({
             <DropdownMenuItem
               key={item.url}
               asChild
-              sound="click"
               onClick={handleClose}
               data-depth={item.depth}
               className="data-[depth=3]:pl-6 data-[depth=4]:pl-8"
@@ -128,7 +126,6 @@ export const DocsTableOfContents = ({
           className="text-muted-foreground hover:text-foreground data-[active=true]:text-foreground text-[0.8rem] data-[active=true]:font-medium no-underline transition-colors data-[depth=3]:pl-4 data-[depth=4]:pl-6"
           data-active={item.url === `#${activeHeading}`}
           data-depth={item.depth}
-          onClick={playTick}
         >
           {item.title}
         </a>

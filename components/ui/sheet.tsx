@@ -1,76 +1,16 @@
 "use client";
 
-import { XIcon } from "lucide-react";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { Dialog as SheetPrimitive } from "radix-ui";
-import { useCallback, useEffect, useRef } from "react";
 
-import { drawerOpen, drawerClose } from "@/audio/core";
-import { useFeedback } from "@/hooks/use-feedback";
+import { Icon } from "@/components/icon";
 import { cn } from "@/lib/utils";
 
 const Sheet = ({
-  onOpenChange,
-  sounds = false,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Root> & {
-  sounds?: boolean;
-}) => {
-  const playOpen = useFeedback({ soundDef: drawerOpen });
-  const playClose = useFeedback({ soundDef: drawerClose });
-  const isControlled = props.open !== undefined;
-  const lastOpen = useRef(props.open ?? props.defaultOpen ?? false);
-
-  const playStateSound = useCallback(
-    (open: boolean) => {
-      if (!sounds || open === lastOpen.current) {
-        return;
-      }
-
-      if (open) {
-        playOpen();
-      } else {
-        playClose();
-      }
-
-      lastOpen.current = open;
-    },
-    [playClose, playOpen, sounds]
-  );
-
-  useEffect(() => {
-    if (!isControlled) {
-      return;
-    }
-
-    playStateSound(props.open ?? false);
-  }, [isControlled, playStateSound, props.open]);
-
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      playStateSound(open);
-      onOpenChange?.(open);
-    },
-    [onOpenChange, playStateSound]
-  );
-
-  if (!sounds) {
-    return (
-      <SheetPrimitive.Root
-        data-slot="sheet"
-        onOpenChange={onOpenChange}
-        {...props}
-      />
-    );
-  }
-
-  return (
-    <SheetPrimitive.Root
-      data-slot="sheet"
-      onOpenChange={handleOpenChange}
-      {...props}
-    />
-  );
-};
+}: React.ComponentProps<typeof SheetPrimitive.Root>) => (
+  <SheetPrimitive.Root data-slot="sheet" {...props} />
+);
 
 const SheetTrigger = ({
   ...props
@@ -132,7 +72,7 @@ const SheetContent = ({
     >
       {children}
       <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
-        <XIcon className="size-4" />
+        <Icon icon={Cancel01Icon} className="size-4" />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>
     </SheetPrimitive.Content>

@@ -5,8 +5,10 @@ import { useCallback, useMemo } from "react";
 import { CopyButton } from "@/components/copy-button";
 import { getIconForPackageManager } from "@/components/icons";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import type { PackageManager } from "@/hooks/use-package-manager";
-import { usePackageManager } from "@/hooks/use-package-manager";
+import {
+  isPackageManager,
+  usePackageManager,
+} from "@/hooks/use-package-manager";
 import type { Event } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +40,11 @@ export const CodeBlockCommand = ({
   );
 
   const handlePackageManagerChange = useCallback(
-    (value: string) => setPackageManager(value as PackageManager),
+    (value: string) => {
+      if (isPackageManager(value)) {
+        setPackageManager(value);
+      }
+    },
     [setPackageManager]
   );
 
@@ -67,7 +73,6 @@ export const CodeBlockCommand = ({
               <TabsTrigger
                 key={key}
                 className="data-[state=active]:border-input h-7 border border-transparent pt-0.5 data-[state=active]:shadow-none"
-                sound="tabSwitch"
                 value={key}
               >
                 {key}

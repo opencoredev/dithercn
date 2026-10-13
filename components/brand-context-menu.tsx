@@ -1,10 +1,11 @@
 "use client";
 
-import { DownloadIcon } from "lucide-react";
+import { Download04Icon } from "@hugeicons/core-free-icons";
 import { useTheme } from "next-themes";
 import { useCallback } from "react";
 import { toast } from "sonner";
 
+import { Icon } from "@/components/icon";
 import { LogoMark, getLogoMarkSVG } from "@/components/logo";
 import {
   ContextMenu,
@@ -55,7 +56,7 @@ export const BrandContextMenu = ({
         </ContextMenuItem>
 
         <ContextMenuItem onClick={handleDownload}>
-          <DownloadIcon /> Download as SVG
+          <Icon icon={Download04Icon} /> Download as SVG
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

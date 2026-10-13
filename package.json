@@ -14,9 +14,10 @@
     "prepare": "lefthook install"
   },
   "dependencies": {
+    "@hugeicons/core-free-icons": "^4.3.5",
+    "@hugeicons/react": "^1.1.10",
     "@tailwindcss/postcss": "^4.2.4",
     "@vercel/analytics": "^2.0.1",
-    "@web-kits/audio": "^0.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -25,7 +26,6 @@
     "jiti": "^2.6.1",
     "jotai": "^2.19.1",
     "lru-cache": "^11.3.5",
-    "lucide-react": "1.11.0",
     "motion": "^12.38.0",
     "next": "16.2.4",
     "next-themes": "0.4.6",
@@ -40,7 +40,6 @@
     "tailwind-merge": "^3.5.0",
     "ts-morph": "^26.0.0",
     "vaul": "^1.1.2",
-    "web-haptics": "^0.0.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {

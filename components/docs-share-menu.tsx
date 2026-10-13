@@ -1,11 +1,14 @@
 "use client";
 
-import { EllipsisIcon, LinkIcon } from "lucide-react";
-import { useCallback, useMemo, useRef } from "react";
+import {
+  Link01Icon,
+  MoreHorizontalIcon,
+  Share08Icon,
+} from "@hugeicons/core-free-icons";
+import { useMemo } from "react";
 import { toast } from "sonner";
 
-import type { ShareIconHandle } from "@/components/animated-icons/share";
-import { ShareIcon } from "@/components/animated-icons/share";
+import { Icon } from "@/components/icon";
 import { XIcon, LinkedInIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +26,6 @@ export const DocsShareMenu = ({
   title: string;
   url: string;
 }) => {
-  const shareIconRef = useRef<ShareIconHandle>(null);
   const { copyToClipboard } = useCopyToClipboard();
 
   const absoluteUrl = useMemo(() => {
@@ -36,27 +38,18 @@ export const DocsShareMenu = ({
     return url;
   }, [url]);
 
-  const handleMouseEnter = useCallback(() => {
-    shareIconRef.current?.startAnimation();
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    shareIconRef.current?.stopAnimation();
-  }, []);
-
   const urlEncoded = encodeURIComponent(absoluteUrl);
 
   return (
-    <DropdownMenu sounds>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           className="hidden sm:flex size-7 border-none active:scale-none"
           variant="secondary"
           size="icon-sm"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
+          aria-label="Share this page"
         >
-          <ShareIcon ref={shareIconRef} />
+          <Icon icon={Share08Icon} />
         </Button>
       </DropdownMenuTrigger>
 
@@ -67,17 +60,16 @@ export const DocsShareMenu = ({
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <DropdownMenuItem
-          sound="copy"
           onClick={() => {
             copyToClipboard(absoluteUrl);
             toast.success("Link copied");
           }}
         >
-          <LinkIcon />
+          <Icon icon={Link01Icon} />
           Copy link
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild sound="click">
+        <DropdownMenuItem asChild>
           <a
             href={`https://x.com/intent/tweet?url=${urlEncoded}`}
             target="_blank"
@@ -88,7 +80,7 @@ export const DocsShareMenu = ({
           </a>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild sound="click">
+        <DropdownMenuItem asChild>
           <a
             href={`https://www.linkedin.com/sharing/share-offsite?url=${urlEncoded}`}
             target="_blank"
@@ -101,13 +93,12 @@ export const DocsShareMenu = ({
 
         {typeof navigator !== "undefined" && "share" in navigator && (
           <DropdownMenuItem
-            sound="click"
             onClick={(e) => {
               e.preventDefault();
               navigator.share({ title, url: absoluteUrl });
             }}
           >
-            <EllipsisIcon />
+            <Icon icon={MoreHorizontalIcon} />
             Other app
           </DropdownMenuItem>
         )}

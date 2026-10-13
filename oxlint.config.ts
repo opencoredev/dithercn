@@ -12,7 +12,5 @@ export default defineConfig({
     ".cursor/**",
     ".changeset/**",
     ".claude/**",
-    ".web-kits/**",
-    "audio/**",
   ],
 });
