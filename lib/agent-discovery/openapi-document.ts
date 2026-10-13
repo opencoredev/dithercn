@@ -29,12 +29,12 @@ export const buildOpenApiDocument = (
           summary: "Agent skills discovery index",
         },
       },
-      [ROUTES.AGENT_SKILLS_SITE_SKILL]: {
+      [ROUTES.AGENT_SKILL]: {
         get: {
           responses: {
-            "200": { description: "Agent skill markdown" },
+            "200": { description: "The dithercn agent skill, SKILL.md" },
           },
-          summary: "Site agent skill markdown",
+          summary: "dithercn agent skill: build any dither on the engine",
         },
       },
       [ROUTES.API_CATALOG]: {

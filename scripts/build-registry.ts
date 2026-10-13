@@ -9,8 +9,13 @@
  * Run with `pnpm registry:build`.
  */
 
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+
+import {
+  renderSkillFile,
+  skillFiles,
+} from "../lib/agent-discovery/dithercn-skill";
 
 const ROOT = process.cwd();
 const REGISTRY_DIR = path.join(ROOT, "registry");
@@ -20,6 +25,14 @@ const SITE_URL = (process.env.SITE_URL ?? "http://localhost:3000").replace(
   ""
 );
 const REGISTRY_URL = `${SITE_URL}/r`;
+
+// The agent skill, rendered for SITE_URL, is what the dithercn-skill item ships.
+const SKILL_OUT = path.join(ROOT, ".generated", "skills", "dithercn");
+for (const file of skillFiles()) {
+  const target = path.join(SKILL_OUT, file);
+  mkdirSync(path.dirname(target), { recursive: true });
+  writeFileSync(target, renderSkillFile(file, SITE_URL) ?? "");
+}
 
 // Site-only modules a shipped file must never import: users don't have them.
 const FORBIDDEN_IMPORTS = [
@@ -123,7 +136,11 @@ const IMPORT_PATTERN =
 
 for (const { file, item } of items) {
   const dependencies = new Set(item.registryDependencies);
-  for (const entry of item.files ?? []) {
+  // Markdown and other plain files hold example code, not imports to check.
+  const codeFiles = (item.files ?? []).filter((entry) =>
+    /\.(?:ts|tsx|js|jsx)$/.test(entry.path)
+  );
+  for (const entry of codeFiles) {
     let code: string;
     try {
       code = readFileSync(path.join(ROOT, entry.path), "utf-8");

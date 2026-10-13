@@ -1,5 +1,97 @@
 [
   {
+    "name": "dithercn-skill",
+    "type": "registry:item",
+    "title": "dithercn agent skill",
+    "description": "An agent skill that teaches Claude Code, Codex, Cursor and other coding agents to build any dither on the engine. Installs into .agents/skills/dithercn and .claude/skills/dithercn, with the engine and dither-export.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/dither-export.json"
+    ],
+    "files": [
+      {
+        "path": ".generated/skills/dithercn/SKILL.md",
+        "type": "registry:file",
+        "target": ".agents/skills/dithercn/SKILL.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/engine-api.md",
+        "type": "registry:file",
+        "target": ".agents/skills/dithercn/references/engine-api.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/examples.md",
+        "type": "registry:file",
+        "target": ".agents/skills/dithercn/references/examples.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/fields.md",
+        "type": "registry:file",
+        "target": ".agents/skills/dithercn/references/fields.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/placement.md",
+        "type": "registry:file",
+        "target": ".agents/skills/dithercn/references/placement.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/quality.md",
+        "type": "registry:file",
+        "target": ".agents/skills/dithercn/references/quality.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/recipes.md",
+        "type": "registry:file",
+        "target": ".agents/skills/dithercn/references/recipes.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/theme.md",
+        "type": "registry:file",
+        "target": ".agents/skills/dithercn/references/theme.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/SKILL.md",
+        "type": "registry:file",
+        "target": ".claude/skills/dithercn/SKILL.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/engine-api.md",
+        "type": "registry:file",
+        "target": ".claude/skills/dithercn/references/engine-api.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/examples.md",
+        "type": "registry:file",
+        "target": ".claude/skills/dithercn/references/examples.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/fields.md",
+        "type": "registry:file",
+        "target": ".claude/skills/dithercn/references/fields.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/placement.md",
+        "type": "registry:file",
+        "target": ".claude/skills/dithercn/references/placement.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/quality.md",
+        "type": "registry:file",
+        "target": ".claude/skills/dithercn/references/quality.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/recipes.md",
+        "type": "registry:file",
+        "target": ".claude/skills/dithercn/references/recipes.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/theme.md",
+        "type": "registry:file",
+        "target": ".claude/skills/dithercn/references/theme.md"
+      }
+    ]
+  },
+  {
     "name": "dither-export",
     "type": "registry:lib",
     "title": "Dither export",
