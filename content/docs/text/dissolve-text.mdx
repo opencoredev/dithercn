@@ -1,0 +1,126 @@
+---
+title: "Dissolve text"
+description: "Text that dissolves in through Bayer thresholds, by character, word or line, and can dissolve back out."
+---
+
+import DissolveTextDemo from "@/examples/dissolve-text-demo";
+import DissolveTextWords from "@/examples/dissolve-text-words";
+import DissolveTextCycle from "@/examples/dissolve-text-cycle";
+
+<ComponentPreview src="examples/dissolve-text-demo.tsx" size="lg">
+  <DissolveTextDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dissolve-text" />
+
+## Usage
+
+```tsx
+import { DissolveText } from "@/components/dithercn/dissolve-text";
+
+export function Headline() {
+  return (
+    <DissolveText as="h2" className="text-6xl font-semibold">
+      Arrives one dot at a time
+    </DissolveText>
+  );
+}
+```
+
+Each character is masked by a 4×4 Bayer matrix that fills in level by level, from no dots to solid, so the letters build up out of the dither. By default it plays once when the text scrolls into view, one character after another. Use the replay button on the preview to see it again.
+
+## Examples
+
+### Word by word
+
+`by="word"` reveals whole words, which reads better for a paragraph. An 8×8 matrix with 2px cells gives a finer grain at body sizes.
+
+<ComponentPreview src="examples/dissolve-text-words.tsx">
+  <DissolveTextWords />
+</ComponentPreview>
+
+### Dissolving out and in
+
+Set `show={false}` and the text dissolves back out. Here a timer hides the word, swaps it, and shows the next one.
+
+<ComponentPreview src="examples/dissolve-text-cycle.tsx">
+  <DissolveTextCycle />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "children",
+      type: "string",
+      required: true,
+      description: "The text.",
+    },
+    {
+      name: "as",
+      type: '"h1" | "h2" | "h3" | "h4" | "p" | "span" | "div"',
+      default: '"span"',
+      description: "The element to render.",
+    },
+    {
+      name: "by",
+      type: '"char" | "word" | "line"',
+      default: '"char"',
+      description:
+        "Dissolve each character, each word, or the whole text at once.",
+    },
+    {
+      name: "trigger",
+      type: '"mount" | "in-view"',
+      default: '"in-view"',
+      description:
+        "Play when mounted, or when the text first scrolls into view.",
+    },
+    {
+      name: "show",
+      type: "boolean",
+      default: "true",
+      description: "false dissolves the text out. true brings it back.",
+    },
+    {
+      name: "duration",
+      type: "number",
+      default: "600",
+      description: "Milliseconds for one character, word or line.",
+    },
+    {
+      name: "stagger",
+      type: "number",
+      default: "28 per character, 90 per word",
+      description: "Milliseconds between one unit and the next.",
+    },
+    {
+      name: "delay",
+      type: "number",
+      default: "0",
+      description: "Milliseconds before the first unit starts.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8"',
+      default: '"bayer4"',
+      description: "The threshold pattern the letters fill in through.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The text stays real text, one inline element per character or word, so it can be selected, copied and indexed. While it is dissolved out, it is hidden from assistive technology.
+- The animation is plain CSS keyframes that step a `mask-image` through the matrix's levels with an ease-out timing. A text that plays on mount needs no JavaScript to run.
+- With reduced motion turned on, the text appears and disappears instantly.
+- Text waiting for `in-view` stays hidden until it scrolls into view. Without JavaScript it is shown as normal text.
