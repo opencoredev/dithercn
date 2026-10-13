@@ -4,8 +4,8 @@ export default function PlasmaHeadline() {
   return (
     <section className="relative isolate flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
       <Plasma
-        intensity={0.5}
-        scale={0.7}
+        intensity={0.3}
+        scale={0.55}
         warp={0.8}
         className="absolute inset-0 -z-10"
       />
@@ -13,7 +13,7 @@ export default function PlasmaHeadline() {
         Ship the weird idea
       </h3>
       <p className="text-muted-foreground max-w-sm text-sm text-pretty">
-        Capped at half intensity, the plasma never gets bright enough to fight
+        Capped at 30% intensity, the plasma never gets bright enough to fight
         the text.
       </p>
     </section>
