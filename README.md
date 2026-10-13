@@ -5,12 +5,18 @@
 <h1 align="center">dithercn</h1>
 
 <p align="center">
-  Beautiful dithers for landing pages and dashboards. A shadcn registry of dithered backgrounds, charts, UI pieces, type and images that follow your theme, installed with <code>npx shadcn add</code>.
+  Beautiful dithers for landing pages and dashboards. A dither engine with an agent skill: describe the dither you want and your coding agent builds it in your shadcn theme.
 </p>
+
+## What it is
+
+- **The engine.** `dither-core` (`lib/dither/`) turns a tone into ordered dither dots: a WebGL shader for anything that moves or varies per pixel, SVG patterns and CSS masks for static fills, image dithering, and PNG/SVG/CSS export.
+- **The agent skill.** `skills/dithercn/` teaches Claude Code, Codex, Cursor and other agents to build any dither on the engine. It ships as the `dithercn-skill` registry item and at `/.well-known/agent-skills/dithercn/SKILL.md`.
+- **The examples.** Backgrounds, charts, interface pieces, text and images, each installable with `npx shadcn add` and each a starting point for your own.
 
 ## Status
 
-Early preview. Components install from the registry, each with a docs page under `content/docs/<group>/`. The groups are Backgrounds, Charts, Interface, Text, Images and Tools; Concepts explains `dither-core`, the engine they share.
+Early preview, not deployed yet. The docs live in `content/docs/`: Get started, Engine (how `dither-core` works and how to write your own dither), and the example groups Backgrounds, Charts, Interface, Text and Images.
 
 ## Develop
 
@@ -22,30 +28,31 @@ pnpm dev
 Then open http://localhost:3000. Other scripts:
 
 - `pnpm build` builds the registry, then the site
-- `pnpm registry:build` merges `registry/*.json` into `registry.json` (generated, gitignored), checks it, and writes the items to `public/r/`
+- `pnpm registry:build` renders the skill into `.generated/`, merges `registry/*.json` into `registry.json` (both generated, gitignored), checks it, and writes the items to `public/r/`
 - `pnpm check` runs formatting and lint checks (ultracite)
 - `pnpm typecheck` runs TypeScript
 
 Set `SITE_URL` to the public origin when deploying. Without it, canonical URLs and install commands use `http://localhost:3000`.
 
-## Install a component
+## Install
 
 With the dev server running, from a project that uses shadcn/ui:
 
 ```bash
-npx shadcn@latest add http://localhost:3000/r/dither-gradient.json
+npx shadcn@latest add http://localhost:3000/r/dithercn-skill.json
 ```
 
-This adds the component, `dither-core` in `lib/dither/`, and `--dither-ink`, `--dither-paper` and `--dither-cell` in your CSS, mapped to your `--primary` and `--background` tokens.
+This adds the engine in `lib/dither/`, the skill in `.agents/skills/dithercn/` and `.claude/skills/dithercn/`, and the `--dither-*` CSS variables mapped to your `--primary` and `--background` tokens. Then ask your agent for a dither. To install the skill for every project instead, see the Installation page. Any example installs the same way, for example `http://localhost:3000/r/dither-gradient.json`.
 
 ## For agents
 
-The site serves `/llms.txt`, `/llms-full.txt`, a Markdown version of every docs page (append `.md`), an agent skill at `/.well-known/agent-skills/`, an API catalog at `/.well-known/api-catalog` and an OpenAPI description at `/openapi.json`.
+The skill is the main surface: `/.well-known/agent-skills/index.json` lists it and `/.well-known/agent-skills/dithercn/SKILL.md` serves it. The site also serves `/llms.txt`, `/llms-full.txt`, a Markdown version of every docs page (append `.md`), an API catalog at `/.well-known/api-catalog` and an OpenAPI description at `/openapi.json`.
 
 ## Project structure
 
 ```
-├── content/docs/       # Docs (MDX). (root) is "Get started", concepts/ the engine guides, the rest catalog groups
+├── content/docs/       # Docs (MDX). (root) is "Get started", engine/ the engine guides, examples/ the overview, the rest example groups
+├── skills/dithercn/    # The agent skill (SKILL.md and references), served and shipped as dithercn-skill
 ├── components/dithercn/ # Shipped components, one file each
 ├── lib/dither/         # dither-core, the shipped engine
 ├── examples/           # Docs demos (site only)

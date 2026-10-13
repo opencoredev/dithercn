@@ -55,6 +55,22 @@ const nextConfig = {
         permanent: true,
         source: "/.well-known/agent-skills/site-skill.md",
       },
+      // Round 3: the agent skill became the centre of the docs.
+      {
+        destination: ROUTES.DOCS_BUILD_WITH_AGENTS,
+        permanent: true,
+        source: `${ROUTES.DOCS}/ai-agents`,
+      },
+      {
+        destination: ROUTES.DOCS_EXAMPLES,
+        permanent: true,
+        source: `${ROUTES.DOCS}/catalog`,
+      },
+      {
+        destination: ROUTES.DOCS_EXAMPLES,
+        permanent: true,
+        source: `${ROUTES.DOCS}/usage`,
+      },
       // Concepts became Engine; the Tools group was folded into it.
       {
         destination: `${ROUTES.DOCS}/engine/:path*`,

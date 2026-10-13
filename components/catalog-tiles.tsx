@@ -146,7 +146,7 @@ const countLabel = (count: number) =>
   count === 1 ? "1 component" : `${count} components`;
 
 const tileHref = (category: CatalogCategory) =>
-  category.pieces[0]?.url ?? `${ROUTES.DOCS_CATALOG}#catalog-${category.id}`;
+  category.pieces[0]?.url ?? `${ROUTES.DOCS_EXAMPLES}#catalog-${category.id}`;
 
 export const CatalogTiles = ({
   catalog,

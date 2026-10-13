@@ -11,8 +11,8 @@ import { source } from "@/lib/source";
 
 const navItems = [
   { href: ROUTES.DOCS, label: "Docs" },
-  { href: ROUTES.DOCS_CATALOG, label: "Catalog" },
-  { href: ROUTES.DOCS_AI_AGENTS, label: "AI agents" },
+  { href: ROUTES.DOCS_BUILD_WITH_AGENTS, label: "Build with agents" },
+  { href: ROUTES.DOCS_EXAMPLES, label: "Examples" },
 ];
 
 export const SiteHeader = () => (

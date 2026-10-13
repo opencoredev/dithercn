@@ -3,6 +3,7 @@
   "pages": [
     "(root)",
     "engine",
+    "examples",
     "backgrounds",
     "charts",
     "interface",

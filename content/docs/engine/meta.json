@@ -3,6 +3,7 @@
   "description": "How dither-core works and how to build your own dither on it.",
   "pages": [
     "dither-engine",
+    "write-your-own",
     "palettes",
     "pixel-scale",
     "motion",

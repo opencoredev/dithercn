@@ -25,11 +25,13 @@ export const SITE = {
     URL: "https://github.com/leoisadev1",
   },
   DESCRIPTION: {
-    LONG: "Beautiful dithers for landing pages and dashboards. Dithered backgrounds, charts, loaders, type and images that follow your shadcn theme, installed with npx shadcn add.",
+    LONG: "Beautiful dithers for landing pages and dashboards. dithercn is a dither engine with an agent skill: ask your coding agent for any dither and it builds it on the engine, in your shadcn theme. The backgrounds, charts and interface pieces in the docs are examples.",
     SHORT: "Beautiful dithers for landing pages and dashboards",
   },
   KEYWORDS: [
     "dither",
+    "dither engine",
+    "agent skill",
     "dithering",
     "bayer dither",
     "ordered dithering",

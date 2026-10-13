@@ -1,0 +1,44 @@
+---
+title: All examples
+description: Components built on the dithercn engine. Install one as it is, or use it as the starting point for your own.
+---
+
+Every component here is built on the [engine](/docs/engine/dither-engine), and each one installs as plain source into `components/dithercn/`. Use them three ways: drop one into your page as it is, open its source to see how a dither like it is made, or point your agent at one and ask for a variation. For anything not on this list, [ask your agent](/docs/build-with-agents) or [write your own](/docs/engine/write-your-own).
+
+## Install and render an example
+
+```bash
+npx shadcn@latest add http://localhost:3000/r/dither-gradient.json
+```
+
+Backgrounds fill the box you give them. Put one behind your content with `absolute inset-0`:
+
+```tsx
+import { DitherGradient } from "@/components/dithercn/dither-gradient";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <DitherGradient angle={160} className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+Backgrounds built on `DitherShader` share these props:
+
+| Prop      | What it controls                                                            | Default                          |
+| --------- | --------------------------------------------------------------------------- | -------------------------------- |
+| `matrix`  | The threshold pattern: `"bayer2"`, `"bayer4"`, `"bayer8"` or `"blue-noise"` | Varies by component              |
+| `levels`  | How many tones to snap to before dithering                                  | Every tone the matrix can draw   |
+| `cell`    | Cell size in CSS pixels                                                     | `--dither-cell`                  |
+| `palette` | Colours from paper to ink, two or more                                      | `--dither-paper`, `--dither-ink` |
+| `animate` | Whether it moves                                                            | `true`                           |
+| `speed`   | How fast it moves                                                           | `1`                              |
+
+Charts and interface pieces take a `color` from the [named palette](/docs/theming) and a `fill` of `"gradient"`, `"dotted"`, `"hatched"` or `"solid"`. Each page lists every prop.
+
+## All examples
+
+<CatalogIndex />

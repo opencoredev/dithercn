@@ -1,0 +1,63 @@
+---
+title: Build with agents
+description: Give your coding agent the dithercn skill and ask it for any dither, from a hero background to a dashboard meter.
+---
+
+dithercn is built to be used by your coding agent. The dithercn skill teaches it the engine, so you can describe the dither you want in plain words and get a component that fits your page, follows your theme and passes the same checks the examples do.
+
+## Install the skill
+
+In a shadcn project, one command adds the skill and the engine:
+
+```bash
+npx shadcn@latest add http://localhost:3000/r/dithercn-skill.json
+```
+
+The skill lands in `.agents/skills/dithercn/` and `.claude/skills/dithercn/` inside the project. [Installation](/docs/installation#install-the-skill-for-every-project) shows how to install it for every project instead.
+
+Agents that discover skills from a website can find it at [`/.well-known/agent-skills/index.json`](/.well-known/agent-skills/index.json). The skill itself is plain Markdown at [`/.well-known/agent-skills/dithercn/SKILL.md`](/.well-known/agent-skills/dithercn/SKILL.md), so you can also paste that URL into any agent and ask it to follow it.
+
+## Ask for a dither
+
+Describe what you want and where it goes. Name the page, the mood and anything that must stay readable. For example:
+
+- "Add a dithered topographic contour background behind the hero on the home page. Slow, quiet, readable headline."
+- "On the billing page, add a dithered radial meter for storage used, 72%, with the number in the middle."
+- "Make the pricing section's top edge dissolve into the page with a dithered fade in our accent colour."
+- "Dither the team photos in the about page in our primary colour, and make them sharpen on hover."
+- "Replace the empty state on the inbox with a small dithered illustration of a paper plane."
+
+You don't need to know which component or API fits. The skill tells the agent how to choose.
+
+## What the agent does
+
+The skill gives your agent a route to follow:
+
+1. **Set up the engine.** It checks for `lib/dither` and installs `dither-core` if it's missing.
+2. **Pick a technique.** A WebGL field for anything that moves or varies per pixel, SVG patterns for chart and meter fills, CSS masks for blocks and bars, image dithering for photos, and export for files. If one of the [examples](/docs/examples) is close, it installs that and edits it.
+3. **Build the component.** It writes a typed component with props you can tweak, places it behind or inside your content, and colours it from your theme.
+4. **Check it in a browser.** It looks at the result in light and dark mode, at desktop and phone widths and with reduced motion, and fixes what doesn't read.
+
+## What the skill contains
+
+| File                       | What it covers                                                                                                          |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `SKILL.md`                 | The route above, and the rules every dither follows                                                                     |
+| `references/engine-api.md` | Every engine export: `DitherShader`, `FillPattern`, `fillStyle`, colours, motion hooks, `ditherImage` and export        |
+| `references/fields.md`     | How to write a GLSL field, with building blocks for gradients, noise, contour lines, rings, arcs and shading            |
+| `references/recipes.md`    | Complete components to adapt: a shader background, an SVG chart fill, a progress bar, a dithered photo, a CSS-only band |
+| `references/placement.md`  | Putting a dither on a landing page or dashboard: layering, sizing, server and client components                         |
+| `references/theme.md`      | Tokens, named colours, palettes, light and dark mode                                                                    |
+| `references/quality.md`    | The checks: looks, contrast, reduced motion, accessibility, performance                                                 |
+| `references/examples.md`   | Every example component, with its install command and docs link                                                         |
+
+The skill is accurate to the installed engine and links into the files your agent can read, so it never has to guess at an API.
+
+## Other ways in for agents
+
+The skill is the main way in. The site also publishes plain-text surfaces for agents that browse:
+
+- [`/llms.txt`](/llms.txt) lists every docs page with a one-line description and a Markdown link, and [`/llms-full.txt`](/llms-full.txt) is the whole documentation as one file.
+- Add `.md` to any docs URL for its Markdown, for example [`/docs/installation.md`](/docs/installation.md), or send an `Accept: text/markdown` header. Every page also has a **Copy page** menu.
+- The registry index is at [`/r/registry.json`](/r/registry.json), and each item at `/r/<name>.json`. The [shadcn MCP server](https://ui.shadcn.com/docs/mcp) can browse and install from it once you have [added the `@dithercn` namespace](/docs/installation#use-a-namespace).
+- [`/.well-known/api-catalog`](/.well-known/api-catalog) links every machine-readable surface (RFC 9727), [`/openapi.json`](/openapi.json) describes the read-only endpoints, and [`/api/status`](/api/status) returns `{"status":"ok"}`. The home page sends these as `Link` headers too.

@@ -1,0 +1,159 @@
+---
+title: "Write your own dither"
+description: "Build a dithered background from scratch on DitherShader: a tone, a shape, then motion and props."
+---
+
+import EngineFieldTone from "@/examples/engine-field-tone";
+import EngineFieldRings from "@/examples/engine-field-rings";
+import EngineFieldRipples from "@/examples/engine-field-ripples";
+
+This guide builds a dithered ripple background in three steps. You write one GLSL function, the field, and `DitherShader` does everything else: the dots, the colours, resizing, motion and reduced motion. The same steps make any background you can describe with a little math. Your agent follows them too, through the [dithercn skill](/docs/build-with-agents).
+
+You need the engine installed (see [Installation](/docs/installation)) and a section with a size to put the dither in.
+
+## 1. Return a tone
+
+The field runs once for every cell and returns a tone from 0 to 1: 0 is paper, 1 is ink. The engine turns that tone into dots, so a field that returns the height draws a gradient from bottom to top:
+
+```tsx
+"use client";
+
+import { DitherShader } from "@/lib/dither";
+
+const FIELD = `
+float field(vec2 uv, vec2 res, float t) {
+  return uv.y;
+}
+`;
+
+export function Ripples() {
+  return (
+    <DitherShader
+      field={FIELD}
+      palette={["--dither-paper", "blue"]}
+      className="absolute inset-0"
+    />
+  );
+}
+```
+
+<ComponentPreview
+  src="examples/engine-field-tone.tsx"
+  size="md"
+  align="stretch"
+>
+  <EngineFieldTone />
+</ComponentPreview>
+
+`uv` is the cell's position from 0 to 1 on both axes, with y pointing up. `res` is the size of the canvas in cells, and `t` is time in seconds. Return smooth values and let the engine do the dithering.
+
+## 2. Draw a shape
+
+`uv` stretches with the box, so a circle measured in `uv` comes out as an oval. Multiply x by the aspect ratio first, and distances are true. Then compute anything that has a distance in it, here rings around a point that fade as they spread:
+
+```glsl
+float field(vec2 uv, vec2 res, float t) {
+  float aspect = res.x / res.y;
+  vec2 p = vec2(uv.x * aspect, uv.y);
+  vec2 drop = vec2(0.5 * aspect, 0.45);
+  float d = length(p - drop);
+  float rings = 0.5 + 0.5 * cos(d * 48.0);
+  float fade = exp(-d * 3.0);
+  return rings * fade;
+}
+```
+
+<ComponentPreview
+  src="examples/engine-field-rings.tsx"
+  size="md"
+  align="stretch"
+>
+  <EngineFieldRings />
+</ComponentPreview>
+
+`cos` turns distance into repeating bands, and `exp` fades them out. Every tone between 0 and 1 becomes a different dot density, which is why the rings look soft rather than drawn.
+
+## 3. Add motion and props
+
+Three changes finish it. Noise bends the rings so they look like water, `t` moves them outwards, and uniforms turn the fixed numbers into props:
+
+```tsx
+"use client";
+
+import { DitherShader } from "@/lib/dither";
+import type { DitherShaderProps } from "@/lib/dither";
+
+const FIELD = `
+float field(vec2 uv, vec2 res, float t) {
+  float aspect = res.x / res.y;
+  vec2 p = vec2(uv.x * aspect, uv.y);
+  vec2 drop = vec2(rippleDrop.x * aspect, 1.0 - rippleDrop.y);
+  float wobble = fbm(p * 2.2 + vec2(t * 0.03, 0.0)) - 0.5;
+  float d = length(p - drop) + wobble * 0.08;
+  float rings = 0.5 + 0.5 * cos(d * rippleRings - t * 0.9);
+  float fade = exp(-d * 2.6);
+  return rippleStrength * rings * fade;
+}
+`;
+
+export type RipplesProps = Omit<DitherShaderProps, "field" | "uniforms"> & {
+  /** Where the drop falls, from the top left, 0 to 1. */
+  drop?: readonly [number, number];
+  /** How tightly the rings are packed. */
+  rings?: number;
+  /** Peak tone, 0 to 1. */
+  strength?: number;
+};
+
+export const Ripples = ({
+  drop = [0.5, 0.42],
+  rings = 46,
+  strength = 0.85,
+  ...props
+}: RipplesProps) => (
+  <DitherShader
+    {...props}
+    field={FIELD}
+    stillTime={4}
+    uniforms={{
+      rippleDrop: drop,
+      rippleRings: rings,
+      rippleStrength: strength,
+    }}
+  />
+);
+```
+
+<ComponentPreview
+  src="examples/engine-field-ripples.tsx"
+  size="full"
+  align="stretch"
+>
+  <EngineFieldRipples />
+</ComponentPreview>
+
+- `fbm` is one of three helpers every field gets, with `snoise` and `hash21`. It returns soft, cloudy noise from 0 to 1.
+- Each key in `uniforms` is declared for you: a number becomes a `float`, a pair a `vec2`. Changing a prop updates the uniform without recompiling. Prefix the names (`ripple…`) so they never clash with another field.
+- `stillTime={4}` is the moment shown when the visitor prefers reduced motion. Pick one that looks finished.
+- The rest of `DitherShaderProps` passes through, so `palette`, `matrix`, `cell` and `speed` work on `Ripples` as they do on every example.
+
+## Put it on the page
+
+```tsx
+<section className="relative isolate overflow-hidden rounded-3xl">
+  <Ripples
+    className="absolute inset-0 -z-10"
+    palette={["--dither-paper", "blue"]}
+    matrix="bayer8"
+  />
+  <div className="px-8 py-32">…</div>
+</section>
+```
+
+The shader fills its positioned parent and ignores the pointer, so your content sits in a sibling on top. Keep the tone low where text sits; here `strength` caps it at 0.85, and the rings fade before they reach the edges.
+
+## Where to go next
+
+- [Dither engine](/docs/engine/dither-engine) covers matrices and levels, and the static fills for charts and blocks.
+- [Palettes](/docs/engine/palettes), [Pixel scale](/docs/engine/pixel-scale) and [Motion](/docs/engine/motion) cover the shared props.
+- The [examples](/docs/examples) are all built this way. Open any background's source for a field to start from.

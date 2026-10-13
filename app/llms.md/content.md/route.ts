@@ -17,9 +17,12 @@ ${AGENT_DOCS_DIRECTIVE_MARKDOWN}
 
 ## Quick links
 
+- [dithercn agent skill](${base}${ROUTES.AGENT_SKILL}): build any dither on the engine
 - [Introduction](${base}${ROUTES.DOCS}.md)
+- [Build with agents](${base}${ROUTES.DOCS_BUILD_WITH_AGENTS}.md)
 - [Installation](${base}${ROUTES.DOCS_INSTALLATION}.md)
-- [Catalog of components](${base}${ROUTES.DOCS_CATALOG}.md)
+- [Write your own dither](${base}${ROUTES.DOCS_WRITE_YOUR_OWN}.md)
+- [Examples](${base}${ROUTES.DOCS_EXAMPLES}.md)
 - [Registry index](${base}${ROUTES.REGISTRY})
 - [LLM index (llms.txt)](${base}${ROUTES.LLMS})
 - [API catalog](${base}${ROUTES.API_CATALOG})
