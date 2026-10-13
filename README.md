@@ -66,6 +66,8 @@ The skill is the main surface: `/.well-known/agent-skills/index.json` lists it a
 
 ## Credits
 
+[DitherKit](https://www.tripwire.sh/dither-kit) by Boring Software set the quality bar for dithercn, and several of our ideas come straight from it: the gradient, dotted, hatched and solid fills, bloom under fills, a named colour palette that works in light and dark, a chart crosshair whose tooltip glides as you scrub, legend hover and click-to-lock, live knobs in the docs, generative avatars, and buttons whose dither thickens on hover and press. We wrote our own code and look, but the ideas are theirs. DitherKit in turn credits [EvilCharts](https://evilcharts.com) by legions-developer for the dithered chart style, so thanks to them too.
+
 Docs run on [Fumadocs](https://fumadocs.dev), and icons come from [Hugeicons](https://hugeicons.com).
 
 ## License
