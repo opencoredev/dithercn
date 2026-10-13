@@ -1,11 +1,12 @@
 ---
 title: "Empty state"
-description: "A glyph tile in a dithered scene, with a title, a description and an action, for views with nothing in them yet."
+description: "A lit, dithered illustration with a title, a description and an action, for views with nothing in them yet."
 ---
 
 import EmptyStateDemo from "@/examples/empty-state-demo";
 import { controls as emptyStateControls } from "@/examples/empty-state-controls";
-import EmptyStateIcon from "@/examples/empty-state-icon";
+import EmptyStateIllustrations from "@/examples/empty-state-illustrations";
+import EmptyStatePanel from "@/examples/empty-state-panel";
 import EmptyStateSearch from "@/examples/empty-state-search";
 
 <ComponentPreview
@@ -23,15 +24,13 @@ import EmptyStateSearch from "@/examples/empty-state-search";
 ## Usage
 
 ```tsx
-import { FolderIcon } from "lucide-react";
-
 import { EmptyState } from "@/components/dithercn/empty-state";
 import { Button } from "@/components/ui/button";
 
 export function NoProjects() {
   return (
     <EmptyState
-      icon={<FolderIcon />}
+      illustration="folder"
       title="No projects yet"
       description="Create a project to start building."
       action={<Button>New project</Button>}
@@ -40,27 +39,36 @@ export function NoProjects() {
 }
 ```
 
-The glyph sits on a raised tile in the middle of a scene drawn in dither cells. Bring the glyph from your own icon set with `icon`; without one, the tile shows a dashed square.
+Above the text sits a small lit object drawn in dither cells. Each surface takes a tone from a light up and to the left, so faces turned to the light are dense, faces turned away are sparse, and curved surfaces step through every Bayer level. A one-cell seam splits the object's parts, a clear margin outlines it, and a faint halo and floor shadow sit behind it.
 
-- `rings`: four bands around the tile, each lighter than the one inside it. They ripple outward by brightening one after another. `fill` sets their texture.
-- `grid`: a lattice of single cells that thins out towards the edges, like a floor under the tile. Quieter, for search results and side panels.
-- `none`: just the tile.
+- `box`: an open box with its flaps folded back. The default, for lists and orders.
+- `search`: a magnifying glass with a glint on the glass. For search and filters with no results.
+- `folder`: a folder with a sheet peeking out. For files, projects and documents.
+- `planet`: a lit sphere with a tilted ring. For feeds, events and anything still to arrive.
 
-Both scenes dissolve at the top and bottom through blue noise, so they melt into whatever surface they sit on.
+`matrix` changes the pattern: `bayer4` for crisp steps, `bayer8` for finer ones, `blue-noise` for an even grain.
 
 ## Examples
 
+### Illustrations
+
+The four objects in four colours.
+
+<ComponentPreview src="examples/empty-state-illustrations.tsx" size="lg">
+  <EmptyStateIllustrations />
+</ComponentPreview>
+
 ### Inside a settings panel
 
-A first-run state for API keys, in green with dotted rings, using a dither button for the action.
+A first-run state for API keys, with the green folder and a dither button for the action.
 
-<ComponentPreview src="examples/empty-state-icon.tsx" size="lg">
-  <EmptyStateIcon />
+<ComponentPreview src="examples/empty-state-panel.tsx" size="lg">
+  <EmptyStatePanel />
 </ComponentPreview>
 
 ### No search results
 
-The `grid` scene in grey, for a state the user will see often. Keep these quiet and give a way out.
+The magnifier in grey, for a state the user will see often. Keep these quiet and give a way out.
 
 <ComponentPreview src="examples/empty-state-search.tsx" size="lg">
   <EmptyStateSearch />
@@ -87,34 +95,29 @@ The `grid` scene in grey, for a state the user will see often. Keep these quiet 
       description: "Buttons or links, under the text.",
     },
     {
-      name: "icon",
-      type: "ReactNode",
-      description: "The glyph in the tile. Default: a dashed square.",
-    },
-    {
-      name: "scene",
-      type: '"rings" | "grid" | "none"',
-      default: '"rings"',
-      description: "What surrounds the tile.",
-    },
-    {
-      name: "fill",
-      type: '"gradient" | "dotted" | "hatched" | "solid"',
-      default: '"gradient"',
-      description: "Texture of the rings.",
+      name: "illustration",
+      type: '"box" | "search" | "folder" | "planet"',
+      default: '"box"',
+      description: "The dithered object above the text.",
     },
     {
       name: "color",
       type: "DitherColor",
       default: '"ink"',
       description:
-        "Colour of the scene: a palette name, a CSS variable name or any CSS colour.",
+        "Colour of the illustration: a palette name, a CSS variable name or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern.",
     },
     {
       name: "animate",
       type: "boolean",
       default: "true",
-      description: "Ripple the rings outward.",
+      description: "Bob the object up and down by one cell.",
     },
     {
       name: "titleAs",
@@ -127,6 +130,6 @@ The `grid` scene in grey, for a state the user will see often. Keep these quiet 
 
 ## Notes
 
-- The scene is decorative and hidden from assistive technology. The title is a real heading; set `titleAs` to fit the page outline.
-- The ripple fades each ring's opacity with CSS, and stops under reduced motion. The scene is a few SVG paths, cached per fill, so it costs no JavaScript at runtime.
-- The scene keeps an 84 by 52 aspect ratio up to 336 pixels wide and shrinks on narrow screens.
+- The illustration is decorative and hidden from assistive technology. The title is a real heading; set `titleAs` to fit the page outline.
+- The bob moves the object one whole cell in steps, so the dither never smears, and it stops under reduced motion. Each illustration is two SVG paths, computed once per illustration and matrix and cached, so it costs no JavaScript at runtime and renders on the server.
+- The illustration keeps a 112 by 72 cell aspect ratio up to 336 pixels wide, so cells are 3 pixels at full size, and it shrinks on narrow screens.
