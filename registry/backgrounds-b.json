@@ -82,5 +82,19 @@
         "target": "components/dithercn/beams.tsx"
       }
     ]
+  },
+  {
+    "name": "eclipse",
+    "type": "registry:component",
+    "title": "Eclipse",
+    "description": "A dark disc with a glowing rim and a soft corona that breathes slowly.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/eclipse.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/eclipse.tsx"
+      }
+    ]
   }
 ]
