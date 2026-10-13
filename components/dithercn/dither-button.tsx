@@ -122,6 +122,20 @@ const pressLayer = ({ cell, rows }: LayerOptions, color: string) =>
     to: 0,
   });
 
+/**
+ * Keeps the label's band clear: dither shows only along the top and bottom
+ * edges, so dots frame the text instead of crossing it.
+ */
+const CLEAR_LABEL =
+  "linear-gradient(to bottom, #000 0 30%, transparent 34% 66%, #000 70%)";
+
+// On a wrapper: the dither layers already use mask-image for their pattern,
+// and an ancestor's mask composes with theirs.
+const FRAME: CSSProperties = {
+  WebkitMaskImage: CLEAR_LABEL,
+  maskImage: CLEAR_LABEL,
+};
+
 /** A layer's inline style, with its opacity once shown (default 1). */
 type LayerStyle = CSSProperties & { "--dcn-btn-on"?: string };
 
@@ -239,13 +253,15 @@ const Fill = ({ variant, color, bloom, ...options }: FillProps) => {
         {STYLES}
       </style>
       <span className={LAYER} style={surface.base} />
-      {surface.rest.map((style, index) => (
-        // The rest layers are fixed in number and order per variant.
-        // oxlint-disable-next-line no-array-index-key
-        <span key={index} className={LAYER} style={style} />
-      ))}
-      <span className={cn(LAYER, "dcn-btn-hover")} style={surface.hover} />
-      <span className={cn(LAYER, "dcn-btn-press")} style={surface.press} />
+      <span className={LAYER} style={FRAME}>
+        {surface.rest.map((style, index) => (
+          // The rest layers are fixed in number and order per variant.
+          // oxlint-disable-next-line no-array-index-key
+          <span key={index} className={LAYER} style={style} />
+        ))}
+        <span className={cn(LAYER, "dcn-btn-hover")} style={surface.hover} />
+        <span className={cn(LAYER, "dcn-btn-press")} style={surface.press} />
+      </span>
       {/* The edge goes over the fill; an inset shadow on the root would sit under it. */}
       <span className={LAYER} style={edgeStyle(variant, color)} />
     </span>
