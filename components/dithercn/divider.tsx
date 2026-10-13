@@ -1,8 +1,8 @@
 import { useId } from "react";
 import type { ComponentProps, ReactNode } from "react";
 
-import { DitherPattern } from "@/lib/dither";
-import type { DitherColor, DitherMatrix } from "@/lib/dither";
+import { DitherPattern, FillPattern } from "@/lib/dither";
+import type { DitherColor, DitherMatrix, FillVariant } from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /*
@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
  * and every pattern tiles from the same origin. It is cut into steps along
  * its length: a solid run in the middle and, at each end, a ramp of steps
  * whose dither level falls towards the tip. Neighbouring steps line up
- * cell for cell, so the fade has no seams.
+ * cell for cell, so the fade has no seams. A dotted, hatched or solid
+ * rule uses one texture and fades its steps by opacity instead.
  */
 
 const STEPS = 10;
@@ -28,8 +29,10 @@ export type DividerProps = Omit<ComponentProps<"div">, "children" | "color"> & {
   fade?: number;
   /** Densest dither level, at the middle of the rule. Default 0.6. */
   strength?: number;
-  /** Rule colour. Default `--dither-ink`. */
+  /** Rule colour: a palette name or any CSS colour. Default `"ink"`. */
   color?: DitherColor;
+  /** Texture of the rule. `gradient` fades through dither levels; the others fade by opacity. Default `"gradient"`. */
+  fill?: FillVariant;
   /** Threshold matrix. Default `"bayer4"`. */
   matrix?: DitherMatrix;
   /** Size of one dither cell in CSS pixels. Default 2. */
@@ -84,6 +87,7 @@ const Rule = ({
   thickness,
   strength,
   color,
+  fill,
   matrix,
   cell,
   className,
@@ -93,6 +97,7 @@ const Rule = ({
   thickness: number;
   strength: number;
   color: DitherColor;
+  fill: FillVariant;
   matrix: DitherMatrix;
   cell: number;
   className?: string;
@@ -112,6 +117,14 @@ const Rule = ({
       shapeRendering="crispEdges"
     >
       <defs>
+        {fill === "gradient" ? null : (
+          <FillPattern
+            id={`${id}-texture`}
+            fill={fill}
+            color={color}
+            cell={cell}
+          />
+        )}
         {levels.map((level, index) => (
           <DitherPattern
             key={level}
@@ -130,7 +143,14 @@ const Rule = ({
           y={vertical ? `${start}%` : 0}
           width={vertical ? "100%" : `${length + 0.05}%`}
           height={vertical ? `${length + 0.05}%` : "100%"}
-          fill={`url(#${id}-${level})`}
+          fill={
+            fill === "gradient" ? `url(#${id}-${level})` : `url(#${id}-texture)`
+          }
+          fillOpacity={
+            fill === "gradient"
+              ? undefined
+              : strength * ((level + 1) / (STEPS + 1)) ** 1.6
+          }
         />
       ))}
     </svg>
@@ -148,7 +168,8 @@ export const Divider = ({
   thickness = 2,
   fade = 0.6,
   strength = 0.6,
-  color = "--dither-ink",
+  color = "ink",
+  fill = "gradient",
   matrix = "bayer4",
   cell = 2,
   decorative,
@@ -160,6 +181,7 @@ export const Divider = ({
   const rule = {
     cell,
     color,
+    fill,
     matrix,
     strength: Math.min(1, Math.max(0, strength)),
     thickness,

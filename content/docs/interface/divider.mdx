@@ -3,11 +3,12 @@ title: "Divider"
 description: "A horizontal or vertical dithered rule whose ends fade out, with an optional label in the middle."
 ---
 
+import { controls as dividerControls } from "@/examples/divider-controls";
 import DividerDemo from "@/examples/divider-demo";
 import DividerLabel from "@/examples/divider-label";
 import DividerVertical from "@/examples/divider-vertical";
 
-<ComponentPreview src="examples/divider-demo.tsx">
+<ComponentPreview src="examples/divider-demo.tsx" controls={dividerControls}>
   <DividerDemo />
 </ComponentPreview>
 
@@ -82,26 +83,33 @@ A vertical divider fills the height of its container. Here it uses `--foreground
     {
       name: "strength",
       type: "number",
-      default: "1",
+      default: "0.6",
       description: "Densest dither level, in the middle of the rule.",
     },
     {
       name: "color",
-      type: "string",
-      default: '"--dither-ink"',
-      description: "Rule colour. A CSS variable name or any CSS colour.",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        'Rule colour: a palette name such as "blue", a CSS variable name, or any CSS colour.',
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description:
+        "Texture of the rule. Gradient fades through dither levels; the others keep their texture and fade by opacity.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
-      default: '"bayer8"',
-      description:
-        "The threshold pattern. Bayer 8×8 gives a one-cell rule the most steps.",
+      default: '"bayer4"',
+      description: "The threshold pattern for the gradient fill.",
     },
     {
       name: "cell",
       type: "number",
-      default: "3",
+      default: "2",
       description: "Size of one dither cell in CSS pixels.",
     },
     {

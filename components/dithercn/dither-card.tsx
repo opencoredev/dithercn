@@ -1,8 +1,8 @@
 import { useId } from "react";
 import type { ComponentProps, CSSProperties } from "react";
 
-import { DitherPattern } from "@/lib/dither";
-import type { DitherColor, DitherMatrix } from "@/lib/dither";
+import { DitherPattern, FillPattern } from "@/lib/dither";
+import type { DitherColor, DitherMatrix, FillVariant } from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /*
@@ -12,7 +12,9 @@ import { cn } from "@/lib/utils";
  * one smooth falloff with every dot on the same grid. The hover layer is a
  * second, larger and denser stack whose rings switch on one after another,
  * innermost first, so the glow grows outward through the levels instead of
- * fading. Leaving the card switches them off in reverse.
+ * fading. Leaving the card switches them off in reverse. With a dotted,
+ * hatched or solid fill, every ring shares one texture at a low opacity,
+ * and the overlap of the stack builds the falloff instead.
  */
 
 export type DitherCardGlow =
@@ -32,8 +34,10 @@ export type DitherCardProps = Omit<ComponentProps<"div">, "color"> & {
   strength?: number;
   /** Grow and densify the glow on hover and keyboard focus. Default `false`. */
   interactive?: boolean;
-  /** Glow colour. Default `--dither-ink`. */
+  /** Glow colour: a palette name or any CSS colour. Default `"ink"`. */
   color?: DitherColor;
+  /** Texture of the glow. Default `"gradient"`. */
+  fill?: FillVariant;
   /** Threshold matrix. Default `"bayer4"`. */
   matrix?: DitherMatrix;
   /** Size of one dither cell in CSS pixels. Default 3. */
@@ -84,13 +88,19 @@ const ringsFor = (reach: number, strength: number): Ring[] =>
     };
   });
 
+// Opacity of each ring when the rings share one texture; nine overlap at the origin.
+const TEXTURE_OPACITY = 0.2;
+
 const RingStack = ({
   id,
+  texture,
   rings,
   origin,
   boost,
 }: {
   id: string;
+  /** The shared texture's id, or undefined for one dither level per ring. */
+  texture: string | undefined;
   rings: Ring[];
   origin: Origin;
   boost: boolean;
@@ -113,7 +123,10 @@ const RingStack = ({
           cy={origin.cy}
           rx={radius * origin.stretch}
           ry={radius}
-          fill={`url(#${id}-${index})`}
+          fill={
+            texture === undefined ? `url(#${id}-${index})` : `url(#${texture})`
+          }
+          fillOpacity={texture === undefined ? undefined : TEXTURE_OPACITY}
         />
       );
     })}
@@ -131,7 +144,8 @@ export const DitherCard = ({
   reach = 200,
   strength = 0.45,
   interactive = false,
-  color = "--dither-ink",
+  color = "ink",
+  fill = "gradient",
   matrix = "bayer4",
   cell = 3,
   className,
@@ -143,6 +157,7 @@ export const DitherCard = ({
   const level = Math.min(1, Math.max(0, strength));
   const rings = ringsFor(reach, level);
   const boosted = ringsFor(reach * 1.3, Math.min(1, level * 1.4));
+  const texture = fill === "gradient" ? undefined : `${id}-texture`;
 
   return (
     <div
@@ -166,6 +181,9 @@ export const DitherCard = ({
         shapeRendering="crispEdges"
       >
         <defs>
+          {texture === undefined ? null : (
+            <FillPattern id={texture} fill={fill} color={color} cell={cell} />
+          )}
           {rings.map((ring, index) => (
             <DitherPattern
               key={ring.radius}
@@ -189,9 +207,21 @@ export const DitherCard = ({
               ))
             : null}
         </defs>
-        <RingStack id={id} rings={rings} origin={origin} boost={false} />
+        <RingStack
+          id={id}
+          texture={texture}
+          rings={rings}
+          origin={origin}
+          boost={false}
+        />
         {interactive ? (
-          <RingStack id={`${id}-boost`} rings={boosted} origin={origin} boost />
+          <RingStack
+            id={`${id}-boost`}
+            texture={texture}
+            rings={boosted}
+            origin={origin}
+            boost
+          />
         ) : null}
       </svg>
       {children}
