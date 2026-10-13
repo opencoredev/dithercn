@@ -19,15 +19,16 @@ import { cn } from "@/lib/utils";
  * canvas one pixel per cell, which CSS scales up without smoothing. Shape
  * edges are hard (a cell is in the ring or not); only the tone inside a
  * shape fades, so outlines stay crisp and the dither carries the motion.
+ * Cells are two pixels by default, big enough to read as dither.
  */
 
-export type LoaderVariant = "ring" | "pulse" | "grid" | "bar";
+export type LoaderVariant = "ring" | "dots" | "pulse" | "bar";
 export type LoaderSize = "sm" | "md" | "lg";
 
 export type LoaderProps = Omit<ComponentProps<"div">, "children" | "color"> & {
   /** The animation. Default `"ring"`. */
   variant?: LoaderVariant;
-  /** Height in pixels: 20, 32 or 48. The bar is four times as wide. Default `"md"`. */
+  /** Height in pixels: 24, 40 or 64. Dots are twice as wide, the bar three times. Default `"md"`. */
   size?: LoaderSize;
   /** What a screen reader announces. Default `"Loading"`. */
   label?: string;
@@ -37,18 +38,18 @@ export type LoaderProps = Omit<ComponentProps<"div">, "children" | "color"> & {
   bloom?: Bloom;
   /** Threshold matrix. Default `"bayer4"`. */
   matrix?: DitherMatrix;
-  /** Size of one dither cell in CSS pixels. Default 1. */
+  /** Size of one dither cell in CSS pixels. Default 2 (1 at `sm`). */
   cell?: number;
   /** Speed multiplier. Default 1. */
   speed?: number;
 };
 
-const HEIGHT = { lg: 48, md: 32, sm: 20 } as const satisfies Record<
+const HEIGHT = { lg: 64, md: 40, sm: 24 } as const satisfies Record<
   LoaderSize,
   number
 >;
 
-const DEFAULT_CELL = { lg: 1, md: 1, sm: 1 } as const satisfies Record<
+const DEFAULT_CELL = { lg: 2, md: 2, sm: 1 } as const satisfies Record<
   LoaderSize,
   number
 >;
@@ -75,33 +76,43 @@ const radiusAt = ({ cols, rows }: Grid, x: number, y: number) =>
     (y + 0.5 - rows / 2) / (rows / 2)
   );
 
-const SEGMENTS = 8;
-
 /**
- * Eight round segments on a circle. A comet runs round them, so each
- * segment steps down through the dither levels as the head passes, and
- * the tail stretches and shrinks, so the ring breathes instead of
- * spinning at one pace.
+ * A thick ring with a comet running round it. The head is solid and the
+ * tail steps down through the dither levels behind it. The tail stretches
+ * and shrinks as it goes, so the ring breathes instead of spinning at one
+ * pace, and the whole ring keeps a faint track.
  */
 const ringField =
   ({ cols, rows }: Grid): ToneField =>
   (x, y, t) => {
-    const scale = cols / 2;
-    const dx = (x + 0.5 - cols / 2) / scale;
-    const dy = (y + 0.5 - rows / 2) / scale;
-    const angle = fract(Math.atan2(dx, -dy) / TAU);
-    const segment = Math.round(angle * SEGMENTS) % SEGMENTS;
-    const centre = (segment / SEGMENTS) * TAU;
-    const distance = Math.hypot(
-      dx - 0.7 * Math.sin(centre),
-      dy + 0.7 * Math.cos(centre)
-    );
-    if (distance > 0.24) {
+    const dx = (x + 0.5 - cols / 2) / (cols / 2);
+    const dy = (y + 0.5 - rows / 2) / (rows / 2);
+    const radius = Math.hypot(dx, dy);
+    if (radius > 1 || radius < 0.58) {
       return 0;
     }
-    const tail = 0.45 + 0.3 * (0.5 - 0.5 * Math.cos(t * 2.1));
-    const behind = fract(t * 0.9 - segment / SEGMENTS);
-    return behind > tail ? TRACK : Math.max(TRACK, 1 - behind / tail);
+    const angle = fract(Math.atan2(dx, -dy) / TAU);
+    const tail = 0.5 + 0.3 * (0.5 - 0.5 * Math.cos(t * 2.1));
+    const behind = fract(t * 0.85 - angle);
+    if (behind > tail) {
+      return TRACK;
+    }
+    return Math.max(TRACK, (1 - behind / tail) ** 1.4 * 1.1);
+  };
+
+/** Three discs that build up and dissolve through the dither levels in turn. */
+const dotsField =
+  ({ cols, rows }: Grid): ToneField =>
+  (x, y, t) => {
+    const pitch = cols / 3;
+    const index = Math.min(2, Math.floor(x / pitch));
+    const dx = (x + 0.5 - (index + 0.5) * pitch) / (pitch / 2);
+    const dy = (y + 0.5 - rows / 2) / (rows / 2);
+    if (Math.hypot(dx, dy) > 0.86) {
+      return 0;
+    }
+    const wave = 0.5 + 0.5 * Math.sin(t * TAU * 0.8 - index * 1.1);
+    return Math.max(TRACK, wave ** 1.6 * 1.05);
   };
 
 /** A dot that beats while thin rings ripple out of it and fade as they grow. */
@@ -127,34 +138,6 @@ const pulseField = ({ cols, rows }: Grid): ToneField => {
   };
 };
 
-/** The outer blocks of a 3x3 grid, clockwise from the top left. */
-const LOOP: readonly number[] = [0, 1, 2, 5, 8, 7, 6, 3];
-const TRAIL = [1, 0.7, 0.45] as const;
-
-/** A snake running round a 3x3 grid of blocks, one block per step. */
-const gridField =
-  ({ cols }: Grid): ToneField =>
-  (x, y, t) => {
-    const pitch = cols / 3;
-    const gap = Math.max(1, Math.round(pitch * 0.25));
-    const column = Math.min(2, Math.floor(x / pitch));
-    const row = Math.min(2, Math.floor(y / pitch));
-    const inBlock =
-      x - Math.round(column * pitch) < Math.round(pitch) - gap &&
-      y - Math.round(row * pitch) < Math.round(pitch) - gap;
-    if (!inBlock) {
-      return 0;
-    }
-    const block = row * 3 + column;
-    if (block === 4) {
-      return TRACK;
-    }
-    const head = Math.floor(t * 8) % LOOP.length;
-    const position = LOOP.indexOf(block);
-    const behind = (head - position + LOOP.length) % LOOP.length;
-    return TRAIL[behind] ?? TRACK;
-  };
-
 /** A dense head sweeping across a faint track, its tail thinning behind it. */
 const barField =
   ({ cols }: Grid): ToneField =>
@@ -171,7 +154,7 @@ const barField =
 
 const FIELDS = {
   bar: barField,
-  grid: gridField,
+  dots: dotsField,
   pulse: pulseField,
   ring: ringField,
 } as const satisfies Record<LoaderVariant, (grid: Grid) => ToneField>;
@@ -179,7 +162,7 @@ const FIELDS = {
 // The still frame each variant shows under reduced motion.
 const STILL_TIME = {
   bar: 0.9,
-  grid: 0.3,
+  dots: 0.2,
   pulse: 0.5,
   ring: 0.4,
 } as const satisfies Record<LoaderVariant, number>;
@@ -187,7 +170,10 @@ const STILL_TIME = {
 const gridFor = (variant: LoaderVariant, height: number, cell: number) => {
   const rows = Math.max(6, Math.round(height / cell));
   if (variant === "bar") {
-    return { cols: rows * 4, rows: Math.max(2, Math.round(rows / 5)) };
+    return { cols: rows * 3, rows: Math.max(2, Math.round(rows / 5)) };
+  }
+  if (variant === "dots") {
+    return { cols: rows * 2, rows: Math.round(rows * 0.62) };
   }
   return { cols: rows, rows };
 };
@@ -238,8 +224,8 @@ const paint = ({
 };
 
 /**
- * A small dithered loading indicator: a breathing ring, a pulse, a snake
- * round a grid of blocks, or a bar. It announces `label` politely to
+ * A small dithered loading indicator: a ring with a comet tail, three
+ * dots that dissolve in turn, a pulse, or a bar. It announces `label` politely to
  * screen readers, holds a still frame under reduced motion, and pauses
  * offscreen and in hidden tabs.
  */

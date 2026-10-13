@@ -7,7 +7,7 @@ export const variant = segmented({
   default: "ring",
   id: "variant",
   label: "Variant",
-  options: ["ring", "pulse", "grid", "bar"],
+  options: ["ring", "dots", "pulse", "bar"],
 });
 
 export const size = segmented({
