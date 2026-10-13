@@ -4,10 +4,15 @@ description: "A line over a dithered fill that is densest at the line, for reven
 ---
 
 import AreaChartDemo from "@/examples/area-chart-demo";
+import { areaChartControls } from "@/examples/area-chart-controls";
 import AreaChartLayered from "@/examples/area-chart-layered";
 import AreaChartCompact from "@/examples/area-chart-compact";
 
-<ComponentPreview src="examples/area-chart-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/area-chart-demo.tsx"
+  size="lg"
+  controls={areaChartControls}
+>
   <AreaChartDemo />
 </ComponentPreview>
 
@@ -43,7 +48,7 @@ export function Revenue() {
 
 ### Two layered series
 
-With two or more series the chart adds a legend, and every series after the first draws in a different colour and dither texture (an 8×8 Bayer, then a 2×2). Each fill knocks out the ones behind it, so overlapping areas never mix and the lines always sit on top. Hover or focus the chart and use the arrow keys to read every series at one point.
+With two or more series the chart adds a legend, and every series after the first draws in the next palette colour. Each fill knocks out the ones behind it, so overlapping areas never mix and the lines always sit on top. Scrub with the pointer, or focus the chart and use the arrow keys: a crosshair and readout glide between points. Hover a legend entry to spotlight that series, click it to keep it lit, and press Escape to let go.
 
 <ComponentPreview src="examples/area-chart-layered.tsx" size="lg">
   <AreaChartLayered />
@@ -51,7 +56,7 @@ With two or more series the chart adds a legend, and every series after the firs
 
 ### Compact, inside a stat card
 
-`axes={false}` drops the axes and the padding around the plot, so the fill can run to the edges of a card. `fill="flat"` uses one even level, and `matrix="bayer8"` gives a finer texture.
+`axes={false}` drops the axes and the padding around the plot, so the fill can run to the edges of a card. `fill="dotted"` swaps the gradient for a sparse, even lattice of dots.
 
 <ComponentPreview src="examples/area-chart-compact.tsx">
   <AreaChartCompact />
@@ -81,6 +86,13 @@ With two or more series the chart adds a legend, and every series after the firs
         "Each series is { label, value, color? }, where value is a numeric field of T or a function. Later series draw on top.",
     },
     {
+      name: "stack",
+      type: '"none" | "stacked" | "percent"',
+      default: '"none"',
+      description:
+        "none overlaps the series from the baseline. stacked sits each on the ones before it. percent stacks and scales every point to 100%; the readout adds each share.",
+    },
+    {
       name: "height",
       type: "number",
       default: "240",
@@ -88,16 +100,44 @@ With two or more series the chart adds a legend, and every series after the firs
     },
     {
       name: "fill",
-      type: '"density" | "flat"',
-      default: '"density"',
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
       description:
-        "density makes the fill densest under the line and thinner toward the axis. flat uses one level.",
+        "gradient is densest just under the line and thins toward the axis. dotted is a sparse lattice, hatched diagonal lines, solid flat colour.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description:
+        "A soft glow in each series' colour behind its fill. Its strength follows --dither-bloom, lower in light mode.",
+    },
+    {
+      name: "colors",
+      type: "readonly DitherColor[]",
+      default: "ink, orange, green, pink, …",
+      description:
+        'Colours by series position: palette names such as "green" or any CSS colour. A series\' own color wins.',
+    },
+    {
+      name: "interactive",
+      type: "boolean",
+      default: "true",
+      description:
+        "Scrubbing, the readout and the legend spotlight. false makes a decorative chart: no focus stop, no readout, just an image with a summary.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Entrance motion. Always off under reduced motion.",
     },
     {
       name: "level",
       type: "number",
-      default: "0.5",
-      description: "Coverage of the densest part of the fill, from 0 to 1.",
+      default: "0.625",
+      description:
+        "Gradient only: coverage of the densest band, just under the line, from 0 to 1.",
     },
     {
       name: "curve",
@@ -110,7 +150,7 @@ With two or more series the chart adds a legend, and every series after the firs
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description: "Dither texture of the first series.",
+      description: "Gradient only: the dither texture.",
     },
     {
       name: "cell",
@@ -129,13 +169,14 @@ With two or more series the chart adds a legend, and every series after the firs
       name: "tooltip",
       type: "boolean",
       default: "true",
-      description: "Show the readout on hover and keyboard focus.",
+      description: "Show the readout while scrubbing.",
     },
     {
       name: "legend",
       type: "boolean",
       default: "Two or more series",
-      description: "Show a legend under the chart.",
+      description:
+        "Show the legend under the chart. Its entries spotlight a series on hover and lock it on click.",
     },
     {
       name: "format",
@@ -147,11 +188,11 @@ With two or more series the chart adds a legend, and every series after the firs
   ]}
 />
 
-Series colours default to `--dither-ink`, then `--muted-foreground`, `--chart-3` and `--chart-5`. Pass `color` on a series to set your own.
+Series colours follow the palette: ink, then orange, green, pink, purple, blue, red and grey. Pass `colors` for the whole chart, or `color` on one series, using a palette name or any CSS colour.
 
 ## Notes
 
-- The chart is a focusable group labelled with a short summary, and the full data sits in a visually hidden table, so screen readers get every value. The arrow keys, Home and End move the readout; Escape hides it.
+- The chart is a focusable group labelled with a short summary, and the full data sits in a visually hidden table, so screen readers get every value. The arrow keys, Page Up, Page Down, Home and End move the readout without easing, a polite live region reads out the values at each stop, and Escape clears the readout and any locked series. Legend entries are toggle buttons.
 - On entrance the line draws in and the fill steps up through the dither levels. With reduced motion the finished chart appears at once.
 - Cells are snapped to whole device pixels, so the dither stays sharp on any screen. Markers use a ring in `--dither-paper`; set it to your card's background if the card is not the page colour.
-- It is plain SVG with no chart library. The entrance re-renders the chart about 16 times, then it only redraws on hover.
+- It is plain SVG with no chart library. The entrance re-renders the chart about 16 times. Scrubbing updates at most once a frame and only moves the crosshair, markers and readout, by transform, so a year of daily points in three series stays smooth.

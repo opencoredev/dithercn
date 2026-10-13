@@ -1,11 +1,16 @@
 "use client";
 
-import { RefreshIcon } from "@hugeicons/core-free-icons";
+import { RefreshIcon, SlidersHorizontalIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef, useState } from "react";
 
 import { CopyButton } from "@/components/copy-button";
 import { Icon } from "@/components/icon";
+import {
+  PreviewControlsPanel,
+  PreviewControlsProvider,
+} from "@/components/preview-controls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { PreviewControlSet, PreviewValue } from "@/lib/preview-controls";
 import { cn } from "@/lib/utils";
 
 /*
@@ -59,12 +64,16 @@ const useNearViewport = () => {
 const TRIGGER_CLASS =
   "text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:bg-background h-7 flex-none rounded-full border-0 px-3 text-[0.8rem] transition-colors duration-150 data-[state=active]:shadow-none dark:data-[state=active]:border-0";
 
+const TOOL_BUTTON =
+  "text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[0.8rem] font-medium transition-[color,scale] duration-150 outline-none focus-visible:ring-[3px] active:scale-[0.96]";
+
 export const ComponentPreviewFrame = ({
   children,
   code,
   codeHtml,
   size,
   align,
+  controls,
   className,
 }: {
   children: React.ReactNode;
@@ -72,11 +81,17 @@ export const ComponentPreviewFrame = ({
   codeHtml: string | null;
   size: PreviewSize;
   align: PreviewAlign;
+  controls?: PreviewControlSet;
   className?: string;
 }) => {
   const [tab, setTab] = useState("preview");
   const [run, setRun] = useState(0);
+  const [values, setValues] = useState<Record<string, PreviewValue>>({});
+  const [panelOpen, setPanelOpen] = useState(true);
   const { isNear, ref } = useNearViewport();
+  const controlList = controls === undefined ? [] : Object.values(controls);
+  const hasControls = controlList.length > 0;
+  const showPanel = hasControls && panelOpen;
 
   return (
     <Tabs
@@ -96,17 +111,30 @@ export const ComponentPreviewFrame = ({
           ) : null}
         </TabsList>
         {tab === "preview" ? (
-          <button
-            type="button"
-            onClick={() => setRun((count) => count + 1)}
-            className="group/replay text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[0.8rem] font-medium transition-[color,scale] duration-150 outline-none focus-visible:ring-[3px] active:scale-[0.96]"
-          >
-            <Icon
-              icon={RefreshIcon}
-              className="size-3.5 transition-transform duration-300 ease-(--ease-out) group-active/replay:-rotate-90 motion-reduce:transition-none"
-            />
-            Replay
-          </button>
+          <div className="flex items-center">
+            {hasControls ? (
+              <button
+                type="button"
+                aria-expanded={panelOpen}
+                onClick={() => setPanelOpen((open) => !open)}
+                className={cn(TOOL_BUTTON, panelOpen && "text-foreground")}
+              >
+                <Icon icon={SlidersHorizontalIcon} className="size-3.5" />
+                Controls
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setRun((count) => count + 1)}
+              className={cn("group/replay", TOOL_BUTTON)}
+            >
+              <Icon
+                icon={RefreshIcon}
+                className="size-3.5 transition-transform duration-300 ease-(--ease-out) group-active/replay:-rotate-90 motion-reduce:transition-none"
+              />
+              Replay
+            </button>
+          </div>
         ) : null}
       </div>
       <TabsContent
@@ -115,17 +143,35 @@ export const ComponentPreviewFrame = ({
         className="data-[state=inactive]:hidden"
       >
         <div
-          ref={ref}
           className={cn(
-            "bg-card text-card-foreground relative isolate w-full overflow-hidden rounded-[20px] [--dither-paper:var(--card)]",
-            SIZE_CLASS[size],
-            ALIGN_CLASS[align]
+            "bg-card text-card-foreground w-full overflow-hidden rounded-[20px] [--dither-paper:var(--card)]"
           )}
         >
-          {isNear ? (
-            <div key={run} className="contents">
-              {children}
-            </div>
+          <div
+            ref={ref}
+            className={cn(
+              "relative isolate w-full min-w-0 overflow-hidden",
+              SIZE_CLASS[size],
+              ALIGN_CLASS[align]
+            )}
+          >
+            {isNear ? (
+              <PreviewControlsProvider values={values}>
+                <div key={run} className="contents">
+                  {children}
+                </div>
+              </PreviewControlsProvider>
+            ) : null}
+          </div>
+          {showPanel ? (
+            <PreviewControlsPanel
+              controls={controlList}
+              values={values}
+              onChange={(id, value) =>
+                setValues((current) => ({ ...current, [id]: value }))
+              }
+              onReset={() => setValues({})}
+            />
           ) : null}
         </div>
       </TabsContent>
