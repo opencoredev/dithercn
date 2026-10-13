@@ -56,7 +56,7 @@ const ALIGN_CLASS = {
  * without `clip` keep `hidden`, and `pinScroll` undoes any scroll there.
  */
 const STAGE_CLASS =
-  "relative isolate w-full min-w-0 overflow-hidden supports-[overflow:clip]:overflow-clip";
+  "relative isolate w-full min-w-0 overflow-hidden supports-[overflow:clip]:overflow-clip supports-[overflow:clip]:[overflow-clip-margin:6px]";
 
 const pinScroll = (event: UIEvent<HTMLDivElement>) => {
   const el = event.currentTarget;
