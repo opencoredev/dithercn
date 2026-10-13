@@ -1,5 +1,5 @@
 {
   "title": "Tools",
   "description": "Make and export dithers without writing code.",
-  "pages": ["export"]
+  "pages": ["dither-maker", "export"]
 }
