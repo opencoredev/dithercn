@@ -10,13 +10,20 @@ import {
 import type { ComponentProps, RefObject } from "react";
 
 import {
+  BloomGroup,
   cssColor,
   DitherPattern,
   ditherMaskStyle,
+  FillPattern,
   readDitherCell,
   subscribeToTheme,
 } from "@/lib/dither";
-import type { DitherColor, DitherMatrix } from "@/lib/dither";
+import type {
+  Bloom,
+  DitherColor,
+  DitherMatrix,
+  FillVariant,
+} from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /** Which way the metric should move: revenue `up`, latency `down`. */
@@ -35,9 +42,13 @@ export type StatCardProps = Omit<ComponentProps<"div">, "children"> & {
   good?: StatDirection;
   /** Recent values, oldest first, drawn as a dithered area along the bottom. */
   trend?: readonly number[];
-  /** Ink colour for the trend and the surface. Default `--dither-ink`. */
+  /** Colour of the trend and the surface: a palette name or any CSS colour. Default `ink`. */
   color?: DitherColor;
-  /** Threshold matrix. Default `"bayer4"`. */
+  /** Texture under the trend line: `gradient` (bands that thin out below the line), `dotted`, `hatched` or `solid`. Default `gradient`. */
+  fill?: FillVariant;
+  /** Soft glow in `color` behind the trend: `off`, `low` or `high`. Default `off`. */
+  bloom?: Bloom;
+  /** Gradient only: threshold matrix. Default `"bayer4"`. */
   matrix?: DitherMatrix;
   /** Cell size in CSS pixels. Default `--dither-cell`. */
   cell?: number;
@@ -119,6 +130,7 @@ const trendPaths = (
     return `${upper}${lower}Z`;
   });
   return {
+    area: `${toPath(points)}L${width} ${height}L0 ${height}Z`,
     bands,
     end: points.at(-1) ?? { x: width, y: height },
     line: toPath(points),
@@ -128,11 +140,15 @@ const trendPaths = (
 const Trend = ({
   values,
   color,
+  fill,
+  bloom,
   matrix,
   cell,
 }: {
   values: readonly number[];
   color: DitherColor;
+  fill: FillVariant;
+  bloom: Bloom;
   matrix: DitherMatrix;
   cell?: number;
 }) => {
@@ -150,24 +166,44 @@ const Trend = ({
       {paths ? (
         <svg width={width} height={height} className="absolute inset-0 block">
           <defs>
-            {BAND_LEVELS.map((level, index) => (
-              <DitherPattern
-                key={level}
-                id={`${prefix}-${index}`}
-                level={level}
-                matrix={matrix}
-                cell={cellSize}
+            {fill === "gradient" ? (
+              BAND_LEVELS.map((level, index) => (
+                <DitherPattern
+                  key={level}
+                  id={`${prefix}-${index}`}
+                  level={level}
+                  matrix={matrix}
+                  cell={cellSize}
+                  color={color}
+                />
+              ))
+            ) : (
+              <FillPattern
+                id={`${prefix}-area`}
+                fill={fill}
                 color={color}
+                cell={cellSize}
               />
-            ))}
+            )}
           </defs>
-          {paths.bands.map((band, index) => (
+          <BloomGroup bloom={bloom} fill={cssColor(color)}>
+            <path d={paths.area} />
+          </BloomGroup>
+          {fill === "gradient" ? (
+            paths.bands.map((band, index) => (
+              <path
+                key={BAND_LEVELS[index]}
+                d={band}
+                fill={`url(#${prefix}-${index})`}
+              />
+            ))
+          ) : (
             <path
-              key={BAND_LEVELS[index]}
-              d={band}
-              fill={`url(#${prefix}-${index})`}
+              d={paths.area}
+              fill={`url(#${prefix}-area)`}
+              opacity={fill === "solid" ? 0.35 : 1}
             />
-          ))}
+          )}
           <path
             d={paths.line}
             fill="none"
@@ -199,7 +235,9 @@ const Arrow = ({ direction }: { direction: StatDirection }) => (
   </svg>
 );
 
-const GOOD_TONE = "text-[oklch(0.5_0.13_155)] dark:text-[oklch(0.8_0.15_155)]";
+/** A palette colour pulled toward the text colour, so small text keeps its contrast. */
+const toneOf = (name: "green" | "red") =>
+  `color-mix(in oklab, ${cssColor(name)}, var(--foreground) 22%)`;
 
 /** Arrow direction, colour, visible text and spoken text for a delta. */
 const describeDelta = (
@@ -214,7 +252,7 @@ const describeDelta = (
       direction: null,
       spoken: `Unchanged${suffix}`,
       text: amount,
-      tone: "text-muted-foreground",
+      tone: undefined,
     };
   }
   const direction: StatDirection = delta > 0 ? "up" : "down";
@@ -222,7 +260,7 @@ const describeDelta = (
     direction,
     spoken: `${direction === "up" ? "Up" : "Down"} ${amount}${suffix}`,
     text: `${direction === "up" ? "+" : "−"}${amount}`,
-    tone: direction === good ? GOOD_TONE : "text-destructive",
+    tone: toneOf(direction === good ? "green" : "red"),
   };
 };
 
@@ -238,7 +276,9 @@ export const StatCard = ({
   deltaLabel,
   good = "up",
   trend,
-  color = "--dither-ink",
+  color = "ink",
+  fill = "gradient",
+  bloom = "off",
   matrix = "bayer4",
   cell,
   className,
@@ -283,8 +323,9 @@ export const StatCard = ({
             <span
               className={cn(
                 "inline-flex items-center gap-1 font-mono font-medium tabular-nums",
-                change.tone
+                change.tone === undefined && "text-muted-foreground"
               )}
+              style={{ color: change.tone }}
             >
               {change.direction ? <Arrow direction={change.direction} /> : null}
               <span aria-hidden>{change.text}</span>
@@ -299,7 +340,14 @@ export const StatCard = ({
         )}
       </div>
       {hasTrend ? (
-        <Trend values={trend} color={color} matrix={matrix} cell={cell} />
+        <Trend
+          values={trend}
+          color={color}
+          fill={fill}
+          bloom={bloom}
+          matrix={matrix}
+          cell={cell}
+        />
       ) : null}
     </div>
   );
