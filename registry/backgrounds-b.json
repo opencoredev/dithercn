@@ -1,0 +1,100 @@
+[
+  {
+    "name": "plasma",
+    "type": "registry:component",
+    "title": "Plasma",
+    "description": "Classic plasma: overlapping sine waves that flow into each other, dithered in two colours or a palette.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/plasma.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/plasma.tsx"
+      }
+    ]
+  },
+  {
+    "name": "starfield",
+    "type": "registry:component",
+    "title": "Starfield",
+    "description": "Dithered stars in three parallax layers that twinkle and drift slowly.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/starfield.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/starfield.tsx"
+      }
+    ]
+  },
+  {
+    "name": "halftone",
+    "type": "registry:component",
+    "title": "Halftone",
+    "description": "Print-style round dots on a rotated grid that grow with a noise, radial or linear source.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/halftone.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/halftone.tsx"
+      }
+    ]
+  },
+  {
+    "name": "dither-grid",
+    "type": "registry:component",
+    "title": "Dither grid",
+    "description": "A perspective grid floor that fades into a glowing horizon and scrolls slowly.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-grid.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-grid.tsx"
+      }
+    ]
+  },
+  {
+    "name": "horizon",
+    "type": "registry:component",
+    "title": "Horizon",
+    "description": "A planet's horizon from space: a lit rim, a drifting aurora glow and fixed stars.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/horizon.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/horizon.tsx"
+      }
+    ]
+  },
+  {
+    "name": "beams",
+    "type": "registry:component",
+    "title": "Beams",
+    "description": "God rays from a point or an edge that sweep slowly and fade with distance.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/beams.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/beams.tsx"
+      }
+    ]
+  },
+  {
+    "name": "eclipse",
+    "type": "registry:component",
+    "title": "Eclipse",
+    "description": "A dark disc with a glowing rim and a soft corona that breathes slowly.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/eclipse.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/eclipse.tsx"
+      }
+    ]
+  }
+]

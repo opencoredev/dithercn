@@ -1,0 +1,139 @@
+---
+title: "Eclipse"
+description: "A dark disc with a glowing rim and a soft corona that breathes slowly, for launch pages and event heroes."
+---
+
+import EclipseDemo from "@/examples/eclipse-demo";
+import EclipseHeadline from "@/examples/eclipse-headline";
+import EclipseAmber from "@/examples/eclipse-amber";
+
+<ComponentPreview src="examples/eclipse-demo.tsx" size="full" align="stretch">
+  <EclipseDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="eclipse" />
+
+## Usage
+
+```tsx
+import { Eclipse } from "@/components/dithercn/eclipse";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Eclipse className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+A disc in `skyColor` sits in front of a light in `rimColor`. A thin rim hugs the edge and is brightest on the `light` side, like the crescent of a real eclipse. Around it, a halo fades outwards with slow variations in strength, and the whole glow breathes on a slow ten-second cycle.
+
+## Examples
+
+### Beside a headline
+
+A large disc pushed past the right edge and lit from the left, with a short corona so the text stays on clean paper.
+
+<ComponentPreview src="examples/eclipse-headline.tsx" size="lg" align="stretch">
+  <EclipseHeadline />
+</ComponentPreview>
+
+### Amber on warm black
+
+Explicit colours instead of theme tokens, a smaller disc, a wider corona and the full `pulse`. The 8×8 matrix gives a finer texture.
+
+<ComponentPreview src="examples/eclipse-amber.tsx" size="full" align="stretch">
+  <EclipseAmber />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "center",
+      type: "[x: number, y: number]",
+      default: "[0.5, 0.5]",
+      description:
+        "Centre of the disc, as fractions of the box from the top left.",
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "0.24",
+      description: "Radius of the disc as a share of the box height.",
+    },
+    {
+      name: "corona",
+      type: "number",
+      default: "0.5",
+      description: "How far the halo reaches past the rim, from 0 to 1.",
+    },
+    {
+      name: "light",
+      type: "number",
+      default: "315",
+      description:
+        "Where the rim is brightest, in degrees as in CSS: 0 is the top.",
+    },
+    {
+      name: "pulse",
+      type: "number",
+      default: "0.5",
+      description: "How much the glow breathes, from 0 (steady) to 1.",
+    },
+    {
+      name: "rimColor",
+      type: "DitherColor",
+      default: '"--dither-ink"',
+      description: "Colour of the rim and halo.",
+    },
+    {
+      name: "skyColor",
+      type: "DitherColor",
+      default: '"--dither-paper"',
+      description: "Colour of the sky and the disc.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the halo shifts and breathes.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The eclipse fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The eclipse is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a CSS disc and ring.
+- The disc is the sky colour, so on a light theme it reads as a pale disc with a coloured ring. Pass a dark `skyColor` for a dark disc on any theme.

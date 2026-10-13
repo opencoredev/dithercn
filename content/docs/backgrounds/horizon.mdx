@@ -1,0 +1,144 @@
+---
+title: "Horizon"
+description: "A planet's horizon seen from space, with a lit rim, a drifting aurora glow and fixed stars. The landing page hero, with props."
+---
+
+import HorizonDemo from "@/examples/horizon-demo";
+import HorizonSunrise from "@/examples/horizon-sunrise";
+import HorizonHeadline from "@/examples/horizon-headline";
+
+<ComponentPreview src="examples/horizon-demo.tsx" size="full" align="stretch">
+  <HorizonDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="horizon" />
+
+## Usage
+
+```tsx
+import { Horizon } from "@/components/dithercn/horizon";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Horizon className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+This is the scene behind the dithercn landing page. The planet is a circle whose top touches `horizon`; `curve` sets how small and round it looks. Above the rim, domain-warped noise forms aurora curtains that slide slowly along the horizon. The sky and planet use `skyColor`, and the glow, rim and stars use `glowColor`.
+
+## Examples
+
+### Sunrise
+
+A flatter planet, higher in the frame, with a smooth band instead of curtains and an explicit amber glow.
+
+<ComponentPreview
+  src="examples/horizon-sunrise.tsx"
+  size="full"
+  align="stretch"
+>
+  <HorizonSunrise />
+</ComponentPreview>
+
+### Small planet under a headline
+
+A low, strongly curved horizon leaves most of the frame as sky, with more stars.
+
+<ComponentPreview src="examples/horizon-headline.tsx" size="lg" align="stretch">
+  <HorizonHeadline />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "horizon",
+      type: "number",
+      default: "0.28",
+      description:
+        "Height of the horizon's highest point from the bottom, from 0 to 1.",
+    },
+    {
+      name: "curve",
+      type: "number",
+      default: "0.6",
+      description:
+        "How round the planet is, from 0 (nearly flat) to 1 (a small globe).",
+    },
+    {
+      name: "glow",
+      type: "number",
+      default: "1",
+      description: "Strength of the glow above the horizon, from 0 to 1.",
+    },
+    {
+      name: "aurora",
+      type: "number",
+      default: "1",
+      description:
+        "How much the glow breaks into curtains, from 0 (a smooth band) to 1.",
+    },
+    {
+      name: "stars",
+      type: "number",
+      default: "1",
+      description: "How many stars, from 0 to 3. They never move.",
+    },
+    {
+      name: "glowColor",
+      type: "DitherColor",
+      default: '"--dither-ink"',
+      description: "Colour of the glow, rim and stars.",
+    },
+    {
+      name: "skyColor",
+      type: "DitherColor",
+      default: '"--dither-paper"',
+      description: "Colour of the sky and the planet.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the aurora drifts.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The scene fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The scene is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a soft CSS glow over a dark arc.
+- Stars thin out near the horizon, so the glow always has a clean edge.
