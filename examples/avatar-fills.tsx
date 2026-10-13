@@ -7,8 +7,8 @@ export default function AvatarFills() {
   return (
     <div className="flex flex-col gap-4">
       {FILL_VARIANTS.map((fill) => (
-        <div key={fill} className="flex items-center gap-3">
-          <span className="text-muted-foreground w-16 font-mono text-xs">
+        <div key={fill} className="flex items-center gap-2 sm:gap-3">
+          <span className="text-muted-foreground w-14 shrink-0 font-mono text-xs">
             {fill}
           </span>
           {NAMES.map((name) => (
@@ -16,7 +16,7 @@ export default function AvatarFills() {
               key={name}
               name={name}
               fill={fill}
-              size={44}
+              size={38}
               shape="square"
             />
           ))}

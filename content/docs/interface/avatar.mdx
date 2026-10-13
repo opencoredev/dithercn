@@ -41,7 +41,7 @@ export function Viewers({ names }: { names: string[] }) {
 }
 ```
 
-`name` seeds a small random generator that fills half of a 7 by 7 grid of blocks, and the other half mirrors it. A block is more likely to be on near the centre, so every face is a compact mark rather than noise, and the middle column always has at least two blocks. Each block gets one of three tones, denser towards the middle, and the fill decides how a tone is drawn. The same string always gives the same face and colour, on the server and in the browser, so you can use an email or a user id and get a stable avatar for free.
+`name` seeds a small random generator that fills half of a 5 by 5 grid of blocks, and the other half mirrors it. A block is more likely to be on near the centre, so every face is a compact mark rather than noise, and the middle column always has at least two blocks. Each block is full or half tone, and the fill decides how half tone is drawn. Behind the face sits a disc of sparse dither in the same colour, densest at the top left as if lit, and kept one cell clear of the face so the mark stays crisp. The same string always gives the same face and colour, on the server and in the browser, so you can use an email or a user id and get a stable avatar for free.
 
 Without `color`, the avatar picks one of six palette hues from the string. Pass a palette name or any CSS colour to set it yourself.
 
@@ -65,7 +65,7 @@ A member list seeded by email, labelled by name. `status` adds a dot and appends
 
 ### Fills
 
-The same six names in every fill. Gradient draws the three tones as Bayer levels; dotted and hatched texture the lighter tones and keep the densest solid; solid uses opacity steps.
+The same six names in every fill. Gradient draws half tone as a Bayer checker; dotted and hatched texture it instead; solid uses a lighter opacity. Full blocks are solid in every fill.
 
 <ComponentPreview src="examples/avatar-fills.tsx" size="md">
   <AvatarFills />
