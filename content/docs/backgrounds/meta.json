@@ -1,5 +1,20 @@
 {
   "title": "Backgrounds",
   "description": "Full-bleed dithered surfaces for heroes, sections and cards.",
-  "pages": ["dither-gradient"]
+  "pages": [
+    "dither-gradient",
+    "dither-glow",
+    "mesh-gradient",
+    "aurora",
+    "noise-field",
+    "waves",
+    "plasma",
+    "beams",
+    "eclipse",
+    "horizon",
+    "starfield",
+    "halftone",
+    "dither-grid",
+    "dither-fade"
+  ]
 }

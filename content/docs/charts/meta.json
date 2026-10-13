@@ -1,5 +1,16 @@
 {
   "title": "Charts",
   "description": "Charts and status displays with a dithered fill.",
-  "pages": []
+  "pages": [
+    "area-chart",
+    "bar-chart",
+    "line-chart",
+    "sparkline",
+    "heatmap",
+    "donut-chart",
+    "gauge",
+    "progress-bar",
+    "uptime-bar",
+    "stat-card"
+  ]
 }
