@@ -1,6 +1,6 @@
 "use client";
 
-import { Add01Icon, InboxIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon } from "@hugeicons/core-free-icons";
 
 import { DitherButton } from "@/components/dithercn/dither-button";
 import { EmptyState } from "@/components/dithercn/empty-state";
@@ -9,28 +9,27 @@ import { usePreviewValue } from "@/components/preview-controls";
 import * as knobs from "@/examples/empty-state-controls";
 
 export default function EmptyStateDemo() {
-  const scene = usePreviewValue(knobs.scene);
-  const fill = usePreviewValue(knobs.fill);
+  const illustration = usePreviewValue(knobs.illustration);
+  const matrix = usePreviewValue(knobs.matrix);
   const color = usePreviewValue(knobs.tint);
   const animate = usePreviewValue(knobs.animate);
 
   return (
     <EmptyState
-      scene={scene}
-      fill={fill}
+      illustration={illustration}
+      matrix={matrix}
       color={color}
       animate={animate}
-      icon={<Icon icon={InboxIcon} />}
-      title="No messages yet"
-      description="When someone replies to a thread you follow, it shows up here."
+      title="No projects yet"
+      description="Create a project to deploy your first site. It takes about a minute."
       action={
         <>
           <DitherButton color={color}>
             <Icon icon={Add01Icon} />
-            New message
+            New project
           </DitherButton>
           <DitherButton variant="outline" color="grey">
-            Notification settings
+            Import from Git
           </DitherButton>
         </>
       }

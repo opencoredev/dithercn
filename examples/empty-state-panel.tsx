@@ -1,10 +1,7 @@
-import { Key01Icon } from "@hugeicons/core-free-icons";
-
 import { DitherButton } from "@/components/dithercn/dither-button";
 import { EmptyState } from "@/components/dithercn/empty-state";
-import { Icon } from "@/components/icon";
 
-export default function EmptyStateIcon() {
+export default function EmptyStatePanel() {
   return (
     <div className="bg-background ring-border w-full max-w-xl overflow-hidden rounded-xl ring-1">
       <div className="border-border flex items-center justify-between border-b px-5 py-3">
@@ -15,8 +12,7 @@ export default function EmptyStateIcon() {
       </div>
       <EmptyState
         color="green"
-        fill="dotted"
-        icon={<Icon icon={Key01Icon} />}
+        illustration="folder"
         title="No API keys"
         description="Create a key to call the API from your server. Keys are shown once, so store them somewhere safe."
         action={

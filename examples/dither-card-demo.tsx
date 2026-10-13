@@ -17,7 +17,7 @@ export default function DitherCardDemo() {
       color={color}
       strength={strength}
       interactive
-      reach={170}
+      reach={260}
       tabIndex={0}
       className="bg-background w-full max-w-sm px-6 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >

@@ -12,9 +12,8 @@ export default function EmptyStateSearch() {
         <span className="font-mono text-sm">ditehr</span>
       </div>
       <EmptyState
-        scene="grid"
+        illustration="search"
         color="grey"
-        icon={<Icon icon={Search01Icon} />}
         title="No results for “ditehr”"
         description="Check the spelling, or search for a shorter phrase."
         action={

@@ -14,6 +14,11 @@ export default function DitherButtonPalette() {
           </DitherButton>
         ))
       )}
+      {COLORS.map((color) => (
+        <DitherButton key={`outline-${color}`} variant="outline" color={color}>
+          outline
+        </DitherButton>
+      ))}
     </div>
   );
 }

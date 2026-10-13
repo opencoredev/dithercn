@@ -1,6 +1,6 @@
 ---
 title: "Dither button"
-description: "A button filled with a dither texture that grows denser on hover and denser again while you press it."
+description: "A button with a lit, dithered surface: a highlight dithered down from the top, a shade dithered up from the bottom, brighter on hover and pressed in on click."
 ---
 
 import DitherButtonDemo from "@/examples/dither-button-demo";
@@ -38,15 +38,17 @@ export function Actions() {
 }
 ```
 
-`DitherButton` renders a real `<button>` with `type="button"` unless you pass another `type`. The fill sits in three layers behind the label: rest, hover and press. Each layer has more inked cells than the one below it, so as the hover layer fades in the texture eases denser, and pressing adds the third. Only opacity animates, so the cells stay on the grid.
+`DitherButton` renders a real `<button>` with `type="button"` unless you pass another `type`. A filled button is lit like a pixel-art bevel: the full colour, with a highlight (the colour mixed towards white) dithered down from the top and a shade (mixed towards black) dithered up from the bottom, so the Bayer steps show at rest. Hover fades in a longer, denser highlight. Press fades in a shade from the top, so the face looks pushed in. Only opacity animates, so the cells stay on the grid.
 
-`filled` buttons show the rest texture over a light tint of their colour. `outline` buttons start bare with a thin edge and take on the texture when you point at them, which suits secondary actions.
+`outline` buttons are a faint tint inside a hairline edge, with the plain colour dithered up from the bottom. Hover and press make that dither denser and taller, which suits secondary actions.
+
+The label is dark on the bright dark-theme colours and light on the deeper light-theme ones.
 
 ## Examples
 
 ### Fills and colours
 
-Every fill in four colours. `gradient` is densest at the bottom edge and thins upward through the Bayer levels; `dotted` adds dots to a staggered lattice; `hatched` doubles its diagonals and then crosses them; `solid` is flat colour with a lighter dither rising on hover.
+Every fill in four colours, filled and outline. `fill` sets the texture of the shade: `gradient` is a Bayer ramp up from the bottom, `dotted` a staggered dot lattice, `hatched` rising diagonals, and `solid` a thin dithered rim along the bottom edge. The top highlight is the same on all four.
 
 <ComponentPreview src="examples/dither-button-palette.tsx" size="md">
   <DitherButtonPalette />
@@ -54,7 +56,7 @@ Every fill in four colours. `gradient` is densest at the bottom edge and thins u
 
 ### Loading in a form
 
-`loading` keeps the label and the button's width, steps three cells before the label, pulses the hover texture, and sets `aria-busy`. Clicks are ignored until it clears. Submit this one to see it.
+`loading` keeps the label and the button's width, steps three cells before the label, pulses the hover highlight, and sets `aria-busy`. Clicks are ignored until it clears. Submit this one to see it.
 
 <ComponentPreview src="examples/dither-button-form.tsx" size="md">
   <DitherButtonForm />
@@ -77,13 +79,14 @@ Pass `asChild` and a single child, such as Next.js `Link` or a plain `<a>`, and 
       type: '"filled" | "outline"',
       default: '"filled"',
       description:
-        "Filled shows the texture at rest. Outline starts bare and fills in on hover.",
+        "Filled is the lit colour surface. Outline is a faint tint whose dither grows on hover.",
     },
     {
       name: "fill",
       type: '"gradient" | "dotted" | "hatched" | "solid"',
       default: '"gradient"',
-      description: "The texture of the fill.",
+      description:
+        "Texture of the shade: a Bayer ramp, a dot lattice, diagonals, or a thin rim.",
     },
     {
       name: "color",
@@ -132,8 +135,8 @@ All other props pass through to the `<button>`, or to your child with `asChild`.
 
 ## Notes
 
-- Focus shows a 2 pixel outline with `:focus-visible` and the hover texture, so keyboard users see the same density step as pointer users.
-- Hover only applies on devices that can hover. Press works everywhere, so touch screens get the denser fill as feedback.
+- Focus shows a 2 pixel outline with `:focus-visible` and the hover highlight, so keyboard users see the same step as pointer users.
+- Hover only applies on devices that can hover. Press works everywhere, so touch screens get the pressed-in shade as feedback.
 - With reduced motion, the layers switch without fading, the press does not scale, and the loading cells hold still.
 - Disabled and loading buttons drop to 45% opacity and a not-allowed or progress cursor. For a disabled link, set `aria-disabled` on it and leave out `href`.
 - The fill is plain CSS masks in one shared `<style>` tag. The button only needs client JavaScript for `asChild` and `loading`.

@@ -1,20 +1,20 @@
-import { DITHER_COLOR_NAMES, FILL_VARIANTS } from "@/lib/dither";
+import { DITHER_COLOR_NAMES } from "@/lib/dither";
 import { color, segmented, toggle } from "@/lib/preview-controls";
 
 // Knobs for the empty state's main demo, shared by the page and the demo.
 
-export const scene = segmented({
-  default: "rings",
-  id: "scene",
-  label: "Scene",
-  options: ["rings", "grid", "none"],
+export const illustration = segmented({
+  default: "box",
+  id: "illustration",
+  label: "Illustration",
+  options: ["box", "search", "folder", "planet"],
 });
 
-export const fill = segmented({
-  default: "gradient",
-  id: "fill",
-  label: "Fill",
-  options: FILL_VARIANTS,
+export const matrix = segmented({
+  default: "bayer4",
+  id: "matrix",
+  label: "Matrix",
+  options: ["bayer4", "bayer8", "blue-noise"],
 });
 
 export const tint = color({
@@ -27,8 +27,8 @@ export const tint = color({
 export const animate = toggle({
   default: true,
   id: "animate",
-  label: "Ripple",
+  label: "Animate",
 });
 
 /** Display order of the tray. */
-export const controls = [scene, fill, tint, animate];
+export const controls = [illustration, matrix, tint, animate];

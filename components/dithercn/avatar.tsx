@@ -12,20 +12,22 @@ import { cn } from "@/lib/utils";
 
 /*
  * A face from a string. The string seeds a small random generator, which
- * fills one half of a 7x7 grid of blocks; the other half mirrors it. Our
+ * fills one half of a 5x5 grid of blocks; the other half mirrors it. Our
  * rules: a block's chance of being on falls with its distance from the
  * centre, so every face is a compact, centred mark rather than noise; the
- * centre column always holds at least two blocks; and each block gets one
- * of three tones, denser towards the middle. Every block is 4x4 cells, so
- * a tone is drawn as a real Bayer level (gradient), a texture (dotted,
- * hatched) or an opacity step (solid). The same string always draws the
- * same face, on the server and in the browser.
+ * centre column always holds at least two blocks; and each block is
+ * either full or half tone, half tone likelier at the edges. Every block
+ * is 4x4 cells, so half tone is a real Bayer level (gradient), a texture
+ * (dotted, hatched) or an opacity step (solid). Behind the face sits a
+ * lit disc of sparse dither in the same colour, densest up and to the
+ * left, kept one cell clear of the face so the mark stays crisp. The same
+ * string always draws the same face, on the server and in the browser.
  */
 
-const GRID = 7;
+const GRID = 5;
 const HALF = Math.ceil(GRID / 2);
 const SUB = 4;
-const PAD = 1.25;
+const PAD = 1.5;
 const VIEW = GRID * SUB + PAD * 2 * SUB;
 
 /** The hues an avatar picks from when it has no `color`. */
@@ -61,7 +63,7 @@ const generator = (seed: number) => {
 /** The tone of each block, row by row. 0 is off. */
 export type AvatarFace = readonly (readonly number[])[];
 
-const TONES = [0.5, 0.75, 1] as const;
+const TONES = [0.5, 1] as const;
 
 /** The face for a string. Exported so you can reuse it, e.g. in an OG image. */
 export const avatarFace = (value: string): AvatarFace => {
@@ -72,19 +74,18 @@ export const avatarFace = (value: string): AvatarFace => {
     const half = Array.from({ length: HALF }, (_unused, x) => {
       const near = 1 - Math.hypot(x - centre, y - centre) / reach;
       // The corner blocks stay off, so a circle never clips the face.
-      if (random() > 0.18 + 0.8 * near || near < 0.05) {
+      if (random() > 0.3 + 0.75 * near || near < 0.05) {
         return 0;
       }
-      // Denser tones are likelier near the centre.
-      const pick = Math.min(2, Math.floor(random() * 1.6 + near * 2.2));
-      return TONES[pick] ?? 1;
+      // Full blocks are likelier near the centre.
+      return random() < 0.25 + 0.6 * near ? TONES[1] : TONES[0];
     });
     return [...half, ...half.slice(0, GRID - HALF).toReversed()];
   });
   // At least two blocks down the middle, so the face has a spine.
   const spine = rows.filter((row) => (row[centre] ?? 0) > 0).length;
   if (spine < 2) {
-    for (const y of [2, 3, 4]) {
+    for (const y of [1, 2, 3]) {
       const row = rows[y];
       if (row) {
         row.splice(centre, 1, TONES[1]);
@@ -92,6 +93,41 @@ export const avatarFace = (value: string): AvatarFace => {
     }
   }
   return rows;
+};
+
+/** Whether any block of the face covers a cell or touches it. */
+const faceNear = (face: AvatarFace, x: number, y: number) => {
+  for (let oy = -1; oy <= 1; oy += 1) {
+    for (let ox = -1; ox <= 1; ox += 1) {
+      const bx = Math.floor((x + ox - PAD * SUB) / SUB);
+      const by = Math.floor((y + oy - PAD * SUB) / SUB);
+      if ((face[by]?.[bx] ?? 0) > 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+/** Tone of the lit disc behind the face: up to a quarter, from the top left. */
+const discTone = (x: number, y: number) => {
+  const nx = (x + 0.5 - VIEW / 2) / (VIEW / 2);
+  const ny = (y + 0.5 - VIEW / 2) / (VIEW / 2);
+  const light = 1 - Math.hypot(nx + 0.45, ny + 0.45) / 1.6;
+  return 0.26 * Math.max(0, light) ** 1.3;
+};
+
+/** The disc behind a face, in cells, as one SVG path. */
+const discPath = (face: AvatarFace) => {
+  let d = "";
+  for (let y = 0; y < VIEW; y += 1) {
+    for (let x = 0; x < VIEW; x += 1) {
+      if (!faceNear(face, x, y) && isInked("bayer4", x, y, discTone(x, y))) {
+        d += `M${x} ${y}h1v1h-1z`;
+      }
+    }
+  }
+  return d;
 };
 
 /** The palette name an avatar uses for a string without its own `color`. */
@@ -106,15 +142,10 @@ const TEXTURE = {
   hatched: (x: number, y: number) => mod4(x + y) === 3,
 } as const;
 
-/** Opacity of a solid block per tone. */
-const SOLID_OPACITY = { 0.5: 0.42, 0.75: 0.7, 1: 1 } as const;
+/** Opacity of a solid half-tone block. */
+const SOLID_HALF = 0.45;
 
-const solidOpacity = (tone: number) => {
-  if (tone >= 1) {
-    return 1;
-  }
-  return tone >= 0.7 ? SOLID_OPACITY[0.75] : SOLID_OPACITY[0.5];
-};
+const solidOpacity = (tone: number) => (tone >= 1 ? 1 : SOLID_HALF);
 
 const cellInked = (fill: FillVariant, tone: number, x: number, y: number) => {
   switch (fill) {
@@ -135,10 +166,17 @@ const cellInked = (fill: FillVariant, tone: number, x: number, y: number) => {
   }
 };
 
-const pathCache = new Map<string, readonly { opacity: number; d: string }[]>();
+interface FacePaths {
+  /** The face, grouped by opacity (several only for `solid`). */
+  blocks: readonly { opacity: number; d: string }[];
+  /** The lit disc behind it. */
+  disc: string;
+}
 
-/** SVG paths for a face, grouped by opacity (several only for `solid`). */
-const facePaths = (value: string, fill: FillVariant) => {
+const pathCache = new Map<string, FacePaths>();
+
+/** SVG paths for a face and its disc. */
+const facePaths = (value: string, fill: FillVariant): FacePaths => {
   const key = `${fill}:${value}`;
   const cached = pathCache.get(key);
   if (cached !== undefined) {
@@ -162,7 +200,10 @@ const facePaths = (value: string, fill: FillVariant) => {
       }
     }
   }
-  const paths = [...groups].map(([opacity, d]) => ({ d, opacity }));
+  const paths = {
+    blocks: [...groups].map(([opacity, d]) => ({ d, opacity })),
+    disc: discPath(face),
+  };
   pathCache.set(key, paths);
   return paths;
 };
@@ -226,6 +267,7 @@ export const Avatar = ({
   ...props
 }: AvatarProps) => {
   const tint = color ?? avatarColor(name);
+  const paths = facePaths(name, fill);
   const ink = cssColor(tint);
   const outline =
     "0 0 0 var(--avatar-outline-width, 0px) var(--avatar-outline, transparent)";
@@ -234,7 +276,7 @@ export const Avatar = ({
     : "";
   const root: StyleWithVars = {
     "--avatar-ink": ink,
-    backgroundColor: `color-mix(in oklab, ${ink} 15%, var(--card, transparent))`,
+    backgroundColor: `color-mix(in oklab, ${ink} 11%, var(--card, transparent))`,
     boxShadow: `${outline}${ringShadow}`,
     height: size ?? "var(--avatar-size, 40px)",
     width: size ?? "var(--avatar-size, 40px)",
@@ -265,7 +307,8 @@ export const Avatar = ({
         )}
         style={bloomStyle(tint, bloom)}
       >
-        {facePaths(name, fill).map(({ d, opacity }) => (
+        <path d={paths.disc} style={{ fill: ink, opacity: 0.6 }} />
+        {paths.blocks.map(({ d, opacity }) => (
           <path key={opacity} d={d} style={{ fill: ink, opacity }} />
         ))}
       </svg>

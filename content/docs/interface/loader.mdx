@@ -1,6 +1,6 @@
 ---
 title: "Loader"
-description: "A small dithered loading indicator: a breathing ring, a pulse, a snake round a grid, or a sweeping bar."
+description: "A small dithered loading indicator: a ring with a comet tail, three dots that dissolve in turn, a pulse, or a sweeping bar."
 ---
 
 import LoaderDemo from "@/examples/loader-demo";
@@ -30,18 +30,18 @@ export function Saving() {
 }
 ```
 
-Each variant is a tone field on a small grid of cells. Every frame, the loader thresholds the field with the Bayer matrix and paints the inked cells into a canvas at one pixel per cell. Shape edges are hard, so the ring and the blocks keep clean outlines; only the tone inside them fades, so the motion happens in the dither.
+Each variant is a tone field on a small grid of cells. Every frame, the loader thresholds the field with the Bayer matrix and paints the inked cells into a canvas at one pixel per cell. Shape edges are hard, so the ring and the dots keep clean outlines; only the tone inside them changes, so the motion happens in the dither. Cells are 2 pixels by default, big enough that you see the Bayer steps.
 
-- `ring`: a comet on a faint track. Its tail stretches and shrinks as it goes round, so the ring breathes instead of spinning at one pace.
+- `ring`: a thick ring with a comet on a faint track. The head is solid and the tail steps down through the dither levels behind it. The tail stretches and shrinks as it goes round, so the ring breathes instead of spinning at one pace.
 - `pulse`: a dot that beats while three rings ripple out from it and thin out as they grow. Good for "waiting for something to arrive".
-- `grid`: a snake running round a 3 by 3 grid of blocks, one block per step, with a fading tail.
-- `bar`: a dense head easing across a faint track, its tail thinning behind it. Four times as wide as it is tall.
+- `dots`: three discs that build up from sparse dither to solid and dissolve again, one after another. Twice as wide as it is tall.
+- `bar`: a dense head easing across a faint track, its tail thinning behind it. Three times as wide as it is tall.
 
 ## Examples
 
 ### Variants and sizes
 
-`sm`, `md` and `lg` are 20, 32 and 48 pixels tall. Cells default to 1, 2 and 3 pixels, so every size has the same number of cells and the same shape.
+`sm`, `md` and `lg` are 24, 40 and 64 pixels tall. Cells default to 1 pixel at `sm` and 2 pixels above it, so larger loaders show more cells and smoother falloff.
 
 <ComponentPreview src="examples/loader-variants.tsx" size="md">
   <LoaderVariants />
@@ -61,7 +61,7 @@ A ring next to a deploy, a bar under an upload, and a pulse in an empty event fe
   rows={[
     {
       name: "variant",
-      type: '"ring" | "pulse" | "grid" | "bar"',
+      type: '"ring" | "dots" | "pulse" | "bar"',
       default: '"ring"',
       description: "Which animation to draw.",
     },
@@ -69,7 +69,7 @@ A ring next to a deploy, a bar under an upload, and a pulse in an empty event fe
       name: "size",
       type: '"sm" | "md" | "lg"',
       default: '"md"',
-      description: "Height of 20, 32 or 48 pixels.",
+      description: "Height of 24, 40 or 64 pixels.",
     },
     {
       name: "label",
@@ -99,9 +99,8 @@ A ring next to a deploy, a bar under an upload, and a pulse in an empty event fe
     {
       name: "cell",
       type: "number",
-      default: "1, 2 or 3",
-      description:
-        "Size of one dither cell in CSS pixels. Defaults follow size.",
+      default: "2 (1 at sm)",
+      description: "Size of one dither cell in CSS pixels.",
     },
     {
       name: "speed",
@@ -116,5 +115,5 @@ A ring next to a deploy, a bar under an upload, and a pulse in an empty event fe
 
 - The root has `role="status"` and a visually hidden `label`, so screen readers announce it politely when it appears. The canvas is hidden from them.
 - With reduced motion turned on, each variant draws one still frame that still reads as a loader.
-- It pauses when scrolled out of view or when the tab is hidden. A loader is 256 cells, so a frame is cheap, and it uses a 2D canvas rather than WebGL, so loaders never count against the page's WebGL budget.
+- It pauses when scrolled out of view or when the tab is hidden. A loader is at most about a thousand cells, so a frame is cheap, and it uses a 2D canvas rather than WebGL, so loaders never count against the page's WebGL budget.
 - Cells snap to whole device pixels, so a loader stays crisp at any zoom level.

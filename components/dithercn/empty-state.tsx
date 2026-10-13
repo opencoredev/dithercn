@@ -1,140 +1,298 @@
-import type { ComponentProps, CSSProperties, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { cssColor, isInked } from "@/lib/dither";
-import type { DitherColor, FillVariant } from "@/lib/dither";
+import type { DitherColor, DitherMatrix } from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /*
- * The scene is a grid of cells, rasterised once into SVG paths, with a
- * glyph tile at its centre. `rings` draws four concentric bands around
- * the tile, each a step lighter than the one inside it, and ripples them
- * outward by fading each band up and down in turn. `grid` draws a
- * lattice of single cells that thins out towards the edges, like a floor
- * the tile sits on. Both fade at the top and bottom through blue noise,
- * so the scene dissolves into the surface instead of stopping at a line.
+ * Each illustration is a small lit object, drawn as a tone field on a grid
+ * of cells: every surface gets a tone from a light up and to the left, so
+ * faces facing the light are dense and faces turned away are sparse, and
+ * curved surfaces fall off through every Bayer level. The field is
+ * thresholded once into an SVG path per layer and cached. A one-cell seam
+ * splits the object's parts (faces, rim, handle), and cells within two
+ * of the object are kept clear, which gives it a crisp outline against
+ * the halo behind it. The halo is a faint radial fade and a
+ * dithered floor shadow. With `animate`, the object bobs a cell up and
+ * down in whole-cell steps while the shadow tightens under it.
  */
 
-const COLS = 84;
-const ROWS = 52;
+const COLS = 112;
+const ROWS = 72;
 const CX = COLS / 2;
-const CY = ROWS / 2;
+const CY = 32;
 
-export type EmptyStateScene = "rings" | "grid" | "none";
+export type EmptyStateIllustration = "box" | "search" | "folder" | "planet";
 
-/** Rings: radius and width in cells, and coverage for a gradient fill. */
-const RINGS = [
-  { level: 0.6, radius: 15, width: 2.4 },
-  { level: 0.4, radius: 21, width: 2.2 },
-  { level: 0.26, radius: 27, width: 2 },
-  { level: 0.16, radius: 33, width: 1.8 },
-] as const;
+type Point = readonly [number, number];
 
-const SOLID_OPACITY = [0.7, 0.45, 0.3, 0.18] as const;
+/** Tone and part number of the object at a cell, or null where there is none. */
+type Shade = readonly [tone: number, part: number];
+type ObjectField = (x: number, y: number) => Shade | null;
 
-const mod4 = (value: number) => value % 4;
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
-const TEXTURE = {
-  dotted: (x: number, y: number) => y % 2 === 0 && (mod4(x) + y / 2) % 2 === 0,
-  hatched: (x: number, y: number) => mod4(x + y) === 3,
-} as const;
-
-/** 1 in the middle band, falling to 0 at the top and bottom edges. */
-const edgeFade = (y: number) => {
-  const from = Math.min(y + 0.5, ROWS - y - 0.5) / (ROWS * 0.32);
-  return Math.min(1, from);
-};
-
-const ringInked = (fill: FillVariant, level: number, x: number, y: number) => {
-  if (!isInked("blue-noise", x, y, edgeFade(y))) {
-    return false;
-  }
-  switch (fill) {
-    case "gradient": {
-      return isInked("bayer4", x, y, level);
-    }
-    case "dotted":
-    case "hatched": {
-      return TEXTURE[fill](x, y);
-    }
-    case "solid": {
-      return true;
-    }
-    default: {
-      const exhaustive: never = fill;
-      return exhaustive;
+/** Whether a point is inside a convex or simple polygon (even-odd rule). */
+const inPolygon = (x: number, y: number, points: readonly Point[]) => {
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i, i += 1) {
+    const [xi, yi] = points[i] ?? [0, 0];
+    const [xj, yj] = points[j] ?? [0, 0];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
     }
   }
+  return inside;
 };
 
-const cellRect = (x: number, y: number) => `M${x} ${y}h1v1h-1z`;
+const shift = ([x, y]: Point, dx: number, dy: number): Point => [
+  x + dx,
+  y + dy,
+];
 
-const ringCache = new Map<FillVariant, readonly string[]>();
+/** Shade a flat face: its base tone, lighter towards its top. */
+const face = (tone: number, y: number, top: number, height: number) =>
+  clamp01(tone * (1.15 - (0.35 * (y - top)) / height));
 
-/** One path per ring, so each can fade on its own. */
-const ringPaths = (fill: FillVariant) => {
-  const cached = ringCache.get(fill);
+/** An open box, flaps folded back, seen from above and to the front. */
+const box: ObjectField = (x, y) => {
+  const top: Point = [CX, CY - 14];
+  const left: Point = [CX - 26, CY - 1];
+  const right: Point = [CX + 26, CY - 1];
+  const front: Point = [CX, CY + 12];
+  const depth = 20;
+  const lift = 11;
+  const flaps: readonly (readonly [readonly Point[], number])[] = [
+    [[top, left, shift(left, -9, -lift), shift(top, -9, -lift)], 0.72],
+    [[top, right, shift(right, 9, -lift), shift(top, 9, -lift)], 0.42],
+  ];
+  for (const [index, [points, tone]] of flaps.entries()) {
+    if (inPolygon(x, y, points)) {
+      return [face(tone, y, CY - 14 - lift, lift + 14), index];
+    }
+  }
+  const leftFace = [left, front, shift(front, 0, depth), shift(left, 0, depth)];
+  if (inPolygon(x, y, leftFace)) {
+    return [face(0.62, y, CY - 1, depth + 13), 2];
+  }
+  const rightFace = [
+    front,
+    right,
+    shift(right, 0, depth),
+    shift(front, 0, depth),
+  ];
+  if (inPolygon(x, y, rightFace)) {
+    return [face(0.3, y, CY - 1, depth + 13), 3];
+  }
+  const opening = [top, right, front, left];
+  const inner = opening.map(
+    ([px, py]): Point => [CX + (px - CX) * 0.8, CY - 1 + (py - (CY - 1)) * 0.74]
+  );
+  if (inPolygon(x, y, opening) && !inPolygon(x, y, inner)) {
+    // The lip of the opening catches the light.
+    return [0.9, 5];
+  }
+  if (inPolygon(x, y, opening)) {
+    // The far walls catch light; the floor of the box is in shadow.
+    const near = (y - (CY - 14)) / 26;
+    return [0.06 + 0.32 * (1 - near) ** 2, 4];
+  }
+  return null;
+};
+
+/** Distance from a point to a segment. */
+const toSegment = (x: number, y: number, a: Point, b: Point) => {
+  const [ax, ay] = a;
+  const [bx, by] = b;
+  const length = (bx - ax) ** 2 + (by - ay) ** 2;
+  const t = clamp01(((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / length);
+  return Math.hypot(x - (ax + t * (bx - ax)), y - (ay + t * (by - ay)));
+};
+
+/** A magnifying glass: a lit rim, a glint on the glass, a round handle. */
+const search: ObjectField = (x, y) => {
+  const lens: Point = [CX - 7, CY - 4];
+  const dx = x - lens[0];
+  const dy = y - lens[1];
+  const radius = Math.hypot(dx, dy);
+  if (radius < 21 && radius > 15.5) {
+    // Brightest where the rim faces the light, up and to the left.
+    const facing = (-dx * 0.7 - dy * 0.7) / radius;
+    return [clamp01(0.55 + 0.42 * facing), 0];
+  }
+  if (radius <= 15.5) {
+    const glint = Math.hypot(dx + 6, (dy + 6) * 1.6);
+    return [glint < 4.5 ? 0.85 : 0.05 * (1 - radius / 15.5), 1];
+  }
+  const start: Point = [lens[0] + 16, lens[1] + 16];
+  const end: Point = [lens[0] + 31, lens[1] + 31];
+  const distance = toSegment(x, y, start, end);
+  if (distance < 4.6) {
+    // Across the handle: lit on its upper side, rolling into shadow.
+    const side = (x - y - (start[0] - start[1])) / 6.5;
+    return [clamp01(0.5 - 0.42 * side + 0.15 * (1 - distance / 4.6)), 2];
+  }
+  return null;
+};
+
+const inRect = (
+  x: number,
+  y: number,
+  [left, top]: Point,
+  [width, height]: Point
+) => x >= left && x < left + width && y >= top && y < top + height;
+
+/** A folder with a sheet of paper peeking out of it. */
+const folder: ObjectField = (x, y) => {
+  const left = CX - 30;
+  const top = CY - 12;
+  // The front panel leans back: its top edge is pulled in by a few cells.
+  const frontTop = top + 9;
+  const lean = (frontTop + 26 - y) / 26;
+  if (y >= frontTop && y < frontTop + 26) {
+    const inset = Math.round(6 * lean);
+    if (x >= left - 2 + inset && x < left + 62 - inset) {
+      return [face(0.6, y, frontTop, 26), 0];
+    }
+  }
+  if (inRect(x, y, [left + 14, top - 4], [34, 16])) {
+    // The sheet: bright, with two lines of text knocked out.
+    const line = y === top - 1 || y === top + 3;
+    return [line && x > left + 18 && x < left + 42 ? 0.15 : 0.95, 1];
+  }
+  if (
+    inRect(x, y, [left, top], [60, 12]) ||
+    inRect(x, y, [left, top - 6], [20, 7])
+  ) {
+    return [face(0.42, y, top - 6, 18), 2];
+  }
+  return null;
+};
+
+/** A lit sphere with a tilted ring round it, and a few stars. */
+const planet: ObjectField = (x, y) => {
+  const px = x + 0.5 - CX;
+  const py = y + 0.5 - (CY + 2);
+  const r = 17;
+  const ringX = px * 0.94 + py * 0.34;
+  const ringY = -px * 0.34 + py * 0.94;
+  const ring = Math.hypot(ringX / 33, ringY / 8.5);
+  const onRing = ring > 0.82 && ring < 1;
+  const front = ringY > 0;
+  const sphere = Math.hypot(px, py) < r;
+  if (onRing && (front || !sphere)) {
+    return [0.42 + 0.4 * (1 - (ringX + 33) / 66), 0];
+  }
+  if (sphere) {
+    const nx = px / r;
+    const ny = py / r;
+    const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+    const light = -0.55 * nx - 0.6 * ny + 0.58 * nz;
+    return [clamp01(0.04 + 0.98 * Math.max(0, light) ** 1.2), 1];
+  }
+  return null;
+};
+
+const OBJECTS = {
+  box,
+  folder,
+  planet,
+  search,
+} as const satisfies Record<EmptyStateIllustration, ObjectField>;
+
+/** Floor shadow and halo tone behind the object. */
+const backdrop = (
+  illustration: EmptyStateIllustration,
+  x: number,
+  y: number
+) => {
+  const halo = Math.hypot((x + 0.5 - CX) / 54, (y + 0.5 - CY) / 34);
+  const glow = 0.12 * Math.max(0, 1 - halo) ** 2;
+  if (illustration === "planet") {
+    return glow;
+  }
+  const floor = Math.hypot((x + 0.5 - CX) / 36, (y + 0.5 - 67) / 3.6);
+  return Math.max(glow, 0.42 * Math.max(0, 1 - floor) ** 0.8);
+};
+
+const cell = (x: number, y: number) => `M${x} ${y}h1v1h-1z`;
+
+interface ScenePaths {
+  object: string;
+  backdrop: string;
+}
+
+const sceneCache = new Map<string, ScenePaths>();
+
+const scenePaths = (
+  illustration: EmptyStateIllustration,
+  matrix: DitherMatrix
+): ScenePaths => {
+  const key = `${illustration}:${matrix}`;
+  const cached = sceneCache.get(key);
   if (cached !== undefined) {
     return cached;
   }
-  const paths = RINGS.map(({ radius, width, level }) => {
-    let d = "";
-    for (let y = 0; y < ROWS; y += 1) {
-      for (let x = 0; x < COLS; x += 1) {
-        const distance = Math.hypot(x + 0.5 - CX, (y + 0.5 - CY) * 1.08);
-        if (
-          Math.abs(distance - radius) < width / 2 &&
-          ringInked(fill, level, x, y)
-        ) {
-          d += cellRect(x, y);
+  const field = OBJECTS[illustration];
+  const tones = Array.from({ length: ROWS }, (_, y) =>
+    Array.from({ length: COLS }, (_unused, x) => field(x, y))
+  );
+  const near = (x: number, y: number) =>
+    [-2, -1, 0, 1, 2].some((oy) =>
+      [-2, -1, 0, 1, 2].some((ox) => (tones[y + oy]?.[x + ox] ?? null) !== null)
+    );
+  // A cell next to a lower-numbered part is left clear, so parts are split
+  // by a one-cell seam, as in pixel art.
+  const seam = (x: number, y: number, part: number) =>
+    [
+      [x - 1, y],
+      [x + 1, y],
+      [x, y - 1],
+      [x, y + 1],
+    ].some(([nx = 0, ny = 0]) => {
+      const other = tones[ny]?.[nx] ?? null;
+      return other !== null && other[1] < part;
+    });
+  let object = "";
+  let back = "";
+  for (let y = 0; y < ROWS; y += 1) {
+    for (let x = 0; x < COLS; x += 1) {
+      const shade = tones[y]?.[x] ?? null;
+      if (shade !== null) {
+        const [tone, part] = shade;
+        if (!seam(x, y, part) && isInked(matrix, x, y, tone)) {
+          object += cell(x, y);
         }
+      } else if (
+        !near(x, y) &&
+        isInked(matrix, x, y, backdrop(illustration, x, y))
+      ) {
+        back += cell(x, y);
       }
     }
-    return d;
-  });
-  ringCache.set(fill, paths);
+  }
+  const paths = { backdrop: back, object };
+  sceneCache.set(key, paths);
   return paths;
 };
 
-let gridCache: string | undefined;
-
-/** A lattice every third cell, thinning out with distance from the centre. */
-const gridPath = () => {
-  if (gridCache !== undefined) {
-    return gridCache;
-  }
-  let d = "";
-  for (let y = 1; y < ROWS; y += 3) {
-    for (let x = 0; x < COLS; x += 3) {
-      const distance = Math.hypot((x + 0.5 - CX) / CX, (y + 0.5 - CY) / CY);
-      const tone = Math.max(0, 1 - distance) ** 0.8 * 1.15;
-      if (isInked("bayer4", x / 3, (y - 1) / 3, tone)) {
-        d += cellRect(x, y);
-      }
-    }
-  }
-  gridCache = d;
-  return d;
-};
-
 const STYLES = [
-  "@keyframes dcn-empty-ripple{0%,100%{opacity:0.4}30%{opacity:1}}",
-  ".dcn-empty-ring{animation:dcn-empty-ripple 3.6s cubic-bezier(0.77,0,0.175,1) var(--dcn-delay) infinite both}",
-  "@media (prefers-reduced-motion: reduce){.dcn-empty-ring{animation:none}}",
+  "@keyframes dcn-empty-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}",
+  ".dcn-empty-bob{animation:dcn-empty-bob 3.2s steps(1,end) infinite}",
+  "@keyframes dcn-empty-shadow{0%,100%{opacity:1}50%{opacity:0.7}}",
+  ".dcn-empty-shadow{animation:dcn-empty-shadow 3.2s steps(1,end) infinite}",
+  "@media (prefers-reduced-motion: reduce){.dcn-empty-bob,.dcn-empty-shadow{animation:none}}",
 ].join("");
 
-type StyleWithVars = CSSProperties & Record<`--${string}`, string>;
-
 interface SceneProps {
-  scene: EmptyStateScene;
-  fill: FillVariant;
+  illustration: EmptyStateIllustration;
+  matrix: DitherMatrix;
   color: DitherColor;
   animate: boolean;
 }
 
-const Scene = ({ scene, fill, color, animate }: SceneProps) => {
-  if (scene === "none") {
-    return null;
-  }
+const Scene = ({ illustration, matrix, color, animate }: SceneProps) => {
+  const paths = scenePaths(illustration, matrix);
   const ink = cssColor(color);
   return (
     <>
@@ -148,51 +306,21 @@ const Scene = ({ scene, fill, color, animate }: SceneProps) => {
         preserveAspectRatio="xMidYMid meet"
         className="absolute inset-0 size-full"
       >
-        {scene === "grid" ? (
-          <path d={gridPath()} style={{ fill: ink, opacity: 0.6 }} />
-        ) : (
-          ringPaths(fill).map((d, index) => {
-            const style: StyleWithVars = {
-              "--dcn-delay": `${index * 0.45}s`,
-              fill: ink,
-              opacity: fill === "solid" ? SOLID_OPACITY[index] : undefined,
-            };
-            return (
-              <path
-                key={RINGS[index]?.radius ?? index}
-                d={d}
-                className={animate ? "dcn-empty-ring" : undefined}
-                style={style}
-              />
-            );
-          })
-        )}
+        <path
+          d={paths.backdrop}
+          className={animate ? "dcn-empty-shadow" : undefined}
+          style={{ fill: ink, opacity: 0.55 }}
+        />
+        {/* One viewBox unit is one cell, so the bob moves a whole cell. */}
+        <path
+          d={paths.object}
+          className={animate ? "dcn-empty-bob" : undefined}
+          style={{ fill: ink }}
+        />
       </svg>
     </>
   );
 };
-
-/** A dashed square: the default glyph, for "nothing here yet". */
-const EmptyGlyph = () => (
-  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <rect
-      x="4.5"
-      y="4.5"
-      width="15"
-      height="15"
-      rx="3"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeDasharray="3 2.6"
-    />
-    <path
-      d="M9.5 12h5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-  </svg>
-);
 
 export type EmptyStateProps = Omit<ComponentProps<"div">, "title" | "color"> & {
   /** The heading. Say what is empty, plainly. */
@@ -201,32 +329,29 @@ export type EmptyStateProps = Omit<ComponentProps<"div">, "title" | "color"> & {
   description?: ReactNode;
   /** Buttons or links, under the text. */
   action?: ReactNode;
-  /** The glyph in the tile, such as an icon from your icon set. Default: a dashed square. */
-  icon?: ReactNode;
-  /** What surrounds the tile. Default `"rings"`. */
-  scene?: EmptyStateScene;
-  /** Texture of the rings. Default `"gradient"`. */
-  fill?: FillVariant;
-  /** Colour of the scene: a palette name or any CSS colour. Default `"ink"`. */
+  /** The dithered object above the text: an open box, a magnifier, a folder or a ringed planet. Default `"box"`. */
+  illustration?: EmptyStateIllustration;
+  /** Colour of the illustration: a palette name or any CSS colour. Default `"ink"`. */
   color?: DitherColor;
-  /** Ripple the rings outward. Default `true`. */
+  /** Threshold matrix: `bayer4` for crisp steps, `bayer8` for finer ones, `blue-noise` for grain. Default `"bayer4"`. */
+  matrix?: DitherMatrix;
+  /** Bob the object up and down a cell. Default `true`. */
   animate?: boolean;
   /** Heading level. Default `"h3"`. */
   titleAs?: "h2" | "h3" | "h4";
 };
 
 /**
- * A placeholder for a view with nothing in it yet: a glyph tile in a
- * dithered scene, a title, a short description and an action.
+ * A placeholder for a view with nothing in it yet: a lit, dithered
+ * illustration, a title, a short description and an action.
  */
 export const EmptyState = ({
   title,
   description,
   action,
-  icon,
-  scene = "rings",
-  fill = "gradient",
+  illustration = "box",
   color = "ink",
+  matrix = "bayer4",
   animate = true,
   titleAs: Heading = "h3",
   className,
@@ -234,24 +359,22 @@ export const EmptyState = ({
 }: EmptyStateProps) => (
   <div
     data-slot="empty-state"
+    data-illustration={illustration}
     className={cn(
       "flex flex-col items-center px-6 py-10 text-center",
       className
     )}
     {...props}
   >
-    <div
-      className={cn(
-        "relative grid w-full max-w-[336px] place-items-center",
-        scene === "none" ? "h-auto" : "aspect-[84/52]"
-      )}
-    >
-      <Scene scene={scene} fill={fill} color={color} animate={animate} />
-      <div className="bg-background text-foreground ring-border relative grid size-14 place-items-center rounded-2xl shadow-[0_1px_2px_oklch(0_0_0/0.12),0_8px_24px_-8px_oklch(0_0_0/0.35)] ring-1 [&_svg:not([class*='size-'])]:size-6">
-        {icon ?? <EmptyGlyph />}
-      </div>
+    <div className="relative aspect-[112/72] w-full max-w-[336px]">
+      <Scene
+        illustration={illustration}
+        matrix={matrix}
+        color={color}
+        animate={animate}
+      />
     </div>
-    <div className="mt-4 flex max-w-sm flex-col gap-1.5">
+    <div className="mt-3 flex max-w-sm flex-col gap-1.5">
       <Heading className="text-base font-semibold tracking-tight text-balance">
         {title}
       </Heading>
