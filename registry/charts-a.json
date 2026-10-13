@@ -29,5 +29,22 @@
         "target": "components/dithercn/area-chart.tsx"
       }
     ]
+  },
+  {
+    "name": "bar-chart",
+    "type": "registry:component",
+    "title": "Bar chart",
+    "description": "Vertical bars, grouped or stacked, each filled with a dither and capped with a solid edge.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/cartesian-chart.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/bar-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/bar-chart.tsx"
+      }
+    ]
   }
 ]
