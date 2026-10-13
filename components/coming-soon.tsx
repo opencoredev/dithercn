@@ -1,8 +1,8 @@
 import { LogoMark } from "@/components/logo";
 
 export const ComingSoon = () => (
-  <aside className="bg-accent/50 text-accent-foreground not-first:mt-6 flex gap-3 rounded-md border border-dashed border-current/25 p-4 text-sm">
-    <LogoMark className="mt-0.5 size-4 shrink-0" />
+  <aside className="bg-card text-card-foreground not-first:mt-6 flex gap-3 rounded-xl p-4 text-sm">
+    <LogoMark className="text-primary mt-0.5 size-4 shrink-0" />
     <div className="flex flex-col gap-1">
       <p className="font-semibold">Coming soon</p>
       <p className="text-foreground/80">

@@ -3,7 +3,7 @@ import { SITE } from "@/constants/site";
 
 export const SiteFooter = () => (
   <footer
-    className="border-t border-dashed group-has-[.docs-nav]/body:pb-20 group-has-[.docs-nav]/body:sm:pb-0"
+    className="border-t group-has-[.docs-nav]/body:pb-20 group-has-[.docs-nav]/body:sm:pb-0"
     style={{ viewTransitionName: "site-footer" }}
   >
     <div className="container-wrapper px-4 xl:px-6">

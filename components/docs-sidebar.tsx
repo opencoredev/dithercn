@@ -17,7 +17,7 @@ import { getPagesFromFolder } from "@/lib/page-tree";
 import type { source } from "@/lib/source";
 
 const MENU_BUTTON_CLS =
-  "relative h-[30px] w-fit overflow-visible border border-transparent text-[0.8rem] font-medium text-muted-foreground hover:text-foreground after:absolute after:inset-x-0 after:-inset-y-1 after:z-0 after:rounded-md data-[active=true]:border-dashed data-[active=true]:border-primary/40 data-[active=true]:bg-accent data-[active=true]:text-accent-foreground 3xl:fixed:w-full 3xl:fixed:max-w-48";
+  "relative h-[30px] w-fit overflow-visible border border-transparent text-[0.8rem] font-medium text-muted-foreground hover:text-foreground after:absolute after:inset-x-0 after:-inset-y-1 after:z-0 after:rounded-md data-[active=true]:bg-accent data-[active=true]:text-accent-foreground 3xl:fixed:w-full 3xl:fixed:max-w-48";
 
 const SidebarPageGroup = ({
   label,

@@ -48,7 +48,7 @@ export const CommandBox = ({
           }
         }}
       >
-        <div className="flex items-center gap-2 border-b border-dashed px-3 py-1">
+        <div className="flex items-center gap-2 border-b px-3 py-1">
           <TabsList className="[&_svg]:text-muted-foreground rounded-none bg-transparent p-0 [&_svg]:me-2 [&_svg]:size-4">
             {getIconForPackageManager(packageManager)}
             {PACKAGE_MANAGERS.map((pm) => (

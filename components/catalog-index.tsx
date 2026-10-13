@@ -52,7 +52,7 @@ export const CatalogIndex = ({
         <section
           key={category.id}
           aria-labelledby={`catalog-${category.id}`}
-          className="grid gap-x-10 gap-y-3 border-t border-dashed py-6 first:border-t-0 first:pt-0 md:grid-cols-[13rem_minmax(0,1fr)]"
+          className="grid gap-x-10 gap-y-3 border-t py-6 first:border-t-0 first:pt-0 md:grid-cols-[13rem_minmax(0,1fr)]"
         >
           <div className="flex flex-col gap-1">
             <h3

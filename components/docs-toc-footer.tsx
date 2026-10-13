@@ -1,7 +1,6 @@
-import { File01Icon, ComputerTerminal01Icon } from "@hugeicons/core-free-icons";
+import { File01Icon } from "@hugeicons/core-free-icons";
 
 import { Icon } from "@/components/icon";
-import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
 const LINK_CLS =
@@ -18,10 +17,6 @@ export const DocsTocFooter = ({
     <a href={markdownUrl} className={LINK_CLS}>
       <Icon icon={File01Icon} />
       View as Markdown
-    </a>
-    <a href={ROUTES.LLMS} className={LINK_CLS}>
-      <Icon icon={ComputerTerminal01Icon} />
-      llms.txt
     </a>
   </div>
 );

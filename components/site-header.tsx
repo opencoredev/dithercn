@@ -17,7 +17,7 @@ const navItems = [
 
 export const SiteHeader = () => (
   <header
-    className="bg-background/90 sticky top-0 z-50 w-full border-b border-dashed backdrop-blur-sm"
+    className="bg-background/90 sticky top-0 z-50 w-full border-b backdrop-blur-sm"
     style={{ viewTransitionName: "site-header" }}
   >
     <div className="container-wrapper 3xl:fixed:px-0 px-6">
