@@ -1,0 +1,175 @@
+---
+title: "Dither gradient"
+description: "A linear, radial or conic gradient drawn as a dither, for heroes, section breaks and cards."
+---
+
+import DitherGradientDemo from "@/examples/dither-gradient-demo";
+import DitherGradientRadial from "@/examples/dither-gradient-radial";
+import DitherGradientConic from "@/examples/dither-gradient-conic";
+import DitherGradientStatic from "@/examples/dither-gradient-static";
+
+<ComponentPreview
+  src="examples/dither-gradient-demo.tsx"
+  size="full"
+  align="stretch"
+>
+  <DitherGradientDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-gradient" />
+
+## Usage
+
+```tsx
+import { DitherGradient } from "@/components/dithercn/dither-gradient";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <DitherGradient angle={160} className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+The gradient fills its box, so give it a size with `className`. It runs from paper at the start to ink at the end, in your theme's `--dither-paper` and `--dither-ink` colours.
+
+## Examples
+
+### Glow behind a headline
+
+A radial gradient that starts as ink and fades to paper. With the centre below the bottom edge and a small radius, only a low arc of light shows, and the headline sits on clean paper.
+
+<ComponentPreview
+  src="examples/dither-gradient-radial.tsx"
+  size="lg"
+  align="stretch"
+>
+  <DitherGradientRadial />
+</ComponentPreview>
+
+### Conic sweep through a palette
+
+`palette` takes any number of colours from paper to ink. A conic sweep jumps from its last colour back to its first, so this palette starts and ends on the background to hide the seam. Blue noise gives it an even, grainy texture.
+
+<ComponentPreview
+  src="examples/dither-gradient-conic.tsx"
+  size="lg"
+  align="stretch"
+>
+  <DitherGradientConic />
+</ComponentPreview>
+
+### Still, inside a card
+
+With `animate={false}` the gradient draws one frame and stops. `to={0.55}` keeps the densest band light enough for text to sit on, and setting `--dither-paper` to the card's own background blends the gradient into it.
+
+<ComponentPreview src="examples/dither-gradient-static.tsx">
+  <DitherGradientStatic />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "mode",
+      type: '"linear" | "radial" | "conic"',
+      default: '"linear"',
+      description: "The gradient's shape.",
+    },
+    {
+      name: "angle",
+      type: "number",
+      default: "180 (linear), 0 (conic)",
+      description:
+        "Linear: the direction in degrees, as in CSS. Conic: where the sweep starts.",
+    },
+    {
+      name: "center",
+      type: "[x: number, y: number]",
+      default: "[0.5, 0.5]",
+      description:
+        "Radial and conic only. The centre as fractions of the box, measured from the top left.",
+    },
+    {
+      name: "radius",
+      type: "number",
+      default: "1",
+      description: "Radial only. 1 reaches the farthest corner.",
+    },
+    {
+      name: "from",
+      type: "number",
+      default: "0",
+      description: "Tone at the start, from 0 (paper) to 1 (ink).",
+    },
+    {
+      name: "to",
+      type: "number",
+      default: "1",
+      description: "Tone at the end.",
+    },
+    {
+      name: "noise",
+      type: "number",
+      default: "0.12",
+      description:
+        "How far a slow noise drift bends the bands. 0 gives straight, even bands.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        "Colours from paper to ink. CSS variable names or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "levels",
+      type: "number",
+      default: "All the matrix can draw",
+      description:
+        "Tones the gradient snaps to before dithering. Lower values give visible bands.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the noise drifts.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The gradient fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The gradient is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a smooth CSS gradient in the same colours.
+- One gradient costs one small draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/concepts/performance).
