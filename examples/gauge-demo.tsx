@@ -1,30 +1,26 @@
 "use client";
 
-import { useId, useState } from "react";
-
 import { Gauge } from "@/components/dithercn/gauge";
+import { usePreviewValue } from "@/components/preview-controls";
+import * as knobs from "@/examples/gauge-controls";
 
 export default function GaugeDemo() {
-  const [load, setLoad] = useState(68);
-  const id = useId();
+  const value = usePreviewValue(knobs.value);
+  const variant = usePreviewValue(knobs.variant);
+  const fill = usePreviewValue(knobs.fill);
+  const color = usePreviewValue(knobs.tint);
+  const bloom = usePreviewValue(knobs.bloom);
 
   return (
-    <div className="flex w-full max-w-xs flex-col items-center gap-8">
-      <Gauge value={load} label="CPU load" unit="%" size={240} />
-      <div className="flex w-full items-center gap-4">
-        <label htmlFor={id} className="text-muted-foreground shrink-0 text-sm">
-          Load
-        </label>
-        <input
-          id={id}
-          type="range"
-          min={0}
-          max={100}
-          value={load}
-          onChange={(event) => setLoad(Number(event.target.value))}
-          className="accent-primary h-1 flex-1 cursor-pointer"
-        />
-      </div>
-    </div>
+    <Gauge
+      value={value}
+      label="CPU load"
+      unit="%"
+      size={240}
+      variant={variant}
+      fill={fill}
+      color={color}
+      bloom={bloom}
+    />
   );
 }

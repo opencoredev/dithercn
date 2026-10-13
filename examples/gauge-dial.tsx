@@ -8,7 +8,7 @@ const HOSTS = [
 
 export default function GaugeDial() {
   return (
-    <div className="bg-background w-full max-w-xl rounded-xl border p-5">
+    <div className="bg-background border-border w-full max-w-xl rounded-2xl border p-5 [--dither-paper:var(--background)] sm:p-6">
       <div className="flex items-baseline justify-between gap-4">
         <span className="font-medium">db-primary-01</span>
         <span className="text-muted-foreground font-mono text-xs">
@@ -24,7 +24,9 @@ export default function GaugeDial() {
             label={label}
             unit="%"
             size={136}
-            color={value > 90 ? "--destructive" : "--dither-ink"}
+            color={value > 90 ? "red" : "blue"}
+            fill={value > 90 ? "hatched" : "gradient"}
+            bloom={value > 90 ? "low" : "off"}
           />
         ))}
       </div>
