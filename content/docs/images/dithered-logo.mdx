@@ -1,13 +1,18 @@
 ---
 title: "Dithered logo"
-description: "An SVG or PNG logo drawn in dithered ink, with sharp letterforms and an optional slow shimmer."
+description: "An SVG or PNG logo redrawn on a pixel grid: exact edges, a dithered fill inside, and an optional shimmer or scan line."
 ---
 
 import DitheredLogoDemo from "@/examples/dithered-logo-demo";
 import DitheredLogoSet from "@/examples/dithered-logo-set";
-import DitheredLogoShade from "@/examples/dithered-logo-shade";
+import DitheredLogoColour from "@/examples/dithered-logo-colour";
+import DitheredLogoScan from "@/examples/dithered-logo-scan";
+import { controls as ditheredLogoControls } from "@/examples/dithered-logo-controls";
 
-<ComponentPreview src="examples/dithered-logo-demo.tsx">
+<ComponentPreview
+  src="examples/dithered-logo-demo.tsx"
+  controls={ditheredLogoControls}
+>
   <DitheredLogoDemo />
 </ComponentPreview>
 
@@ -25,24 +30,34 @@ export function Brand() {
 }
 ```
 
-Set a height with `className`; the width follows the logo's own ratio. The logo is drawn at a 1px cell, fine enough for small type, and its ink thins towards the bottom. Its own colours are ignored: every part becomes the one ink colour.
+Set a height with `className`; the width follows the logo's own ratio. The logo is drawn on a grid of whole device pixels and cut at half coverage, so every edge lands on a cell boundary instead of fraying into noise. A solid outline one cell wide keeps the shapes exact, and the inside takes the `fill`: a gradient that thins towards the bottom, dots, hatching, or solid ink.
+
+By default every part of the logo becomes one ink, `color`. With `tone="original"` it keeps the file's own colours.
 
 ## Examples
 
 ### One treatment for many logos
 
-Logos from different brands, drawn with the same cell, matrix and shade, sit together as a set.
+Logos from different brands, drawn with the same fill and colour, read as one set. Here the hatched fill in grey.
 
 <ComponentPreview src="examples/dithered-logo-set.tsx">
   <DitheredLogoSet />
 </ComponentPreview>
 
-### Colour and shade
+### Colour
 
-`shade={0}` draws solid ink, here in the foreground colour. Higher values thin the ink further; with `shade={0.85}` and blue noise the bottom of the wordmark breaks into grain.
+The same three-colour mark with `tone="original"`, and in one palette colour.
 
-<ComponentPreview src="examples/dithered-logo-shade.tsx">
-  <DitheredLogoShade />
+<ComponentPreview src="examples/dithered-logo-colour.tsx">
+  <DitheredLogoColour />
+</ComponentPreview>
+
+### Scan line
+
+A 3px cell turns the wordmark into pixel art. `effect="scan"` runs a bright line down it every `period` seconds and leaves solid ink behind for a moment.
+
+<ComponentPreview src="examples/dithered-logo-scan.tsx">
+  <DitheredLogoScan />
 </ComponentPreview>
 
 ## Props
@@ -65,53 +80,74 @@ Logos from different brands, drawn with the same cell, matrix and shade, sit tog
     {
       name: "color",
       type: "DitherColor",
-      default: '"--dither-ink"',
-      description: "The ink colour. A CSS variable name or any CSS colour.",
+      default: '"ink"',
+      description: "The ink. A palette name or any CSS colour.",
     },
     {
-      name: "source",
-      type: '"alpha" | "dark"',
-      default: '"alpha"',
+      name: "tone",
+      type: '"mono" | "original"',
+      default: '"mono"',
+      description: "One ink, or the file's own colours.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description: "Texture inside the shapes.",
+    },
+    {
+      name: "outline",
+      type: "boolean",
+      default: "true",
       description:
-        'Which pixels become ink. "alpha" for transparent backgrounds, "dark" for a dark logo on an opaque light background.',
+        "A solid outline one cell wide, so shapes stay exact with an open fill.",
+    },
+    {
+      name: "floor",
+      type: "number",
+      default: "0.3",
+      description:
+        "Gradient fill: the share of ink left at the bottom of the logo.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description: "The threshold pattern.",
+      description: "Threshold pattern for the gradient fill and the effects.",
     },
     {
       name: "cell",
       type: "number",
       default: "1",
-      description: "Size of one dither cell in CSS pixels.",
-    },
-    {
-      name: "shade",
-      type: "number",
-      default: "0.45",
       description:
-        "How much the ink thins towards the bottom, from 0 (solid) to 1.",
+        "Size of one cell in CSS pixels. Larger cells give a chunkier, pixel-art mark.",
     },
     {
-      name: "shimmer",
-      type: "boolean",
-      default: "false",
-      description: "A slow band of full ink that sweeps across the logo.",
+      name: "effect",
+      type: '"none" | "shimmer" | "scan"',
+      default: '"none"',
+      description:
+        "A diagonal band of solid ink, or a bright scan line, sweeping across the logo.",
     },
     {
       name: "period",
       type: "number",
-      default: "7",
-      description: "Seconds per shimmer sweep.",
+      default: "6",
+      description: "Seconds per sweep.",
     },
     {
       name: "phase",
       type: "number",
       default: "0",
       description:
-        "Where in the sweep the logo starts, 0 to 1. Offsets logos in a row.",
+        "Where in the sweep this logo starts, 0 to 1. Offsets logos in a row.",
+    },
+    {
+      name: "source",
+      type: '"alpha" | "dark"',
+      default: '"alpha"',
+      description:
+        '"alpha" for transparent backgrounds, "dark" for a dark logo on an opaque light background.',
     },
     {
       name: "ratio",
@@ -126,5 +162,5 @@ Logos from different brands, drawn with the same cell, matrix and shade, sit tog
 ## Notes
 
 - The root has `role="img"` with the brand name as its label.
-- SVGs need a `width` and `height` (or a `viewBox` the browser can size) so the logo has a ratio.
-- The shimmer runs at 30 fps only while the logo is on screen, and stops under reduced motion. Without it, the logo is drawn once and redrawn only on resize or theme change.
+- SVGs need a `width` and `height` (or a `viewBox` the browser can size) so the logo has a ratio. SVGs are rasterised by the browser at the exact cell size, so curves stay smooth.
+- Effects run at 30 fps only while the logo is on screen, and stop under reduced motion. Without one, the logo is drawn once and redrawn only on resize or theme change.

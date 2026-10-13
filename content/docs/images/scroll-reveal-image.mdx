@@ -1,0 +1,133 @@
+---
+title: "Scroll reveal image"
+description: "An image that sharpens from coarse dithered blocks to the full photo as you scroll it into view."
+---
+
+import ScrollRevealImageDemo from "@/examples/scroll-reveal-image-demo";
+import ScrollRevealImageStory from "@/examples/scroll-reveal-image-story";
+import ScrollRevealImageGallery from "@/examples/scroll-reveal-image-gallery";
+import { controls as scrollRevealControls } from "@/examples/scroll-reveal-image-controls";
+
+<ComponentPreview
+  src="examples/scroll-reveal-image-demo.tsx"
+  size="lg"
+  controls={scrollRevealControls}
+>
+  <ScrollRevealImageDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="scroll-reveal-image" />
+
+## Usage
+
+```tsx
+import { ScrollRevealImage } from "@/components/dithercn/scroll-reveal-image";
+
+export function Chapter() {
+  return (
+    <ScrollRevealImage
+      src="/photos/launch.jpg"
+      alt="The launch pad at dawn"
+      className="aspect-video w-full rounded-xl"
+    />
+  );
+}
+```
+
+Progress follows the scroll position, not a timer. When the top of the image enters at the bottom of the viewport it is a few large blocks. It sharpens in nine steps to full dither detail, then the photo dissolves in cell by cell. It is finished when its top edge is 30% down the viewport. Scroll back and it runs in reverse.
+
+`start` and `finish` move those two points, as a share of the viewport height from the top. Inside a scrolling panel, pass the panel's ref as `scrollRoot`, as the demo above does.
+
+## Examples
+
+### In a long read
+
+The image resolves as the reader reaches it. `finish={0.4}` completes it a little lower on the screen.
+
+<ComponentPreview src="examples/scroll-reveal-image-story.tsx" size="lg">
+  <ScrollRevealImageStory />
+</ComponentPreview>
+
+### Ending on dither
+
+`end="dither"` stops at full dither detail and never shows the photo. A later `start` on the second image staggers the pair.
+
+<ComponentPreview src="examples/scroll-reveal-image-gallery.tsx" size="lg">
+  <ScrollRevealImageGallery />
+</ComponentPreview>
+
+## Props
+
+Takes every look prop of [Dither image](/docs/images/dither-image) (`preset`, `color`, `palette`, `method`, `cell`, `contrast`, `brightness`, `normalize`, `sharpen`, `invert`, `fit`), plus:
+
+<PropsTable
+  rows={[
+    {
+      name: "src",
+      type: "string",
+      description: "Image URL. Cross-origin images need CORS headers.",
+      required: true,
+    },
+    {
+      name: "alt",
+      type: "string",
+      description: 'Describes the image. Pass "" when it is decorative.',
+      required: true,
+    },
+    {
+      name: "end",
+      type: '"photo" | "dither"',
+      default: '"photo"',
+      description: "Finish on the original photo, or on the finest dither.",
+    },
+    {
+      name: "coarsest",
+      type: "number",
+      default: "24",
+      description: "How many cells wide the first blocks are.",
+    },
+    {
+      name: "start",
+      type: "number",
+      default: "1",
+      description:
+        "Where the image's top edge is when the reveal starts, 0 (top) to 1 (bottom of the viewport).",
+    },
+    {
+      name: "finish",
+      type: "number",
+      default: "0.3",
+      description: "Where the top edge is when the reveal finishes.",
+    },
+    {
+      name: "scrollRoot",
+      type: "RefObject<HTMLElement | null>",
+      description: "The scrolling element, when it is not the page.",
+    },
+    {
+      name: "progress",
+      type: "number",
+      description:
+        "Set the progress yourself, 0 to 1, instead of following the scroll.",
+    },
+    {
+      name: "onProgressChange",
+      type: "(progress: number) => void",
+      description: "Called when the progress changes.",
+    },
+    {
+      name: "ratio",
+      type: "number",
+      default: "The image's ratio",
+      description: "Width over height.",
+    },
+  ]}
+/>
+
+## Notes
+
+- Under reduced motion the image is shown finished: the photo, or the fine dither with `end="dither"`.
+- The root has `role="img"` and your `alt` text as its label, so screen readers hear the image once, whatever stage it is at. `data-stage` is `coarse`, `fine` or `photo`.
+- Each coarseness is dithered once and cached, so scrolling back and forth costs nothing after the first pass. Scroll handling only runs while the image is near the viewport, at most once per frame.

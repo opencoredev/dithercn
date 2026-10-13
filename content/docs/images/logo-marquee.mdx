@@ -1,13 +1,17 @@
 ---
 title: "Logo marquee"
-description: "A seamless scrolling row, or a still wall, of logos in one consistent dithered ink."
+description: "A looping row, or a still wall, of logos in one dithered treatment, with soft or dithered edges."
 ---
 
 import LogoMarqueeDemo from "@/examples/logo-marquee-demo";
 import LogoMarqueeWall from "@/examples/logo-marquee-wall";
 import LogoMarqueeRows from "@/examples/logo-marquee-rows";
+import { controls as logoMarqueeControls } from "@/examples/logo-marquee-controls";
 
-<ComponentPreview src="examples/logo-marquee-demo.tsx">
+<ComponentPreview
+  src="examples/logo-marquee-demo.tsx"
+  controls={logoMarqueeControls}
+>
   <LogoMarqueeDemo />
 </ComponentPreview>
 
@@ -22,7 +26,12 @@ import { LogoMarquee } from "@/components/dithercn/logo-marquee";
 
 const logos = [
   { src: "/logos/acme.svg", alt: "Acme", ratio: 4 },
-  { src: "/logos/globex.svg", alt: "Globex", ratio: 3.5 },
+  {
+    src: "/logos/globex.svg",
+    alt: "Globex",
+    ratio: 3.5,
+    href: "/customers/globex",
+  },
 ];
 
 export function Customers() {
@@ -30,15 +39,17 @@ export function Customers() {
 }
 ```
 
-Every logo is a [Dithered logo](/docs/images/dithered-logo) with the same cell, matrix, shade and colour, so logos from different brands read as one set. The row repeats as many times as it needs to fill the width and loops without a seam. Each end fades into the background through eight dithered steps.
+Every logo is a [Dithered logo](/docs/images/dithered-logo) with the same fill, cell and colour, so logos from different brands read as one set. The row repeats as many times as it needs to fill the width and loops without a seam.
 
-`ratio` on each logo reserves its width before it loads, so the row does not shift.
+Hover or focus the row and it coasts to a stop instead of halting; let go and it picks up speed again. A small pause button appears at the right end on hover and keyboard focus. The ends fade out through a mask, so the fade works on any background: `soft` is a smooth ramp, `dither` steps through Bayer levels.
+
+`ratio` on each logo reserves its width before it loads, so the row does not shift. Give a logo an `href` to make it a link.
 
 ## Examples
 
 ### Wall
 
-`variant="wall"` lays the logos out in a still grid with hairline dividers, two to four columns depending on the width of its container. With `shimmer`, a band of ink passes through each logo in turn.
+`variant="wall"` lays the logos out in a still grid with hairline dividers, two columns, or four once its container is 672px wide. Each logo links to a case study, and the shimmer passes through them in turn.
 
 <ComponentPreview src="examples/logo-marquee-wall.tsx" size="lg">
   <LogoMarqueeWall />
@@ -46,19 +57,21 @@ Every logo is a [Dithered logo](/docs/images/dithered-logo) with the same cell, 
 
 ### Two rows
 
-Two marquees moving in opposite directions, the second in the muted foreground colour with a lighter shade.
+Two marquees moving in opposite directions with dithered edges, the second hatched in grey.
 
-<ComponentPreview src="examples/logo-marquee-rows.tsx">
+<ComponentPreview src="examples/logo-marquee-rows.tsx" size="lg">
   <LogoMarqueeRows />
 </ComponentPreview>
 
 ## Props
 
+Also takes the drawing props of [Dithered logo](/docs/images/dithered-logo): `color`, `tone`, `fill`, `outline`, `floor`, `matrix`, `cell`, `effect` and `period`.
+
 <PropsTable
   rows={[
     {
       name: "logos",
-      type: "{ src: string; alt: string; ratio?: number }[]",
+      type: "{ src: string; alt: string; ratio?: number; href?: string; color?: DitherColor }[]",
       description: "The logos, in order.",
       required: true,
     },
@@ -72,31 +85,37 @@ Two marquees moving in opposite directions, the second in the muted foreground c
       name: "variant",
       type: '"marquee" | "wall"',
       default: '"marquee"',
-      description: "A scrolling row, or a still grid.",
+      description: "A scrolling row or a still grid.",
     },
     {
       name: "speed",
       type: "number",
-      default: "36",
-      description: "Marquee only. Pixels per second.",
+      default: "32",
+      description: "Marquee only: scroll speed in CSS pixels per second.",
     },
     {
       name: "direction",
       type: '"left" | "right"',
       default: '"left"',
-      description: "Marquee only. Which way the row moves.",
+      description: "Marquee only: which way the row moves.",
     },
     {
       name: "fade",
-      type: "boolean",
-      default: "true",
-      description: "Marquee only. Fade both ends into the background.",
+      type: '"soft" | "dither" | "none"',
+      default: '"soft"',
+      description: "Marquee only: how the ends fade out.",
     },
     {
-      name: "fadeColor",
-      type: "DitherColor",
-      default: '"--dither-paper"',
-      description: "The colour behind the row, which the ends fade into.",
+      name: "fadeWidth",
+      type: "number",
+      default: "96",
+      description: "Marquee only: width of each end's fade in CSS pixels.",
+    },
+    {
+      name: "pauseButton",
+      type: "boolean",
+      default: "true",
+      description: "Marquee only: show a pause button on hover and focus.",
     },
     {
       name: "logoHeight",
@@ -108,45 +127,13 @@ Two marquees moving in opposite directions, the second in the muted foreground c
       name: "gap",
       type: "number",
       default: "64",
-      description: "Space between logos in CSS pixels.",
-    },
-    {
-      name: "color",
-      type: "DitherColor",
-      default: '"--dither-ink"',
-      description: "Ink colour for every logo.",
-    },
-    {
-      name: "shade",
-      type: "number",
-      default: "0.45",
-      description: "How much the ink thins towards the bottom of each logo.",
-    },
-    {
-      name: "shimmer",
-      type: "boolean",
-      default: "false",
-      description:
-        "A slow band of ink through each logo, offset from one logo to the next.",
-    },
-    {
-      name: "matrix",
-      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
-      default: '"bayer4"',
-      description: "The threshold pattern.",
-    },
-    {
-      name: "cell",
-      type: "number",
-      default: "1",
-      description: "Size of one dither cell in CSS pixels.",
+      description: "Space between logos in the row, in CSS pixels.",
     },
   ]}
 />
 
 ## Notes
 
-- The logos are a list labelled by `label`, and each logo is labelled with its alt text. The repeated copies that fill the loop are hidden from assistive technology.
-- The marquee pauses while the pointer or keyboard focus is on it, and while it is offscreen.
-- With reduced motion, the marquee becomes a still, centred row that wraps onto more lines as needed.
-- The motion is a single transform animation on the row, so it stays smooth while the page is busy.
+- The first copy of the row is a list labelled by `label`; the copies that fill the loop are hidden from assistive technology and their links are out of the tab order.
+- The row stops while it is offscreen. Under reduced motion it becomes a still, centred row that wraps.
+- The motion is a single Web Animation on a transform, so it runs off the main thread.

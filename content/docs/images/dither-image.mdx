@@ -1,14 +1,19 @@
 ---
 title: "Dither image"
-description: "Any photo or illustration dithered to your theme's palette, for covers, galleries and editorial pages."
+description: "Any photo dithered to a preset or your own palette, with crisp pixels and a coarse-to-fine reveal as it loads."
 ---
 
 import DitherImageDemo from "@/examples/dither-image-demo";
-import DitherImageMethods from "@/examples/dither-image-methods";
-import DitherImagePalette from "@/examples/dither-image-palette";
-import DitherImageCover from "@/examples/dither-image-cover";
+import DitherImagePresets from "@/examples/dither-image-presets";
+import DitherImageDuotone from "@/examples/dither-image-duotone";
+import DitherImageNewsprint from "@/examples/dither-image-newsprint";
+import { controls as ditherImageControls } from "@/examples/dither-image-controls";
 
-<ComponentPreview src="examples/dither-image-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/dither-image-demo.tsx"
+  size="lg"
+  controls={ditherImageControls}
+>
   <DitherImageDemo />
 </ComponentPreview>
 
@@ -26,40 +31,52 @@ export function Cover() {
     <DitherImage
       src="/photos/launch.jpg"
       alt="The launch pad at dawn"
+      preset="duotone"
+      color="blue"
       className="aspect-video w-full rounded-xl"
     />
   );
 }
 ```
 
-The image fills its box like `object-fit: cover`. Give the box a width and either a height or an aspect ratio; with only a width, it takes the image's own ratio once it loads, or `ratio` if you set it.
+The default `duotone` preset suits most photos. Pick another `preset`, then override any part of it. The image fills its box like `object-fit: cover`; give the box a width and a height or aspect ratio, or set `ratio` so the space is reserved before the image loads.
 
-Dark parts of the image take the darkest palette colour and light parts the lightest. On a black page with the default palette the highlights are drawn in ink; on a white page the shadows are. Either way the picture reads as a positive.
+Every cell is a whole number of device pixels and the canvas is scaled up with `image-rendering: pixelated`, so edges stay sharp at any zoom. Before dithering, the tones are stretched to fill the palette and edges get a light sharpen, which keeps faces and horizons readable at a 2px cell. Turn these off with `normalize={false}` and `sharpen={0}`.
+
+While the file loads the box shows a faint dotted field. When it arrives the image resolves from 16× blocks to full detail in about a third of a second.
 
 ## Examples
 
-### Six methods
+### Presets
 
-`method` picks the algorithm. The ordered matrices (`bayer4`, `bayer8`, `blue-noise`) give a regular texture that stays stable if the image changes. Error diffusion (`floyd-steinberg`, `atkinson`, `sierra-lite`) keeps finer detail. Atkinson, the default, drops a little of the error, which gives clean highlights and deep shadows.
+| Preset      | Look                                                                    |
+| ----------- | ----------------------------------------------------------------------- |
+| `ink`       | Atkinson diffusion, one ink on the page colour. Follows the theme.      |
+| `duotone`   | Blue noise over the page colour, a tint and the ink. Follows the theme. |
+| `newsprint` | An ordered 8×8 screen, near black on warm paper, in both themes.        |
+| `gameboy`   | Four greens on a 3px Bayer grid.                                        |
+| `riso`      | Navy, blue and pink on cream, like a two-drum print.                    |
 
-<ComponentPreview src="examples/dither-image-methods.tsx" size="lg">
-  <DitherImageMethods />
+<ComponentPreview src="examples/dither-image-presets.tsx" size="lg">
+  <DitherImagePresets />
 </ComponentPreview>
 
-### Four colours
+### Palettes from colour names
 
-`palette` takes two to four colours. Here blue noise spreads the Hubble photo over the page colour and three chart blues, sorted from dark to light.
+`color` takes any palette name: `blue`, `purple`, `green`, `pink`, `orange`, `red`, `grey` or `ink`. Each is tuned for light and dark. Here the duotone preset gives each mission its own hue.
 
-<ComponentPreview src="examples/dither-image-palette.tsx" size="lg">
-  <DitherImagePalette />
+<ComponentPreview src="examples/dither-image-duotone.tsx" size="lg">
+  <DitherImageDuotone />
 </ComponentPreview>
 
-### Article cover
+For full control, pass `palette` with two to four colours. Names, CSS variables and CSS colours all work: `palette={["--dither-paper", "purple", "oklch(0.9 0.05 300)"]}`.
 
-A larger `cell` and the `bayer8` matrix give a bolder print. Setting `--dither-paper` on the image matches the paper to the card it sits in.
+### Newsprint article
 
-<ComponentPreview src="examples/dither-image-cover.tsx" size="lg">
-  <DitherImageCover />
+A fixed palette ignores the theme, so the newsprint card looks the same on a black page and a white one.
+
+<ComponentPreview src="examples/dither-image-newsprint.tsx" size="lg">
+  <DitherImageNewsprint />
 </ComponentPreview>
 
 ## Props
@@ -81,29 +98,42 @@ A larger `cell` and the `bayer8` matrix give a bolder print. Setting `--dither-p
       required: true,
     },
     {
-      name: "method",
-      type: '"bayer4" | "bayer8" | "blue-noise" | "floyd-steinberg" | "atkinson" | "sierra-lite"',
-      default: '"atkinson"',
-      description: "The dither algorithm.",
+      name: "preset",
+      type: '"ink" | "duotone" | "newsprint" | "gameboy" | "riso"',
+      default: '"duotone"',
+      description: "A starting look: method, cell, contrast and palette.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        "The ink for the ink and duotone presets. A palette name or any CSS colour.",
     },
     {
       name: "palette",
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
-      default: '["--dither-paper", "--dither-ink"]',
+      default: "From the preset",
       description:
-        'Two to four colours, in any order. They are sorted from dark to light. Use "transparent" to let the background show through.',
+        'Two to four colours that replace the preset palette. Sorted dark to light. Use "transparent" to let the background show through.',
+    },
+    {
+      name: "method",
+      type: '"bayer4" | "bayer8" | "blue-noise" | "floyd-steinberg" | "atkinson" | "sierra-lite"',
+      default: "From the preset",
+      description: "The dither algorithm.",
     },
     {
       name: "cell",
       type: "number",
-      default: "2",
+      default: "From the preset (2 or 3)",
       description:
-        "Size of one dither cell in CSS pixels. Finer than the site's --dither-cell, as photos need the detail.",
+        "Size of one cell in CSS pixels, rounded to whole device pixels.",
     },
     {
       name: "contrast",
       type: "number",
-      default: "1.2",
+      default: "From the preset",
       description: "1 leaves contrast alone. Higher values push tones apart.",
     },
     {
@@ -111,6 +141,19 @@ A larger `cell` and the `bayer8` matrix give a bolder print. Setting `--dither-p
       type: "number",
       default: "0",
       description: "Added to every tone, from -1 to 1.",
+    },
+    {
+      name: "normalize",
+      type: "boolean",
+      default: "true",
+      description:
+        "Stretch the image's darkest and lightest tones to the ends of the palette.",
+    },
+    {
+      name: "sharpen",
+      type: "number",
+      default: "0.3",
+      description: "Edge sharpening before dithering, 0 to 1.",
     },
     {
       name: "invert",
@@ -129,13 +172,22 @@ A larger `cell` and the `bayer8` matrix give a bolder print. Setting `--dither-p
       type: "number",
       default: "The image's ratio",
       description:
-        "Width over height. Set it to reserve space before the image loads. A height in className wins.",
+        "Width over height. Reserves space before the image loads. A height in className wins.",
+    },
+    {
+      name: "resolve",
+      type: "boolean",
+      default: "true",
+      description:
+        "Resolve from coarse blocks to full detail the first time the image appears.",
     },
   ]}
 />
 
 ## Notes
 
-- The root has `role="img"` and your `alt` text as its label. With `alt=""` it is hidden from assistive technology.
-- The image loads when it comes within about 300px of the viewport, then fades in. It redraws when the box resizes, the page zooms or the theme changes.
-- Dithering runs once per change on the main thread, at one pixel per cell. A 1200 by 800 pixel box at the default 2px cell is 600 by 400 cells, 240,000 pixels.
+- The root has `role="img"` and your `alt` text as its label, and `aria-busy` while it loads. With `alt=""` it is hidden from assistive technology.
+- `data-state` on the root is `idle`, `loading`, `resolving`, `ready` or `error`.
+- The image loads when it comes within about 300px of the viewport. It redraws when the box resizes, the page zooms or the theme changes, without resolving again.
+- Under reduced motion the image appears at full detail with no resolve.
+- Dithering runs on the main thread at one pixel per cell. A 1200 by 800 pixel box at a 2px cell is 240,000 pixels, a few milliseconds of work. Coarse frames are much cheaper.

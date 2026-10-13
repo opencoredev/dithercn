@@ -3,7 +3,7 @@
     "name": "dither-image",
     "type": "registry:component",
     "title": "Dither image",
-    "description": "Any image dithered to your palette with Bayer, blue noise or error diffusion, redrawn on theme change.",
+    "description": "Any image dithered to a preset (ink, duotone, newsprint, gameboy, riso) or your own palette, resolving from coarse to fine.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -14,36 +14,36 @@
     ]
   },
   {
-    "name": "hover-reveal",
+    "name": "image-compare",
     "type": "registry:component",
-    "title": "Hover reveal",
-    "description": "A dithered image that reveals the original under a dithered spotlight on hover, focus or tap.",
+    "title": "Image compare",
+    "description": "A draggable, keyboard-accessible before and after slider between a dithered image and the original or another dither.",
     "registryDependencies": [
       "{{REGISTRY_URL}}/dither-core.json",
       "{{REGISTRY_URL}}/dither-image.json"
     ],
     "files": [
       {
-        "path": "components/dithercn/hover-reveal.tsx",
+        "path": "components/dithercn/image-compare.tsx",
         "type": "registry:component",
-        "target": "components/dithercn/hover-reveal.tsx"
+        "target": "components/dithercn/image-compare.tsx"
       }
     ]
   },
   {
-    "name": "image-transition",
+    "name": "scroll-reveal-image",
     "type": "registry:component",
-    "title": "Image transition",
-    "description": "Images that dissolve into each other through a dither threshold pattern, autoplaying or controlled.",
+    "title": "Scroll reveal image",
+    "description": "An image that sharpens from coarse dithered blocks to the full photo as it scrolls into view.",
     "registryDependencies": [
       "{{REGISTRY_URL}}/dither-core.json",
       "{{REGISTRY_URL}}/dither-image.json"
     ],
     "files": [
       {
-        "path": "components/dithercn/image-transition.tsx",
+        "path": "components/dithercn/scroll-reveal-image.tsx",
         "type": "registry:component",
-        "target": "components/dithercn/image-transition.tsx"
+        "target": "components/dithercn/scroll-reveal-image.tsx"
       }
     ]
   },
@@ -51,7 +51,7 @@
     "name": "dithered-logo",
     "type": "registry:component",
     "title": "Dithered logo",
-    "description": "An SVG or PNG logo drawn in dithered ink, with an optional slow shimmer.",
+    "description": "An SVG or PNG logo redrawn on a pixel grid with exact edges, a dithered fill and an optional shimmer or scan line.",
     "registryDependencies": [
       "{{REGISTRY_URL}}/dither-core.json",
       "{{REGISTRY_URL}}/dither-image.json"
@@ -68,7 +68,7 @@
     "name": "logo-marquee",
     "type": "registry:component",
     "title": "Logo marquee",
-    "description": "A seamless marquee or still wall of logos in one consistent dithered ink.",
+    "description": "A looping row or still wall of logos in one dithered treatment, with soft or dithered edge fades.",
     "registryDependencies": [
       "{{REGISTRY_URL}}/dither-core.json",
       "{{REGISTRY_URL}}/dithered-logo.json"

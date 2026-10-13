@@ -3,8 +3,8 @@
   "description": "Your images and logos, dithered.",
   "pages": [
     "dither-image",
-    "hover-reveal",
-    "image-transition",
+    "image-compare",
+    "scroll-reveal-image",
     "dithered-logo",
     "logo-marquee"
   ]
