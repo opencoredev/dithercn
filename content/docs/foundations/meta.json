@@ -1,0 +1,12 @@
+{
+  "title": "Foundations",
+  "description": "The engine and rules every piece shares.",
+  "pages": [
+    "dither-engine",
+    "palettes",
+    "pixel-scale",
+    "motion",
+    "reduced-motion",
+    "performance"
+  ]
+}

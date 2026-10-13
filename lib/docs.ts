@@ -1,17 +1,14 @@
 import { ROUTES } from "@/constants/routes";
-import type { PageTreeFolder } from "@/lib/page-tree";
 import { formatLabelFromSlug } from "@/lib/utils";
 
 export const DOCS_DIR = `content${ROUTES.DOCS}`;
 
-export const EXCLUDED_SECTIONS = new Set(["installation", "(root)"]);
-
-export const isComponentsFolder = (folder: PageTreeFolder) =>
-  folder.$id === "components" || folder.name === "Components";
+/** The "Get started" folder. Everything else in the page tree is catalog. */
+export const GUIDE_FOLDER_ID = "(root)";
 
 const TITLE_OVERRIDES: Record<string, string> = {
-  json: "JSON",
-  "qr-code": "QR Code",
+  ai: "AI",
+  ui: "UI",
 };
 
 export const formatTitleFromSlug = (slug: string): string =>

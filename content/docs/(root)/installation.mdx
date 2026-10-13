@@ -1,103 +1,72 @@
 ---
 title: Installation
-description: How to use this template to build your own shadcn component.
+description: Add the dithercn tokens to a shadcn project with npx shadcn add.
 ---
 
-## Building Your Component
+dithercn installs with the shadcn CLI, like any other registry. Today the registry has one item, `dither-tokens`. Catalog pieces will install the same way as they land, and each will pull in `dither-tokens` automatically.
 
-### 1. Fork the Template
+## Before you start
 
-Click "Use this template" on [GitHub](https://github.com/shadcn-labs/startercn).
+You need a project that already uses shadcn/ui, with a `components.json` file and Tailwind CSS v4. If you don't have one yet, follow the [shadcn installation guide](https://ui.shadcn.com/docs/installation) first.
 
-### 2. Install Dependencies
+<Callout title="No public URL yet">
+  dithercn isn't deployed yet, so the commands below install from a local copy
+  of this site at `http://localhost:3000`. Clone the repository, run `pnpm
+  install` and `pnpm dev`, then run the commands from your own project.
+</Callout>
+
+## Add the tokens
+
+<Steps>
+
+### Run the add command
 
 ```bash
-pnpm install
+npx shadcn@latest add http://localhost:3000/r/dither-tokens.json
 ```
 
-### 3. Create Your Component
+### Check your CSS
 
-Replace the placeholder at `registry/new-york/your-component.tsx`:
+The CLI adds three variables for light and dark mode to the CSS file named in your `components.json`, and two colours to its `@theme inline` block:
 
-```tsx
-import { forwardRef, HTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
-
-export interface MyButtonProps extends HTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "outline";
+```css
+:root {
+  --dither-ink: var(--primary);
+  --dither-paper: var(--background);
+  --dither-cell: 3px;
 }
 
-const MyButton = forwardRef<HTMLButtonElement, MyButtonProps>(
-  ({ className, variant = "default", ...props }, ref) => {
-    return (
-      <button
-        ref={ref}
-        className={cn(
-          "rounded-md px-4 py-2 font-medium",
-          variant === "default" && "bg-primary text-primary-foreground",
-          variant === "outline" && "border border-input",
-          className
-        )}
-        {...props}
-      />
-    );
-  }
-);
-
-MyButton.displayName = "MyButton";
-
-export { MyButton };
+@theme inline {
+  --color-dither-ink: var(--dither-ink);
+  --color-dither-paper: var(--dither-paper);
+}
 ```
 
-### 4. Update registry.json
+The `.dark` block gets the same three variables. Because they point at your theme tokens, there is nothing to set for dark mode.
 
-```json
+</Steps>
+
+## Use a namespace
+
+To install by name instead of by URL, add dithercn to the `registries` field of your `components.json`:
+
+```json title="components.json"
 {
-  "name": "your-name/your-registry",
-  "homepage": "https://your-site.com",
-  "items": [
-    {
-      "name": "my-button",
-      "type": "registry:ui",
-      "title": "My Button",
-      "description": "A custom button component.",
-      "files": [
-        {
-          "path": "registry/new-york/my-button.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/my-button.tsx"
-        }
-      ]
-    }
-  ]
+  "registries": {
+    "@dithercn": "http://localhost:3000/r/{name}.json"
+  }
 }
 ```
 
-### 5. Build & Deploy
+Then install with the `@dithercn` prefix:
 
 ```bash
-pnpm registry:build
-pnpm build
+npx shadcn@latest add @dithercn/dither-tokens
 ```
 
-Deploy your app and your component is live!
+See the shadcn docs on [namespaced registries](https://ui.shadcn.com/docs/registry/namespace) for more options, including authentication.
 
----
+## Next steps
 
-## Installing Components
-
-To install a component from any registry built with this template:
-
-```bash
-npx shadcn@latest add https://example.com/r/my-button.json
-```
-
-Then use it:
-
-```tsx
-import { MyButton } from "@/components/ui/my-button";
-
-export function Demo() {
-  return <MyButton variant="outline">Click me</MyButton>;
-}
-```
+- [Theming](/docs/theming) explains what each variable does and how to override it.
+- [Usage](/docs/usage) shows how to use the tokens today and how catalog pieces will work.

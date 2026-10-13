@@ -1,0 +1,45 @@
+---
+title: Usage
+description: Use the dither tokens today, and see how catalog pieces will plug into your app.
+---
+
+## Use the tokens today
+
+After you [install `dither-tokens`](/docs/installation), Tailwind gets two colour utilities: `dither-ink` and `dither-paper`. Use them anywhere you would use a theme colour:
+
+```tsx
+export function Stat() {
+  return (
+    <div className="bg-dither-paper text-dither-ink rounded-md border p-4">
+      <p className="text-sm">Weekly active</p>
+      <p className="text-3xl font-semibold tabular-nums">12,480</p>
+    </div>
+  );
+}
+```
+
+Read `--dither-cell` when you need the shared cell size, for example to line up a hand-made pattern with future dithercn pieces:
+
+```css
+.pattern {
+  background-size: calc(var(--dither-cell) * 4) calc(var(--dither-cell) * 4);
+}
+```
+
+## How pieces will work
+
+<Callout title="Planned API">
+  No catalog piece has shipped yet. The shape below is the plan the pieces are
+  being built towards, so details may still change.
+</Callout>
+
+Every piece will be a single component that you install by name and render like any other shadcn component. Pieces share the props described in [Foundations](/docs/foundations/dither-engine):
+
+| Prop        | What it controls                                         | Default                          |
+| ----------- | -------------------------------------------------------- | -------------------------------- |
+| `algorithm` | Which dither to use, such as `"bayer-4"` or `"atkinson"` | Depends on the piece             |
+| `scale`     | Cell size in CSS pixels                                  | `--dither-cell`                  |
+| `palette`   | Ink and paper colours, or a multi-step palette           | `--dither-ink`, `--dither-paper` |
+| `animate`   | Whether the piece moves, and how fast                    | Off                              |
+
+Pieces will render on the client into a canvas sized to their container, with a server-rendered placeholder at the same size so the page doesn't shift while they load.

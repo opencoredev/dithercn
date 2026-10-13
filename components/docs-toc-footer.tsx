@@ -1,55 +1,27 @@
-"use client";
+import { File01Icon, ComputerTerminal01Icon } from "@hugeicons/core-free-icons";
 
-import { SquarePenIcon } from "lucide-react";
-
-import { DiscordIcon, XIcon } from "@/components/icons";
-import { GITHUB, LINK } from "@/constants/links";
-import { DOCS_DIR } from "@/lib/docs";
-import { trackEvent } from "@/lib/events";
+import { Icon } from "@/components/icon";
+import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
+const LINK_CLS =
+  "text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-[0.8rem] transition-colors [&_svg]:size-3.5";
+
 export const DocsTocFooter = ({
-  docId,
+  markdownUrl,
   className,
 }: {
-  docId: string;
+  markdownUrl: string;
   className?: string;
 }) => (
   <div className={cn("flex flex-col gap-2", className)}>
-    {docId && (
-      <a
-        href={`${LINK.GITHUB}/edit/${GITHUB.branch}/${DOCS_DIR}/${docId}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="transition-colors text-[0.8rem] hover:text-foreground text-muted-foreground [&_svg]:size-3 flex gap-1.5 items-center"
-        onClick={() =>
-          trackEvent({
-            name: "click_edit_page",
-            properties: { doc: docId },
-          })
-        }
-      >
-        <SquarePenIcon />
-        Edit this page
-      </a>
-    )}
-    <a
-      href={LINK.X_SHADCN_LABS}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="transition-colors text-[0.8rem] hover:text-foreground text-muted-foreground [&_svg]:size-3 flex gap-1.5 items-center"
-    >
-      <XIcon />
-      Follow @shadcnlabs
+    <a href={markdownUrl} className={LINK_CLS}>
+      <Icon icon={File01Icon} />
+      View as Markdown
     </a>
-    <a
-      href={LINK.DISCORD}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="transition-colors text-[0.8rem] hover:text-foreground text-muted-foreground [&_svg]:size-3 flex gap-1.5 items-center"
-    >
-      <DiscordIcon />
-      Join community
+    <a href={ROUTES.LLMS} className={LINK_CLS}>
+      <Icon icon={ComputerTerminal01Icon} />
+      llms.txt
     </a>
   </div>
 );

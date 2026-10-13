@@ -1,0 +1,15 @@
+---
+title: "Motion"
+description: "Animated thresholds and drifting noise that pause when nobody is looking."
+status: planned
+---
+
+<ComingSoon />
+
+Ordered dithers animate well because the pattern stays put while the input moves. Motion in dithercn will be opt-in and slow by default, and it will stop entirely when the piece is off-screen or the tab is hidden.
+
+## Planned
+
+- An `animate` prop with `speed` and frame-rate cap (24fps by default).
+- Automatic pause off-screen (IntersectionObserver) and in background tabs.
+- A shared ticker so ten animated pieces on one page cost one animation frame loop.

@@ -1,0 +1,15 @@
+---
+title: "Pixel scale"
+description: "Control the size of each dither cell and keep it crisp at every device pixel ratio."
+status: planned
+---
+
+<ComingSoon />
+
+A dither only looks right when each cell lands on whole device pixels. The pixel scale sets the cell size in CSS pixels and snaps it to the screen's pixel grid, so a 3px cell never smears into 3.5.
+
+## Planned
+
+- A `scale` prop in CSS pixels, defaulting to `--dither-cell` (3px in the dithercn tokens).
+- Snapping that accounts for device pixel ratio, with `image-rendering: pixelated` on the output.
+- Responsive scale values, for example a coarser grain on small screens.

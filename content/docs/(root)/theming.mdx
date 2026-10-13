@@ -1,0 +1,37 @@
+---
+title: Theming
+description: How dithercn reads your shadcn theme, and how to override colours and cell size.
+---
+
+dithercn doesn't ship a colour palette. Every piece reads three CSS variables, and those variables point at your existing shadcn tokens by default.
+
+## The variables
+
+| Variable         | Default             | What it controls                          |
+| ---------------- | ------------------- | ----------------------------------------- |
+| `--dither-ink`   | `var(--primary)`    | The colour of the dots                    |
+| `--dither-paper` | `var(--background)` | The colour behind the dots                |
+| `--dither-cell`  | `3px`               | The size of one dither cell in CSS pixels |
+
+[`dither-tokens`](/docs/installation) writes these into both `:root` and `.dark`. When the visitor switches to dark mode, `--primary` and `--background` change, and every dither changes with them.
+
+## Override for one section
+
+Variables cascade, so you can retint a single part of the page by setting them on a wrapper:
+
+```css
+.pricing-hero {
+  --dither-ink: var(--chart-2);
+  --dither-cell: 4px;
+}
+```
+
+Anything inside `.pricing-hero` uses the new ink and a coarser grain. The rest of the page is unchanged.
+
+## Pick colours that still read
+
+A dither only reads when ink and paper differ enough. As a rule, keep the same contrast you would want for body text, about 4.5:1, between `--dither-ink` and `--dither-paper`. Low-contrast pairs look fine as a quiet background, but they lose detail in charts and images.
+
+## Multi-step palettes
+
+Two-tone dithers cover most backgrounds and UI pieces. Charts and heatmaps need more steps, so they will also read `--chart-1` to `--chart-5`. This is planned with the [dashboard pieces](/docs/dashboard/area-chart). [Theme palettes](/docs/foundations/palettes) tracks the details.

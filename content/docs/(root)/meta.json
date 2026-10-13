@@ -1,4 +1,4 @@
 {
-  "title": "Get Started",
-  "pages": ["index", "[Installation](/docs/installation)"]
+  "title": "Get started",
+  "pages": ["index", "installation", "usage", "theming", "ai-agents", "catalog"]
 }

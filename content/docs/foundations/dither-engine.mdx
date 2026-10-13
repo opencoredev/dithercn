@@ -1,0 +1,18 @@
+---
+title: "Dither engine"
+description: "One rendering core for every piece: ordered Bayer, blue noise, Atkinson and Floyd–Steinberg behind a single algorithm prop."
+status: planned
+---
+
+<ComingSoon />
+
+Ordered dithering pushes each pixel through a fixed threshold matrix. It's cheap, it stays stable from frame to frame, and that makes it the right choice for anything that animates. Error diffusion spreads each pixel's rounding error onto its neighbours. That gives the best result on photos and logos, but the pattern shifts whenever the input changes, so it's best kept for still images.
+
+Every dithercn piece will render through this engine, so switching a hero from Bayer to Atkinson is a one-prop change.
+
+## Planned
+
+- `algorithm`: `"bayer-2"`, `"bayer-4"`, `"bayer-8"`, `"blue-noise"`, `"floyd-steinberg"` or `"atkinson"`.
+- Deterministic output: the same input and seed always produce the same pixels, so screenshots and visual tests stay stable.
+- Canvas 2D for static frames, with a WebGL path for animated pieces.
+- A comparison table of when to pick each algorithm, with rendered samples.

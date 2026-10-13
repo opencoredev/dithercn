@@ -1,0 +1,13 @@
+{
+  "title": "Dashboard",
+  "description": "Data components with a dithered fill.",
+  "pages": [
+    "area-chart",
+    "bar-chart",
+    "heatmap",
+    "sparkline",
+    "gauge",
+    "progress-bar",
+    "uptime-bar"
+  ]
+}

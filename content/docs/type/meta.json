@@ -1,0 +1,5 @@
+{
+  "title": "Type",
+  "description": "Display text treated as a dither.",
+  "pages": ["big-text", "dissolve-text"]
+}

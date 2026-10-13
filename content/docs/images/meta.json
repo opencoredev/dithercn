@@ -1,0 +1,5 @@
+{
+  "title": "Images",
+  "description": "Your images, dithered.",
+  "pages": ["image-dither", "hover-reveal"]
+}

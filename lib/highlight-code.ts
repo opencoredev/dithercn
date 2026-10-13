@@ -60,8 +60,8 @@ export const highlightCode = async (code: string, language = "tsx") => {
   const html = await codeToHtml(code, {
     lang: language,
     themes: {
-      dark: "github-dark",
-      light: "github-light",
+      dark: "min-dark",
+      light: "min-light",
     },
     transformers: [
       {

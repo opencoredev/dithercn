@@ -1,0 +1,43 @@
+---
+title: AI agents
+description: The machine-readable surfaces dithercn publishes for coding agents, and how to use them.
+---
+
+Every page on this site has a Markdown version, and the site publishes an index, a full text export, an agent skill and an API catalog. An agent can find and install dithercn pieces without parsing HTML.
+
+## llms.txt
+
+[`/llms.txt`](/llms.txt) lists every docs page with a one-line description and a link to its Markdown version. Point an agent here first.
+
+[`/llms-full.txt`](/llms-full.txt) is the whole documentation as one plain-text file, for agents that prefer to load everything at once.
+
+## Markdown for any page
+
+Add `.md` to a docs URL to get its Markdown source, for example [`/docs/installation.md`](/docs/installation.md). Requests that send an `Accept: text/markdown` header get Markdown from the normal URL, including the home page:
+
+```bash
+curl -H "Accept: text/markdown" http://localhost:3000/docs/theming
+```
+
+Every docs page also has a **Copy page** menu that copies its Markdown or opens it in ChatGPT, Claude and other assistants.
+
+## Agent skill
+
+The site publishes an [agent skill](https://agentskills.io) that explains how to discover and install dithercn pieces:
+
+- [`/.well-known/agent-skills/index.json`](/.well-known/agent-skills/index.json) is the discovery index.
+- [`/.well-known/agent-skills/site-skill.md`](/.well-known/agent-skills/site-skill.md) is the skill itself.
+
+## Registry and MCP
+
+The registry index is at [`/r/registry.json`](/r/registry.json), and each item is at `/r/<name>.json`. The [shadcn MCP server](https://ui.shadcn.com/docs/mcp) can browse and install from any registry listed in your `components.json`. Once you have [added the `@dithercn` namespace](/docs/installation#use-a-namespace), you can ask your agent things like "add the dither tokens from @dithercn".
+
+## API catalog
+
+For tools that discover APIs automatically:
+
+- [`/.well-known/api-catalog`](/.well-known/api-catalog) is a linkset (RFC 9727) pointing to every machine-readable surface.
+- [`/openapi.json`](/openapi.json) describes the read-only HTTP endpoints.
+- [`/api/status`](/api/status) returns `{"status":"ok"}` for health checks.
+
+The home page also sends these as `Link` headers, so a single request is enough to find them.

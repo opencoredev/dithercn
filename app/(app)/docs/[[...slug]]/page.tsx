@@ -1,15 +1,19 @@
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  ArrowUpRight01Icon,
+} from "@hugeicons/core-free-icons";
 import { findNeighbour } from "fumadocs-core/page-tree";
-import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-// import { DocsBaseSwitcher } from "@/components/docs-base-switcher";
 import { DocsCopyPage } from "@/components/docs-copy-page";
 import { DocsKeyboardShortcuts } from "@/components/docs-keyboard-shortcuts";
 import { DocsNavLink } from "@/components/docs-nav-link";
 import { DocsShareMenu } from "@/components/docs-share-menu";
 import { DocsTableOfContents } from "@/components/docs-toc";
 import { DocsTocFooter } from "@/components/docs-toc-footer";
+import { Icon } from "@/components/icon";
 import { PageTransition } from "@/components/page-transition";
 import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
@@ -104,11 +108,11 @@ const Page = async (props: { params: Promise<{ slug?: string[] }> }) => {
         >
           <div className="flex min-w-0 flex-1 flex-col">
             <div className="h-(--top-spacing) shrink-0" />
-            <div className="mx-auto flex w-full max-w-2xl min-w-0 flex-1 flex-col gap-8 px-4 py-6 text-neutral-800 md:px-0 lg:py-8 dark:text-neutral-300">
+            <div className="text-foreground/85 mx-auto flex w-full max-w-2xl min-w-0 flex-1 flex-col gap-8 px-4 py-6 md:px-0 lg:py-8">
               <div className="flex flex-col gap-2">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <h1 className="scroll-m-20 text-4xl font-semibold tracking-tight sm:text-3xl xl:text-4xl">
+                    <h1 className="scroll-m-20 text-3xl font-semibold tracking-[-0.025em] text-balance xl:text-4xl">
                       {doc.title}
                     </h1>
                     <div className="docs-nav flex items-center gap-2">
@@ -129,7 +133,7 @@ const Page = async (props: { params: Promise<{ slug?: string[] }> }) => {
                             transitionTypes={["nav-back"]}
                             className="extend-touch-target size-8 md:size-7"
                             tooltip={{
-                              icon: <ArrowLeftIcon />,
+                              icon: <Icon icon={ArrowLeft01Icon} />,
                               title: "Previous Page",
                             }}
                           >
@@ -142,7 +146,7 @@ const Page = async (props: { params: Promise<{ slug?: string[] }> }) => {
                             transitionTypes={["nav-forward"]}
                             className="extend-touch-target size-8 md:size-7"
                             tooltip={{
-                              icon: <ArrowRightIcon />,
+                              icon: <Icon icon={ArrowRight01Icon} />,
                               title: "Next Page",
                             }}
                           >
@@ -163,14 +167,14 @@ const Page = async (props: { params: Promise<{ slug?: string[] }> }) => {
                     {links?.doc && (
                       <Badge asChild variant="secondary">
                         <Link href={links.doc} target="_blank" rel="noreferrer">
-                          Docs <ArrowUpRightIcon />
+                          Docs <Icon icon={ArrowUpRight01Icon} />
                         </Link>
                       </Badge>
                     )}
                     {links?.api && (
                       <Badge asChild variant="secondary">
                         <Link href={links.api} target="_blank" rel="noreferrer">
-                          API Reference <ArrowUpRightIcon />
+                          API Reference <Icon icon={ArrowUpRight01Icon} />
                         </Link>
                       </Badge>
                     )}
@@ -178,16 +182,6 @@ const Page = async (props: { params: Promise<{ slug?: string[] }> }) => {
                 ) : null}
               </div>
               <div className="w-full flex-1 *:data-[slot=alert]:first:mt-0">
-                {/* {params.slug &&
-                params.slug[0] === "components" &&
-                params.slug[1] &&
-                params.slug[2] && (
-                  <DocsBaseSwitcher
-                    base={params.slug[1]}
-                    component={params.slug.slice(2).join("/")}
-                    className="mb-4"
-                  />
-                )} */}
                 <MdxContent components={mdxComponents} />
               </div>
             </div>
@@ -220,7 +214,7 @@ const Page = async (props: { params: Promise<{ slug?: string[] }> }) => {
                 <DocsTableOfContents toc={doc.toc} />
               </div>
             ) : null}
-            <DocsTocFooter docId={page.path} className="mx-8" />
+            <DocsTocFooter markdownUrl={markdownUrl} className="mx-8" />
           </div>
         </div>
       </PageTransition>

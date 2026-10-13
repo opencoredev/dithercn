@@ -1,13 +1,13 @@
-import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Callout } from "@/components/callout";
+import { CatalogIndex } from "@/components/catalog-index";
 import { CodeBlockCommand } from "@/components/code-block-command";
 import { CodeTabs } from "@/components/code-tabs";
+import { ComingSoon } from "@/components/coming-soon";
 import { ComponentPreview } from "@/components/component-preview";
 import { ComponentSource } from "@/components/component-source";
-import { ComponentsList } from "@/components/components-list";
 import { CopyButton } from "@/components/copy-button";
 import { getIconForLanguageExtension } from "@/components/icons";
 import {
@@ -19,7 +19,6 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -29,44 +28,18 @@ export const mdxComponents = {
   AccordionItem,
   AccordionTrigger: (
     props: React.ComponentProps<typeof AccordionTriggerBase>
-  ) => <AccordionTriggerBase sound="click" {...props} />,
+  ) => <AccordionTriggerBase {...props} />,
   Alert,
   AlertDescription,
   AlertTitle,
   AspectRatio,
   Button,
   Callout,
+  CatalogIndex,
   CodeTabs,
+  ComingSoon,
   ComponentPreview,
   ComponentSource,
-  ComponentsList,
-  FeatureCard: ({
-    icon: Icon,
-    title,
-    description,
-    className,
-  }: React.ComponentProps<typeof Card> & {
-    icon: LucideIcon;
-    title: string;
-    description: string;
-  }) => (
-    <Card
-      className={cn(
-        "flex flex-col gap-2 rounded-xl py-4 shadow-none",
-        className
-      )}
-    >
-      <CardHeader className="flex items-center gap-2 px-4">
-        <div className="bg-primary/10 flex size-8 shrink-0 items-center justify-center rounded-md text-primary">
-          <Icon className="size-4" />
-        </div>
-        <CardTitle className="text-base font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="px-4 text-sm text-muted-foreground">
-        {description}
-      </CardContent>
-    </Card>
-  ),
   Image: ({
     src,
     className,
@@ -151,7 +124,6 @@ export const mdxComponents = {
     ...props
   }: React.ComponentProps<typeof TabsTrigger>) => (
     <TabsTrigger
-      sound="tabSwitch"
       className={cn(
         "text-muted-foreground data-[state=active]:text-foreground data-[state=active]:border-primary dark:data-[state=active]:border-primary hover:text-primary rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pb-3 text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:bg-transparent",
         className

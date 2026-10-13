@@ -1,81 +1,39 @@
 ---
 title: Introduction
-description: A template for building and publishing your own shadcn registry components.
+description: Beautiful dithers for landing pages and dashboards, installed with npx shadcn add.
 ---
 
-A **ready-to-use template** for creating and publishing custom components to the [shadcn registry](https://ui.shadcn.com/docs/registry).
+dithercn is a [shadcn registry](https://ui.shadcn.com/docs/registry) of dithered backgrounds, charts, interface pieces, type and images. Each piece is copied into your project as source, reads its colours from your shadcn theme, and works in light and dark mode.
 
-## What You Get
+<Callout title="Early preview">
+  The docs and the catalog plan are up, and one registry item ships today:
+  [`dither-tokens`](/docs/theming), the CSS variables every piece will share.
+  Every catalog page is marked as coming soon until its piece lands.
+</Callout>
 
-- 📦 **Simple structure** - One component file + one config file
-- 📚 **Documentation site** - Powered by Fumadocs
-- 🎨 **Registry compatible** - Works with `npx shadcn add`
-- 🤖 **[Agent ready](https://www.mintlify.com/score/startercn)** - Ships with `llms.txt`, `llms-full.txt`, API catalog routes, and agent skill discovery endpoints
-- 🔊 **[Web audio feedback](https://audio.raphaelsalaja.com/)** - Built-in interaction sounds powered by `@web-kits/audio`
-- 📳 **[Web haptics](https://haptics.lochie.me/)** - Optional haptic feedback for supported devices via `web-haptics`
-- ✨ **[Motion animations](https://motion.dev/)** - Uses `motion` for animated UI states and transitions
-- 🎯 **[Animated icons](https://lucide-animated.com/)** - Includes reusable animated icons for buttons, sharing, and navigation
-- 🔄 **[View transitions](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition)** - Uses Next.js view transitions for smoother page changes
-- 🚀 **Deploy ready** - Deploy anywhere
+## What a dither is
 
-## Tech Stack
+A dither draws a smooth tone using only a few colours. It places dots of ink at a density that matches the tone, so your eye blends them into a gradient. Dithering began as a workaround for limited screens and printers. It now reads as a deliberate texture, a little like risograph print, and it's what dithercn is for.
 
-- `Next.js 16` + App Router
-- `React 19`
-- `Tailwind CSS 4`
-- `Fumadocs`
-- `motion`
-- `@web-kits/audio`
-- `web-haptics`
-- `shiki` + `rehype-pretty-code`
+## How the catalog is organised
 
-## How It Works
+- [Foundations](/docs/foundations/dither-engine) cover the engine and the rules every piece follows: algorithms, theme palettes, pixel scale, motion and performance.
+- [Backgrounds](/docs/backgrounds/dithered-gradient) are full-bleed surfaces for heroes and section breaks.
+- [Dashboard](/docs/dashboard/area-chart) pieces are charts and status displays with a dithered fill.
+- [UI](/docs/ui/skeleton) pieces are skeletons, loaders, dividers, card surfaces, empty states and a 404 page.
+- [Type](/docs/type/big-text) and [Images](/docs/images/image-dither) dither your headings and pictures.
+- [Logos](/docs/logos/dithered-logo) give a logo wall one consistent look.
+- [Tools](/docs/tools/dither-maker) let you make and export dithers without writing code.
 
-1. Edit your component at `registry/new-york/your-component.tsx`
-2. Update `registry.json` with your component name and details
-3. Run `pnpm registry:build`
+The [catalog](/docs/catalog) lists every planned piece on one page.
 
-That's it. Deploy your app and users can install your component:
+## Principles
 
-```bash
-npx shadcn@latest add https://your-site.com/r/your-component.json
-```
+- **Your theme, not ours.** Dithers read your `--primary` and `--background` tokens through the [`--dither-*` variables](/docs/theming), so they change when your theme changes.
+- **Quiet by default.** Motion is opt-in and slow, and every animated piece holds still when the visitor prefers reduced motion.
+- **Cheap on dashboards.** Pieces render once and re-render only when their inputs change, so twenty sparklines on one screen stay fast.
+- **Real text stays text.** Dithered headings are still HTML, so they can be selected, read aloud and indexed.
 
-## FAQ
+## Credits
 
-<Accordion type="multiple">
-
-<AccordionItem value="faq-1">
-<AccordionTrigger>
-Why copy/paste instead of npm packages?
-</AccordionTrigger>
-<AccordionContent>
-
-The shadcn philosophy gives you **ownership** of the code. You can customize components to your exact needs without fighting library constraints.
-
-</AccordionContent>
-</AccordionItem>
-
-<AccordionItem value="faq-2">
-<AccordionTrigger>
-Which frameworks are supported?
-</AccordionTrigger>
-<AccordionContent>
-
-Any React framework: Next.js, Remix, Astro, Gatsby, Vite, etc.
-
-</AccordionContent>
-</AccordionItem>
-
-<AccordionItem value="faq-3">
-<AccordionTrigger>
-Can I publish multiple components?
-</AccordionTrigger>
-<AccordionContent>
-
-Yes! Add more files to `registry/new-york/` and list them in `registry.json`.
-
-</AccordionContent>
-</AccordionItem>
-
-</Accordion>
+The site and registry setup started from [startercn](https://github.com/shadcn-labs/startercn) by Shadcn Labs, used under the MIT license.

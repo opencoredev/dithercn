@@ -1,4 +1,14 @@
 {
   "root": true,
-  "pages": ["(root)", "components"]
+  "pages": [
+    "(root)",
+    "foundations",
+    "backgrounds",
+    "dashboard",
+    "ui",
+    "type",
+    "images",
+    "logos",
+    "tools"
+  ]
 }
