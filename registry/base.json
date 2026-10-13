@@ -1,0 +1,82 @@
+[
+  {
+    "name": "dither-tokens",
+    "type": "registry:item",
+    "title": "Dither tokens",
+    "description": "CSS variables every dithercn piece reads: ink, paper and cell size, mapped to your shadcn theme tokens.",
+    "cssVars": {
+      "theme": {
+        "color-dither-ink": "var(--dither-ink)",
+        "color-dither-paper": "var(--dither-paper)"
+      }
+    },
+    "css": {
+      "@layer base": {
+        ":root": {
+          "--dither-ink": "var(--primary)",
+          "--dither-paper": "var(--background)",
+          "--dither-cell": "3px"
+        },
+        ".dark": {
+          "--dither-ink": "var(--primary)",
+          "--dither-paper": "var(--background)",
+          "--dither-cell": "3px"
+        }
+      }
+    }
+  },
+  {
+    "name": "dither-core",
+    "type": "registry:lib",
+    "title": "Dither core",
+    "description": "The engine every dithercn component uses: threshold matrices with blue noise, a WebGL dither shader, SVG patterns and CSS masks, image dithering, theme colours and motion hooks.",
+    "registryDependencies": ["utils", "{{REGISTRY_URL}}/dither-tokens.json"],
+    "files": [
+      {
+        "path": "lib/dither/index.ts",
+        "type": "registry:lib",
+        "target": "lib/dither/index.ts"
+      },
+      {
+        "path": "lib/dither/matrices.ts",
+        "type": "registry:lib",
+        "target": "lib/dither/matrices.ts"
+      },
+      {
+        "path": "lib/dither/blue-noise.ts",
+        "type": "registry:lib",
+        "target": "lib/dither/blue-noise.ts"
+      },
+      {
+        "path": "lib/dither/tokens.ts",
+        "type": "registry:lib",
+        "target": "lib/dither/tokens.ts"
+      },
+      {
+        "path": "lib/dither/color.ts",
+        "type": "registry:lib",
+        "target": "lib/dither/color.ts"
+      },
+      {
+        "path": "lib/dither/motion.ts",
+        "type": "registry:lib",
+        "target": "lib/dither/motion.ts"
+      },
+      {
+        "path": "lib/dither/shader.tsx",
+        "type": "registry:lib",
+        "target": "lib/dither/shader.tsx"
+      },
+      {
+        "path": "lib/dither/pattern.tsx",
+        "type": "registry:lib",
+        "target": "lib/dither/pattern.tsx"
+      },
+      {
+        "path": "lib/dither/diffuse.ts",
+        "type": "registry:lib",
+        "target": "lib/dither/diffuse.ts"
+      }
+    ]
+  }
+]
