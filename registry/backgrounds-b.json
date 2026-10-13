@@ -54,5 +54,19 @@
         "target": "components/dithercn/dither-grid.tsx"
       }
     ]
+  },
+  {
+    "name": "horizon",
+    "type": "registry:component",
+    "title": "Horizon",
+    "description": "A planet's horizon from space: a lit rim, a drifting aurora glow and fixed stars.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/horizon.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/horizon.tsx"
+      }
+    ]
   }
 ]
