@@ -1,0 +1,143 @@
+---
+title: "Dither text"
+description: "A display headline whose letters are filled with a dither, from hero size down to section headings."
+---
+
+import DitherTextDemo from "@/examples/dither-text-demo";
+import DitherTextNoise from "@/examples/dither-text-noise";
+import DitherTextSection from "@/examples/dither-text-section";
+
+<ComponentPreview src="examples/dither-text-demo.tsx" size="lg">
+  <DitherTextDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-text" />
+
+## Usage
+
+```tsx
+import { DitherText } from "@/components/dithercn/dither-text";
+
+export function Hero() {
+  return (
+    <DitherText as="h1" className="text-8xl font-semibold tracking-tight">
+      Your headline
+    </DitherText>
+  );
+}
+```
+
+The text stays a real element: people can select and copy it, screen readers read it, and search engines index it. The dither is a small image drawn on the client and clipped to the letters with `background-clip: text`. By default it runs from solid ink at the top to a sparse dither at the bottom, with a slow drift that bends the bands.
+
+Set the size with your own classes. The cell size follows the font size, about 1/24 of it and never below 2px, so the same component reads well as a hero and as a section heading.
+
+## Examples
+
+### Noise fill with a palette
+
+`fill="noise"` fills the letters with drifting noise instead of a gradient. Here blue noise and a three-colour palette, from transparent through `--chart-4` to the ink, give a soft grain.
+
+<ComponentPreview src="examples/dither-text-noise.tsx" size="lg">
+  <DitherTextNoise />
+</ComponentPreview>
+
+### Section heading in the foreground colour
+
+A smaller heading that fades left to right (`angle={90}`), drawn in `--foreground` so it matches body text on light and dark themes. `animate={false}` draws it once.
+
+<ComponentPreview src="examples/dither-text-section.tsx">
+  <DitherTextSection />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "children",
+      type: "ReactNode",
+      required: true,
+      description: "The text. It stays real, selectable text.",
+    },
+    {
+      name: "as",
+      type: '"h1" | "h2" | "h3" | "h4" | "p" | "span" | "div" | "strong"',
+      default: '"span"',
+      description: "The element to render.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "noise"',
+      default: '"gradient"',
+      description: "A gradient across the text, or drifting noise.",
+    },
+    {
+      name: "angle",
+      type: "number",
+      default: "180",
+      description:
+        "Gradient only. Direction in degrees, as in CSS: 180 runs top to bottom, 90 left to right.",
+    },
+    {
+      name: "scale",
+      type: "number",
+      default: "3",
+      description: "Noise only. Higher values give smaller blobs.",
+    },
+    {
+      name: "from",
+      type: "number",
+      default: "1",
+      description:
+        "Tone at the start, from 0 (no ink) to 1 (solid). For noise, the tone of the lightest blobs.",
+    },
+    {
+      name: "to",
+      type: "number",
+      default: "0.4",
+      description:
+        "Tone at the end. Keep it above about 0.3 so the letters stay readable.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["transparent", "--dither-ink"]',
+      description:
+        "Colours from the lightest tone to the darkest. Start with transparent so the page shows between the dots.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "Font size / 24, at least 2",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws the fill once and stops.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the fill drifts.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The text is the accessible content. The fill is a background image, so assistive technology ignores it.
+- Before the client draws the fill, the letters show in the ink colour through a plain dither mask, so there is no flash of unstyled text. In forced-colours mode the fill is removed and the text uses the system colour.
+- Selected text shows in the site's selection colours, solid, so it stays readable while highlighted.
+- With reduced motion turned on, or `animate={false}`, it draws one frame. It redraws at 12 fps only while on screen, at one pixel per dither cell, and pauses in hidden tabs.
+- Keep `to` high enough for the letters to read: below about 0.3 the bottom of each letter breaks into scattered dots.
