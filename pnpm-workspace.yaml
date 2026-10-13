@@ -3,3 +3,7 @@ allowBuilds:
   lefthook: true
   sharp: true
   msw: false
+
+# Copy packages out of the shared store instead of hardlinking them, so a
+# formatter run in another project can't rewrite this project's dependencies.
+packageImportMethod: copy
