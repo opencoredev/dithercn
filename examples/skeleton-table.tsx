@@ -6,7 +6,7 @@ export default function SkeletonTable() {
   return (
     <div
       aria-busy="true"
-      className="bg-background w-full max-w-xl overflow-hidden rounded-2xl border"
+      className="bg-background ring-border w-full max-w-xl overflow-hidden rounded-xl ring-1"
     >
       <span className="sr-only">Loading members</span>
       <div className="text-muted-foreground grid grid-cols-[1fr_6rem_5rem] gap-4 border-b px-5 py-3 text-xs font-medium">
