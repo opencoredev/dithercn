@@ -1,5 +1,5 @@
 {
   "title": "Interface",
   "description": "Everyday interface pieces with a dithered finish.",
-  "pages": ["skeleton", "loader"]
+  "pages": ["dither-button", "dither-card", "divider", "skeleton", "loader"]
 }

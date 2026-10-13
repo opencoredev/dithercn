@@ -1,0 +1,121 @@
+---
+title: "Divider"
+description: "A horizontal or vertical dithered rule whose ends fade out, with an optional label in the middle."
+---
+
+import DividerDemo from "@/examples/divider-demo";
+import DividerLabel from "@/examples/divider-label";
+import DividerVertical from "@/examples/divider-vertical";
+
+<ComponentPreview src="examples/divider-demo.tsx">
+  <DividerDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="divider" />
+
+## Usage
+
+```tsx
+import { Divider } from "@/components/dithercn/divider";
+
+export function Section() {
+  return (
+    <>
+      <p>First section</p>
+      <Divider />
+      <p>Second section</p>
+    </>
+  );
+}
+```
+
+The rule is solid in the middle and fades towards each tip in ten steps of dither. `fade` sets how much of each half is spent fading.
+
+## Examples
+
+### With a label
+
+Pass `label` and the rule splits around it, each half fading away from the text.
+
+<ComponentPreview src="examples/divider-label.tsx" size="lg">
+  <DividerLabel />
+</ComponentPreview>
+
+### Vertical, between stats
+
+A vertical divider fills the height of its container. Here it uses `--foreground` at half strength and 2 pixel cells, so it separates the numbers without competing with them.
+
+<ComponentPreview src="examples/divider-vertical.tsx" size="sm">
+  <DividerVertical />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "orientation",
+      type: '"horizontal" | "vertical"',
+      default: '"horizontal"',
+      description: "Which way the rule runs.",
+    },
+    {
+      name: "label",
+      type: "ReactNode",
+      default: "–",
+      description: "Text in the middle of the rule. Horizontal only.",
+    },
+    {
+      name: "thickness",
+      type: "number",
+      default: "1",
+      description: "Thickness in cells.",
+    },
+    {
+      name: "fade",
+      type: "number",
+      default: "0.6",
+      description: "Share of each half that fades out, from 0 to 1.",
+    },
+    {
+      name: "strength",
+      type: "number",
+      default: "1",
+      description: "Densest dither level, in the middle of the rule.",
+    },
+    {
+      name: "color",
+      type: "string",
+      default: '"--dither-ink"',
+      description: "Rule colour. A CSS variable name or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer8"',
+      description:
+        "The threshold pattern. Bayer 8×8 gives a one-cell rule the most steps.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "3",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "decorative",
+      type: "boolean",
+      default: "true",
+      description:
+        'Unlabelled rules only. false gives the rule role="separator" for assistive technology.',
+    },
+  ]}
+/>
+
+## Notes
+
+- By default the rule is decorative, like most visual dividers. Set `decorative={false}` when it separates content that screen reader users should know is split. A labelled divider reads its label as ordinary text.
+- The rule is one SVG with no viewBox, so a dither cell is always a whole number of CSS pixels and every step of the fade lines up with its neighbours.
+- It has no motion.

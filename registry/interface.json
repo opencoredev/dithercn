@@ -26,5 +26,47 @@
         "target": "components/dithercn/loader.tsx"
       }
     ]
+  },
+  {
+    "name": "divider",
+    "type": "registry:component",
+    "title": "Divider",
+    "description": "A horizontal or vertical dithered rule with fading ends and an optional label.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/divider.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/divider.tsx"
+      }
+    ]
+  },
+  {
+    "name": "dither-card",
+    "type": "registry:component",
+    "title": "Dither card",
+    "description": "A card surface with a dithered glow in a corner or along an edge, which can grow on hover.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-card.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-card.tsx"
+      }
+    ]
+  },
+  {
+    "name": "dither-button",
+    "type": "registry:component",
+    "title": "Dither button",
+    "description": "A button whose hover and press fill dissolves in through the Bayer levels.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-button.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-button.tsx"
+      }
+    ]
   }
 ]
