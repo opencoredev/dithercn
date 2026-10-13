@@ -54,7 +54,10 @@ export const WebMcpTools = () => {
       inputSchema: Record<string, unknown>;
       name: string;
     }) => {
-      const maybeCleanup = registerTool(def, { signal: ac.signal });
+      // A detached method call throws "Illegal invocation" in Chrome.
+      const maybeCleanup = registerTool.call(modelContext, def, {
+        signal: ac.signal,
+      });
       if (typeof maybeCleanup === "function") {
         cleanups.push(maybeCleanup);
       }
