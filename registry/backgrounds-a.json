@@ -40,5 +40,19 @@
         "target": "components/dithercn/noise-field.tsx"
       }
     ]
+  },
+  {
+    "name": "aurora",
+    "type": "registry:component",
+    "title": "Aurora",
+    "description": "Slow vertical curtains of light that sway and shimmer, drawn as a dither.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/aurora.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/aurora.tsx"
+      }
+    ]
   }
 ]
