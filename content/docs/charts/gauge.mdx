@@ -1,0 +1,147 @@
+---
+title: "Gauge"
+description: "A radial gauge of dithered blocks for a single reading, such as load, usage or a score."
+---
+
+import GaugeDemo from "@/examples/gauge-demo";
+import GaugeDial from "@/examples/gauge-dial";
+import GaugeRing from "@/examples/gauge-ring";
+
+<ComponentPreview src="examples/gauge-demo.tsx" size="lg">
+  <GaugeDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="gauge" />
+
+## Usage
+
+```tsx
+import { Gauge } from "@/components/dithercn/gauge";
+
+export function CpuGauge({ load }: { load: number }) {
+  return <Gauge value={load} label="CPU load" unit="%" />;
+}
+```
+
+The arc is split into blocks. Blocks up to the value fill in, with the block at the value solid and each one behind it a step lighter, so the arc points at the reading. The rest of the track stays as faint dots.
+
+## Examples
+
+### Dials on a host card
+
+`variant="dial"` sweeps 270°, like a speedometer. A gauge over 90% switches its `color` to `--destructive`.
+
+<ComponentPreview src="examples/gauge-dial.tsx">
+  <GaugeDial />
+</ComponentPreview>
+
+### Ring beside a summary
+
+`variant="ring"` is a full circle starting at the top, with the reading in the middle. It hides the min and max labels, which would sit on top of each other.
+
+<ComponentPreview src="examples/gauge-ring.tsx">
+  <GaugeRing />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "value",
+      type: "number",
+      description: "The reading. Values outside min and max are clamped.",
+      required: true,
+    },
+    {
+      name: "label",
+      type: "string",
+      description:
+        "What is measured. Shown under the value and used as the accessible name.",
+      required: true,
+    },
+    {
+      name: "min",
+      type: "number",
+      default: "0",
+      description: "The start of the scale.",
+    },
+    {
+      name: "max",
+      type: "number",
+      default: "100",
+      description: "The end of the scale.",
+    },
+    {
+      name: "variant",
+      type: '"half" | "dial" | "ring"',
+      default: '"half"',
+      description: "A 180° arc, a 270° dial, or a full ring.",
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "220",
+      description:
+        "Width in CSS pixels. Text and ring thickness scale with it.",
+    },
+    {
+      name: "segments",
+      type: "number",
+      default: "28, 36 or 48",
+      description:
+        "How many blocks the arc is split into. The default depends on the variant.",
+    },
+    {
+      name: "unit",
+      type: "string",
+      default: '""',
+      description: 'Shown after the value, such as "%".',
+    },
+    {
+      name: "format",
+      type: "Intl.NumberFormatOptions",
+      default: "{ maximumFractionDigits: 1 }",
+      description: "How the value, min and max are formatted.",
+    },
+    {
+      name: "showRange",
+      type: "boolean",
+      default: "true, false for ring",
+      description: "Show min and max under the ends of the arc.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"--dither-ink"',
+      description: "Ink colour of the filled blocks.",
+    },
+    {
+      name: "trackColor",
+      type: "DitherColor",
+      default: "color",
+      description: "Colour of the empty track.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description:
+        "Size of one dither cell in CSS pixels. The ring thickness snaps to whole cells.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The gauge has `role="meter"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax` and an `aria-valuetext` that includes the unit. The drawing is hidden from assistive technology.
+- Blocks fade in one after another when the gauge appears or the value rises. With reduced motion turned on they appear at once.
+- It is plain SVG with one pattern per density, so it costs nothing after it renders.
