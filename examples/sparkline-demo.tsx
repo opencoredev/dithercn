@@ -1,4 +1,8 @@
+"use client";
+
 import { Sparkline } from "@/components/dithercn/sparkline";
+import { usePreviewValue } from "@/components/preview-controls";
+import * as knobs from "@/examples/sparkline-controls";
 
 const STATS = [
   {
@@ -22,6 +26,13 @@ const STATS = [
 ] as const;
 
 export default function SparklineDemo() {
+  const color = usePreviewValue(knobs.tint);
+  const fill = usePreviewValue(knobs.fill);
+  const bloom = usePreviewValue(knobs.bloom);
+  const area = usePreviewValue(knobs.area);
+  const dot = usePreviewValue(knobs.dot);
+  const interactive = usePreviewValue(knobs.interactive);
+
   return (
     <div className="grid w-full max-w-3xl gap-3 sm:grid-cols-3">
       {STATS.map((stat) => (
@@ -44,6 +55,12 @@ export default function SparklineDemo() {
             data={stat.data}
             label={`${stat.label}, last 12 months`}
             height={40}
+            color={color}
+            fill={fill}
+            bloom={bloom}
+            area={area}
+            dot={dot}
+            interactive={interactive}
             className="mt-3"
           />
         </div>

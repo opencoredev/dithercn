@@ -1,4 +1,8 @@
+"use client";
+
 import { LineChart } from "@/components/dithercn/line-chart";
+import { usePreviewValue } from "@/components/preview-controls";
+import * as knobs from "@/examples/line-chart-controls";
 
 const P50 = [
   188, 184, 191, 186, 179, 182, 196, 214, 205, 193, 187, 181, 178, 183, 190,
@@ -20,6 +24,13 @@ const data = P50.map((p50, index) => {
 });
 
 export default function LineChartDemo() {
+  const fill = usePreviewValue(knobs.fill);
+  const color = usePreviewValue(knobs.tint);
+  const bloom = usePreviewValue(knobs.bloom);
+  const markers = usePreviewValue(knobs.markers);
+  const curve = usePreviewValue(knobs.curve);
+  const interactive = usePreviewValue(knobs.interactive);
+
   return (
     <div className="bg-background border-border w-full max-w-xl rounded-2xl border p-5 [--dither-paper:var(--background)] sm:p-6">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
@@ -36,11 +47,17 @@ export default function LineChartDemo() {
         x="time"
         series={[
           {
+            color,
             label: "p50",
             range: { high: "p90", low: "p10" },
             value: "p50",
           },
         ]}
+        fill={fill}
+        bloom={bloom}
+        markers={markers}
+        curve={curve}
+        interactive={interactive}
         format={{
           maximumFractionDigits: 0,
           style: "unit",
