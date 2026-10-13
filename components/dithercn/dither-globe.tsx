@@ -473,17 +473,29 @@ export const DitherGlobe = ({
   const cellSize = Math.max(1, cell);
   const size = useCanvasSize(wrapper, cellSize);
   const extraNames = [
-    ...new Set([...markers, ...arcs].flatMap((item) => item.color ?? [])),
+    ...new Set(
+      [...markers, ...arcs].flatMap((item) =>
+        item.color === undefined ? [] : [item.color]
+      )
+    ),
   ];
   const colors = useDitherColors(wrapper, [color, accent, ...extraNames]);
   const reducedMotion = usePrefersReducedMotion();
   const clock = useRef(0);
   const disc = useRef<Disc | null>(null);
+  // Reused across frames; reallocated only when the cell grid changes size.
+  const frame = useRef<ImageData | null>(null);
   const drawRef = useRef<(time: number, delta: number) => void>(() => {
     // Replaced on the first render.
   });
   const drag = useDragSpin(
     useCallback(() => drawRef.current(clock.current, 0), [])
+  );
+
+  const extra = new Map(
+    colors
+      ? extraNames.map((name, index) => [name, colors[index + 2] ?? colors[1]])
+      : []
   );
 
   const draw = (time: number, delta: number) => {
@@ -494,9 +506,6 @@ export const DitherGlobe = ({
     }
     clock.current = time;
     const spin = start + time * speed + drag.advance(delta);
-    const extra = new Map(
-      extraNames.map((name, index) => [name, colors[index + 2] ?? colors[1]])
-    );
     const scene: Scene = {
       disc: current,
       light: lightVector(light),
@@ -505,7 +514,13 @@ export const DitherGlobe = ({
       paint: { accent: colors[1], extra, land: colors[0] },
       view: { spin: spin * RADIANS, tilt: -tilt * RADIANS },
     };
-    const image = context.createImageData(current.columns, current.rows);
+    let image = frame.current;
+    if (image?.width !== current.columns || image.height !== current.rows) {
+      image = context.createImageData(current.columns, current.rows);
+      frame.current = image;
+    } else {
+      image.data.fill(0);
+    }
     paintSphere(image, scene);
     if (atmosphere) {
       paintAtmosphere(image, scene);
