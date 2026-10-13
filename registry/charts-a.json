@@ -1,0 +1,33 @@
+[
+  {
+    "name": "cartesian-chart",
+    "type": "registry:component",
+    "title": "Cartesian chart",
+    "description": "The shared frame behind the area, line and bar charts: scales, axes, the hover readout, the legend and an accessible data table.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/cartesian-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/cartesian-chart.tsx"
+      }
+    ]
+  },
+  {
+    "name": "area-chart",
+    "type": "registry:component",
+    "title": "Area chart",
+    "description": "One or more series drawn as a crisp line over a dithered fill that is densest under the line.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/cartesian-chart.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/area-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/area-chart.tsx"
+      }
+    ]
+  }
+]
