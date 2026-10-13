@@ -9,6 +9,7 @@ import { HeroActions } from "@/components/hero-actions";
 import { HeroUseCases } from "@/components/hero-use-cases";
 import { Icon } from "@/components/icon";
 import { PageTransition } from "@/components/page-transition";
+import { SiteFooter } from "@/components/site-footer";
 import { SmoothScroll } from "@/components/smooth-scroll";
 import { ROUTES } from "@/constants/routes";
 import { SITE } from "@/constants/site";
@@ -163,6 +164,7 @@ export default async function IndexPage() {
           </div>
         </section>
       </PageTransition>
+      <SiteFooter />
     </>
   );
 }
