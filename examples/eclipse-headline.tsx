@@ -2,12 +2,12 @@ import { Eclipse } from "@/components/dithercn/eclipse";
 
 export default function EclipseHeadline() {
   return (
-    <section className="relative isolate flex size-full items-center px-8 sm:px-12">
+    <section className="relative isolate flex size-full flex-col justify-end p-8 sm:p-12">
       <Eclipse
-        center={[0.86, 0.5]}
-        size={0.34}
+        center={[0.78, 0.28]}
+        size={0.3}
         corona={0.35}
-        light={250}
+        light={225}
         className="absolute inset-0 -z-10"
       />
       <div className="flex max-w-xs flex-col gap-3">
@@ -15,8 +15,8 @@ export default function EclipseHeadline() {
           Totality, on 12 August
         </h3>
         <p className="text-muted-foreground text-sm text-pretty">
-          A large disc pushed to the right edge, lit from the left, so the
-          corona reaches towards the text without crossing it.
+          The disc sits high on the right and is lit from the lower left, so the
+          brightest edge of the rim faces the text below it.
         </p>
       </div>
     </section>
