@@ -1,0 +1,157 @@
+---
+title: "Image transition"
+description: "Two or more images that dissolve into each other cell by cell, as an autoplaying slideshow or under your control."
+---
+
+import ImageTransitionDemo from "@/examples/image-transition-demo";
+import ImageTransitionControlled from "@/examples/image-transition-controlled";
+import ImageTransitionHero from "@/examples/image-transition-hero";
+
+<ComponentPreview src="examples/image-transition-demo.tsx" size="lg">
+  <ImageTransitionDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="image-transition" />
+
+## Usage
+
+```tsx
+import { ImageTransition } from "@/components/dithercn/image-transition";
+
+const images = [
+  { src: "/photos/coast.jpg", alt: "The coast at low tide" },
+  { src: "/photos/ridge.jpg", alt: "A ridge above the cloud line" },
+] as const;
+
+export function Showcase() {
+  return (
+    <ImageTransition
+      images={images}
+      className="aspect-video w-full rounded-xl"
+    />
+  );
+}
+```
+
+Every image is dithered once to the same grid. During a dissolve each cell switches to the next image when the progress passes its threshold in a Bayer matrix, with a gentle drift from the top left so the change travels across the frame.
+
+Without `index`, the slideshow moves on every `interval` milliseconds. It pauses while the pointer is over it, while it is offscreen and while the tab is hidden.
+
+## Examples
+
+### Controlled
+
+Pass `index` to drive it yourself, here from a row of buttons. A new index mid-dissolve carries on from whichever image covers more of the frame.
+
+<ComponentPreview src="examples/image-transition-controlled.tsx" size="lg">
+  <ImageTransitionControlled />
+</ComponentPreview>
+
+### Behind a headline
+
+Large cells and a 2.4 second dissolve make a slow, quiet backdrop. The images are decorative here, so the component is hidden from assistive technology.
+
+<ComponentPreview
+  src="examples/image-transition-hero.tsx"
+  size="full"
+  align="stretch"
+>
+  <ImageTransitionHero />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "images",
+      type: "[{ src: string; alt: string }, ...]",
+      description: "The images, in order. At least one.",
+      required: true,
+    },
+    {
+      name: "index",
+      type: "number",
+      default: "–",
+      description:
+        "The image to show. Set it to control the component; autoplay stops.",
+    },
+    {
+      name: "onIndexChange",
+      type: "(index: number) => void",
+      default: "–",
+      description: "Called when autoplay moves to the next image.",
+    },
+    {
+      name: "interval",
+      type: "number",
+      default: "5000",
+      description:
+        "Milliseconds each image stays when playing on its own. 0 turns autoplay off.",
+    },
+    {
+      name: "duration",
+      type: "number",
+      default: "1400",
+      description: "Length of the dissolve in milliseconds.",
+    },
+    {
+      name: "transitionMatrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer8"',
+      description: "The threshold pattern the dissolve follows.",
+    },
+    {
+      name: "method",
+      type: "DitherMethod",
+      default: '"atkinson"',
+      description: "The dither algorithm for the images.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description: "Two to four colours, sorted from dark to light.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description:
+        "Size of one dither cell in CSS pixels. Finer than the site's --dither-cell, as photos need the detail.",
+    },
+    {
+      name: "contrast",
+      type: "number",
+      default: "1.2",
+      description: "1 leaves contrast alone.",
+    },
+    {
+      name: "brightness",
+      type: "number",
+      default: "0",
+      description: "Added to every tone, from -1 to 1.",
+    },
+    {
+      name: "fit",
+      type: '"cover" | "contain"',
+      default: '"cover"',
+      description: "How each image fills the box.",
+    },
+    {
+      name: "ratio",
+      type: "number",
+      default: "The first image's ratio",
+      description: "Width over height, when the box has no height of its own.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The root has `role="img"` labelled with the current image's alt text. Changes are not announced, so a slideshow does not interrupt a screen reader.
+- Autoplay content that moves on its own needs a way to stop it. The component pauses on hover; for longer slideshows, add a pause button that sets `index`, or pass `interval={0}`.
+- With reduced motion, images switch instantly.
+- A dissolve costs one pass over the cells per frame, copying whole pixels. The frame loop runs only while a dissolve is in progress.
