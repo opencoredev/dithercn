@@ -1,0 +1,116 @@
+---
+title: "Dither number"
+description: "An animated counter for dashboards and landing stats, with tabular digits that roll or dissolve into place."
+---
+
+import DitherNumberDemo from "@/examples/dither-number-demo";
+import DitherNumberStats from "@/examples/dither-number-stats";
+import DitherNumberLive from "@/examples/dither-number-live";
+
+<ComponentPreview src="examples/dither-number-demo.tsx" size="lg">
+  <DitherNumberDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-number" />
+
+## Usage
+
+```tsx
+import { DitherNumber } from "@/components/dithercn/dither-number";
+
+export function Stat() {
+  return <DitherNumber value={128406} className="text-7xl font-semibold" />;
+}
+```
+
+When the number scrolls into view, every digit rolls up from `from` (0 by default) to its place in `value`. Digits pass through a dithered edge above and below the line, so they fade through the dither as they enter and leave. Lower places spin a full extra turn when the value jumps by ten or more at that place, like a mechanical counter. Change `value` later and only the digits that differ move.
+
+## Examples
+
+### Landing stats
+
+`format` takes any `Intl.NumberFormat` options: percent, compact notation and currency here. Separators, symbols and suffixes stay still; only the digits move.
+
+<ComponentPreview src="examples/dither-number-stats.tsx">
+  <DitherNumberStats />
+</ComponentPreview>
+
+### Live value with dissolve
+
+`effect="dissolve"` swaps each changed digit by dissolving the old one out and the new one in, which suits values that update often. This card follows a value that changes every few seconds.
+
+<ComponentPreview src="examples/dither-number-live.tsx">
+  <DitherNumberLive />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "value",
+      type: "number",
+      required: true,
+      description: "The number to show.",
+    },
+    {
+      name: "from",
+      type: "number",
+      default: "0",
+      description: "Where the first run starts.",
+    },
+    {
+      name: "format",
+      type: "Intl.NumberFormatOptions",
+      default: "–",
+      description: "Currency, percent, compact notation, decimals and so on.",
+    },
+    {
+      name: "locales",
+      type: "Intl.LocalesArgument",
+      default: "The visitor's locale",
+      description:
+        "Passed to Intl.NumberFormat. Set it when the server and client must format the same way.",
+    },
+    {
+      name: "effect",
+      type: '"roll" | "dissolve"',
+      default: '"roll"',
+      description: "Digits roll into place, or dissolve out and in.",
+    },
+    {
+      name: "trigger",
+      type: '"mount" | "in-view"',
+      default: '"in-view"',
+      description: "Start the first run on mount, or when scrolled into view.",
+    },
+    {
+      name: "duration",
+      type: "number",
+      default: "1400 (roll), 600 (dissolve)",
+      description: "Milliseconds per change.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8"',
+      default: '"bayer4"',
+      description: "The threshold pattern for the dithered edges.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The formatted value is real text laid over the animation, transparent, so it can be selected and copied and is what screen readers and search engines read. The moving digits are hidden from assistive technology.
+- Digits use tabular figures, so the width only changes when the number of digits does.
+- The server renders the final value. On the client the digits wait at `from` until the trigger fires.
+- With reduced motion turned on, the number changes instantly.
+- Only ASCII digits animate. Formats that use another numbering system show their digits without motion.
