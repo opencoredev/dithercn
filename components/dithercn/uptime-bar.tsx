@@ -1,10 +1,15 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import type { ComponentProps, KeyboardEvent } from "react";
+import type { ComponentProps, CSSProperties, KeyboardEvent } from "react";
 
-import { cssColor, ditherMaskStyle, MOTION } from "@/lib/dither";
-import type { DitherColor, DitherMatrix } from "@/lib/dither";
+import { bloomStyle, cssColor, fillStyle, MOTION } from "@/lib/dither";
+import type {
+  Bloom,
+  DitherColor,
+  DitherMatrix,
+  FillVariant,
+} from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /** `none` means no data for the day, such as before the service existed. */
@@ -26,30 +31,67 @@ export type UptimeBarProps = Omit<ComponentProps<"div">, "children"> & {
   label: string;
   /** One entry per day, oldest first. The last 30, 60 or 90 show, depending on width. */
   days: readonly UptimeDay[];
-  /** Colours per status. Default: ink for up, amber for degraded, `--destructive` for down. */
+  /** Colours per status, as palette names or CSS colours. Default: green up, orange degraded, red down, grey for no data. */
   colors?: Partial<Record<UptimeStatus, DitherColor>>;
+  /**
+   * Texture of the up days. Default `gradient`: dense at the base, thinning
+   * upward. Degraded days are always hatched, down days solid and days
+   * without data dotted, so status never relies on colour alone.
+   */
+  fill?: FillVariant;
+  /** Soft glow behind degraded and down days, so incidents stand out: `off`, `low` or `high`. Default `off`. */
+  bloom?: Bloom;
   /** Locale for dates in the tooltip. Default `"en-US"`. */
   locale?: string;
-  /** Threshold matrix. Default `"bayer4"`. */
+  /** Gradient only: threshold matrix. Default `"bayer4"`. */
   matrix?: DitherMatrix;
   /** Cell size in CSS pixels. Default 2, so narrow bars still show a pattern. */
   cell?: number;
 };
 
 const DEFAULT_COLORS = {
-  degraded: "--uptime-degraded",
-  down: "--destructive",
-  none: "--muted-foreground",
-  up: "--dither-ink",
+  degraded: "orange",
+  down: "red",
+  none: "grey",
+  up: "green",
 } as const satisfies Record<UptimeStatus, DitherColor>;
 
-/** Density as well as colour tells the statuses apart. */
-const LEVELS = {
-  degraded: 7 / 16,
-  down: 1,
-  none: 3 / 16,
-  up: 14 / 16,
-} as const satisfies Record<UptimeStatus, number>;
+/** Texture as well as colour tells the statuses apart. */
+const STATUS_FILLS = {
+  degraded: "hatched",
+  down: "solid",
+  none: "dotted",
+} as const satisfies Record<Exclude<UptimeStatus, "up">, FillVariant>;
+
+/** Paint for one day's bar (or the tooltip's swatch). */
+const statusStyle = ({
+  status,
+  color,
+  fill,
+  cell,
+  matrix,
+  bloom,
+}: {
+  status: UptimeStatus;
+  color: DitherColor;
+  fill: FillVariant;
+  cell: number;
+  matrix: DitherMatrix;
+  bloom: Bloom;
+}): CSSProperties => ({
+  ...fillStyle(status === "up" ? fill : STATUS_FILLS[status], {
+    cell,
+    color,
+    edge: "bottom",
+    from: 1,
+    length: 10,
+    matrix,
+    to: 8 / 16,
+  }),
+  ...(status === "degraded" || status === "down"
+    ? bloomStyle(color, bloom)
+    : {}),
+});
 
 const STATUS_TEXT = {
   degraded: "Degraded",
@@ -72,10 +114,76 @@ const statusOf = (day: UptimeDay): UptimeStatus => {
   return day.uptime >= 0.99 ? "degraded" : "down";
 };
 
-const TOOLTIP_WIDTH = 208;
-
 const formatPercent = (value: number) =>
   `${(Math.floor(value * 10_000) / 100).toFixed(2)}%`;
+
+const TOOLTIP_WIDTH = 208;
+
+/** The tooltip's day and position. A hidden tip keeps its place so it fades out there. */
+interface Tip {
+  index: number;
+  left: number;
+  visible: boolean;
+  /** Glide from the last bar (pointer) or jump (keyboard, first show). */
+  glide: boolean;
+}
+
+/** Details for one day, gliding between bars by transform. */
+const DayTooltip = ({
+  id,
+  tip,
+  day,
+  dates,
+  paint,
+}: {
+  id: string;
+  tip: Tip | null;
+  day: UptimeDay | undefined;
+  dates: Intl.DateTimeFormat;
+  paint: (status: UptimeStatus) => CSSProperties;
+}) => {
+  const status = day === undefined ? "none" : statusOf(day);
+  return (
+    <div
+      id={id}
+      role="tooltip"
+      data-glide={String(tip?.glide ?? false)}
+      className="bg-popover/95 text-popover-foreground border-border pointer-events-none absolute bottom-full left-0 z-10 mb-2 rounded-lg border px-3 py-2.5 text-xs shadow-[0_8px_24px_-12px_rgb(0_0_0/0.6)] backdrop-blur-sm transition-[transform,opacity] duration-200 ease-(--ease-out) motion-reduce:transition-none data-[glide=false]:transition-[opacity]"
+      style={{
+        opacity: tip?.visible === true ? 1 : 0,
+        transform: `translateX(${Math.round((tip?.left ?? 0) - TOOLTIP_WIDTH / 2)}px)`,
+        visibility: tip === null ? "hidden" : undefined,
+        width: TOOLTIP_WIDTH,
+      }}
+    >
+      {day === undefined ? null : (
+        <>
+          <div className="text-muted-foreground font-mono text-[10px] tracking-wide uppercase">
+            {dates.format(new Date(`${day.date}T00:00:00Z`))}
+          </div>
+          <div className="mt-1.5 flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="size-2.5 shrink-0"
+              style={paint(status)}
+            />
+            <span className="text-foreground">{STATUS_TEXT[status]}</span>
+            {day.uptime === null ? null : (
+              <span className="text-muted-foreground ml-auto font-mono tabular-nums">
+                {formatPercent(day.uptime)}
+              </span>
+            )}
+          </div>
+          {day.note ? (
+            <p className="text-muted-foreground mt-1.5 leading-snug text-pretty">
+              {day.note}
+            </p>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+};
 
 /** Days shown at each width: 30 by default, 60 from 28rem, 90 from 42rem. */
 const visibility = (fromEnd: number) => {
@@ -94,6 +202,8 @@ export const UptimeBar = ({
   label,
   days,
   colors,
+  fill = "gradient",
+  bloom = "off",
   locale = "en-US",
   matrix = "bayer4",
   cell = 2,
@@ -102,8 +212,8 @@ export const UptimeBar = ({
 }: UptimeBarProps) => {
   const tooltipId = useId();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  const [tip, setTip] = useState<{ index: number; left: number } | null>(null);
-  const active = tip?.index ?? null;
+  const [tip, setTip] = useState<Tip | null>(null);
+  const active = tip?.visible === true ? tip.index : null;
   const [focusIndex, setFocusIndex] = useState(days.length - 1);
 
   const palette = { ...DEFAULT_COLORS, ...colors };
@@ -148,9 +258,17 @@ export const UptimeBar = ({
     const centre = button.offsetLeft + button.offsetWidth / 2;
     const half = TOOLTIP_WIDTH / 2;
     const left = Math.min(Math.max(centre, half), row.offsetWidth - half);
-    setTip({ index, left });
+    setTip((previous) => ({
+      glide: previous?.visible === true,
+      index,
+      left,
+      visible: true,
+    }));
   };
-  const hide = () => setTip(null);
+  const hide = () =>
+    setTip((previous) =>
+      previous === null ? null : { ...previous, glide: false, visible: false }
+    );
 
   const moveFocus = (
     event: KeyboardEvent<HTMLButtonElement>,
@@ -178,14 +296,12 @@ export const UptimeBar = ({
     buttons.current[next]?.focus();
   };
 
-  const activeDay = active === null ? undefined : days[active];
   const spans = [30, 60, 90].map((span) => Math.min(span, days.length));
 
   return (
     <div
       className={cn(
         "@container relative flex w-full flex-col gap-3",
-        "[--uptime-degraded:oklch(0.64_0.14_70)] dark:[--uptime-degraded:oklch(0.82_0.14_80)]",
         className
       )}
       {...props}
@@ -243,51 +359,36 @@ export const UptimeBar = ({
                   style={{
                     backgroundColor: cssColor(palette[status]),
                     transitionDuration: `${MOTION.fast}ms`,
-                    ...ditherMaskStyle(LEVELS[status], { cell, matrix }),
+                    ...statusStyle({
+                      bloom,
+                      cell,
+                      color: palette[status],
+                      fill,
+                      matrix,
+                      status,
+                    }),
                   }}
                 />
               </li>
             );
           })}
         </ol>
-        {activeDay && tip ? (
-          <div
-            id={tooltipId}
-            role="tooltip"
-            className="bg-popover text-popover-foreground pointer-events-none absolute bottom-full z-10 mb-2 -translate-x-1/2 rounded-lg border px-3 py-2.5 text-xs shadow-lg"
-            style={{ left: tip.left, width: TOOLTIP_WIDTH }}
-          >
-            <div className="text-foreground font-medium">
-              {dates.format(new Date(`${activeDay.date}T00:00:00Z`))}
-            </div>
-            <div className="mt-1.5 flex items-center gap-2">
-              <span
-                aria-hidden
-                className="size-2.5 shrink-0"
-                style={{
-                  backgroundColor: cssColor(palette[statusOf(activeDay)]),
-                  ...ditherMaskStyle(LEVELS[statusOf(activeDay)], {
-                    cell,
-                    matrix,
-                  }),
-                }}
-              />
-              <span className="text-foreground">
-                {STATUS_TEXT[statusOf(activeDay)]}
-              </span>
-              {activeDay.uptime === null ? null : (
-                <span className="text-muted-foreground ml-auto font-mono tabular-nums">
-                  {formatPercent(activeDay.uptime)}
-                </span>
-              )}
-            </div>
-            {activeDay.note ? (
-              <p className="text-muted-foreground mt-1.5 leading-snug text-pretty">
-                {activeDay.note}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+        <DayTooltip
+          id={tooltipId}
+          tip={tip}
+          day={tip === null ? undefined : days[tip.index]}
+          dates={dates}
+          paint={(status) =>
+            statusStyle({
+              bloom: "off",
+              cell,
+              color: palette[status],
+              fill,
+              matrix,
+              status,
+            })
+          }
+        />
       </div>
       <div
         aria-hidden

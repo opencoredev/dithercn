@@ -11,12 +11,14 @@ const DAYS = uptimeDays({
 
 export default function UptimeBarColors() {
   return (
-    <div className="w-full max-w-2xl pt-16 [--status-up:oklch(0.55_0.14_155)] dark:[--status-up:oklch(0.76_0.16_155)]">
+    <div className="w-full max-w-2xl pt-16">
       <UptimeBar
         label="Payments"
         days={DAYS}
         cell={3}
-        colors={{ up: "--status-up" }}
+        fill="dotted"
+        colors={{ degraded: "purple", up: "blue" }}
+        bloom="high"
       />
     </div>
   );
