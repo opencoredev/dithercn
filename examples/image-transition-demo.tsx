@@ -39,7 +39,7 @@ export default function ImageTransitionDemo() {
         <span className="text-muted-foreground truncate">
           {IMAGES[index]?.alt}
         </span>
-        <span className="tabular-nums">
+        <span className="shrink-0 tabular-nums">
           {index + 1} / {IMAGES.length}
         </span>
       </figcaption>
