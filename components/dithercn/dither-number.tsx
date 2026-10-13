@@ -87,6 +87,10 @@ const layout = (
 // are tabular.
 const STATIC_CLASS = "whitespace-pre [font-variant-numeric:normal]";
 
+// Decorative digits are drawn as generated content, so they stay out of
+// the page's text (copy, search snippets); only the real value is text.
+const GLYPH_CLASS = "before:content-[attr(data-digit)]";
+
 // ---------------------------------------------------------------- roll
 
 const COPIES = 3;
@@ -176,16 +180,18 @@ const RollSlot = ({ digit, direction, spin, duration }: SlotProps) => {
 
   return (
     <>
-      <span className="invisible">0</span>
+      <span data-digit="0" className={`invisible ${GLYPH_CLASS}`} />
       <span
         ref={stripRef}
         className="absolute inset-x-0 top-0 flex flex-col items-center will-change-transform"
         style={{ transform: translate(initialRow) }}
       >
         {STRIP.map((row, index) => (
-          <span key={index} className="py-(--number-pad)">
-            {row}
-          </span>
+          <span
+            key={index}
+            data-digit={row}
+            className={`py-(--number-pad) ${GLYPH_CLASS}`}
+          />
         ))}
       </span>
     </>
@@ -253,7 +259,7 @@ const DissolveSlot = ({
 
   return (
     <>
-      <span className="invisible">0</span>
+      <span data-digit="0" className={`invisible ${GLYPH_CLASS}`} />
       {layers.map((layer) => (
         <span
           key={layer.id}
@@ -262,7 +268,8 @@ const DissolveSlot = ({
               setLayers((list) => list.filter(({ id }) => id !== layer.id));
             }
           }}
-          className="absolute inset-x-0 top-[var(--number-pad)] text-center"
+          data-digit={layer.digit ?? ""}
+          className={`absolute inset-x-0 top-(--number-pad) text-center ${GLYPH_CLASS}`}
           style={
             layer.id === 0 || direction === 0
               ? undefined
@@ -274,9 +281,7 @@ const DissolveSlot = ({
                   maskSize: tile,
                 }
           }
-        >
-          {layer.digit}
-        </span>
+        ></span>
       ))}
     </>
   );
@@ -458,9 +463,11 @@ export const DitherNumber = ({
         {glyphs.map((glyph) => {
           if (glyph.kind === "static") {
             return (
-              <span key={glyph.key} className={STATIC_CLASS}>
-                {glyph.char}
-              </span>
+              <span
+                key={glyph.key}
+                data-digit={glyph.char}
+                className={`${STATIC_CLASS} ${GLYPH_CLASS}`}
+              />
             );
           }
           const slotIndex = digitIndex;
