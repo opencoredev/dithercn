@@ -1,0 +1,16 @@
+[
+  {
+    "name": "dither-glow",
+    "type": "registry:component",
+    "title": "Dither glow",
+    "description": "A soft dithered spotlight from an edge, a corner or any point, for heroes and cards.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-glow.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-glow.tsx"
+      }
+    ]
+  }
+]

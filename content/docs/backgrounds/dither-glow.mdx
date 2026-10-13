@@ -1,0 +1,138 @@
+---
+title: "Dither glow"
+description: "A soft dithered spotlight from an edge, a corner or any point, for heroes, pricing cards and quiet section backgrounds."
+---
+
+import DitherGlowDemo from "@/examples/dither-glow-demo";
+import DitherGlowHero from "@/examples/dither-glow-hero";
+import DitherGlowCorner from "@/examples/dither-glow-corner";
+import DitherGlowPalette from "@/examples/dither-glow-palette";
+
+<ComponentPreview
+  src="examples/dither-glow-demo.tsx"
+  size="full"
+  align="stretch"
+>
+  <DitherGlowDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-glow" />
+
+## Usage
+
+```tsx
+import { DitherGlow } from "@/components/dithercn/dither-glow";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <DitherGlow position="top" className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+The glow fills its box and shines from `position`. It uses `bayer8`, whose 64 tones keep the falloff smooth. Its centre is brightest and it falls off softly, with a slow breath and a little noise at the edge so it never looks like a flat circle.
+
+## Examples
+
+### Rising behind a headline
+
+With `position="bottom"` the light sits just below the edge, so only its top shows. The headline sits near the top, on clean paper.
+
+<ComponentPreview src="examples/dither-glow-hero.tsx" size="lg" align="stretch">
+  <DitherGlowHero />
+</ComponentPreview>
+
+### Corner of a card
+
+A corner glow is the quietest way to lift one card out of a row. Setting `--dither-paper` to the card's background blends the glow into it, and `bayer8` gives a finer grain at small sizes.
+
+<ComponentPreview src="examples/dither-glow-corner.tsx">
+  <DitherGlowCorner />
+</ComponentPreview>
+
+### Any point, any palette
+
+`position` also takes `[x, y]` as fractions of the box. With a longer palette the glow steps through each colour from its edge to its core.
+
+<ComponentPreview
+  src="examples/dither-glow-palette.tsx"
+  size="lg"
+  align="stretch"
+>
+  <DitherGlowPalette />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "position",
+      type: '"top" | "bottom" | "left" | "right" | "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | [x: number, y: number]',
+      default: '"top"',
+      description:
+        "Where the light comes from. Edges sit just outside the box; a point is measured from the top left.",
+    },
+    {
+      name: "radius",
+      type: "number",
+      default: "0.7",
+      description: "How far the light reaches. 1 reaches the farthest corner.",
+    },
+    {
+      name: "intensity",
+      type: "number",
+      default: "0.75",
+      description: "Brightness at the centre, from 0 (none) to 1 (full ink).",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        "Colours from paper to ink. CSS variable names or any CSS colour.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer8"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast it moves.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The background fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a CSS approximation in the same colours.
+- It costs one small draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/concepts/performance).
