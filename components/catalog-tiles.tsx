@@ -201,10 +201,10 @@ export const CatalogTiles = ({
         >
           <div
             aria-hidden="true"
-            className="text-dither-ink/65 group-hover/tile:text-dither-ink group-focus-visible/tile:text-dither-ink relative h-36 overflow-hidden transition-colors duration-500 ease-(--ease-out) sm:h-48"
+            className="text-dither-ink/65 group-hover/tile:text-dither-ink group-focus-visible/tile:text-dither-ink relative h-36 overflow-hidden transition-colors duration-300 ease-(--ease-out) sm:h-48"
           >
             {/* The art zooms inside the frame; the tile itself holds still. */}
-            <div className="absolute inset-0 transition-transform duration-700 ease-(--ease-out) group-hover/tile:scale-[1.06] group-focus-visible/tile:scale-[1.06] motion-reduce:transition-none">
+            <div className="absolute inset-0 transition-transform duration-500 ease-(--ease-out) group-hover/tile:scale-[1.06] group-focus-visible/tile:scale-[1.06] motion-reduce:transition-none">
               <TileArt id={category.id} />
             </div>
           </div>

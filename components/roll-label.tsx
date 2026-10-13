@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 const ROLL_CLS =
-  "block transition-transform duration-[400ms] ease-(--ease-out) motion-reduce:transition-none";
+  "block transition-transform duration-300 ease-(--ease-out) motion-reduce:transition-none";
 
 /**
  * A label that rolls up to a copy of itself when its `group/roll` parent is
