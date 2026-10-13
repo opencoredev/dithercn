@@ -1,0 +1,105 @@
+---
+title: "Uptime bar"
+description: "A status-page row of daily bars, dithered by status, with details for each day."
+---
+
+import UptimeBarDemo from "@/examples/uptime-bar-demo";
+import UptimeBarStatusPage from "@/examples/uptime-bar-status-page";
+import UptimeBarColors from "@/examples/uptime-bar-colors";
+
+<ComponentPreview src="examples/uptime-bar-demo.tsx">
+  <UptimeBarDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="uptime-bar" />
+
+## Usage
+
+```tsx
+import { UptimeBar } from "@/components/dithercn/uptime-bar";
+
+const days = [
+  { date: "2026-10-11", uptime: 1 },
+  { date: "2026-10-12", uptime: 0.9962, note: "Elevated latency on writes." },
+  { date: "2026-10-13", uptime: 1 },
+];
+
+export function ApiStatus() {
+  return <UptimeBar label="API" days={days} />;
+}
+```
+
+Pass one entry per day, oldest first. Each day's status comes from its `uptime`: 99.9% or more is up, 99% or more is degraded, and anything lower is an outage. Set `status` on a day to override that, or `uptime: null` for a day with no data.
+
+The row shows the last 30 days on narrow screens, 60 from 28rem wide and 90 from 42rem, based on the width of its container. The percentage on the right is the average over every day with data.
+
+## Examples
+
+### Status page
+
+Several rows in one card. The Realtime service is newer than the window, so its early days have no data and show as faint dots.
+
+<ComponentPreview src="examples/uptime-bar-status-page.tsx" size="lg">
+  <UptimeBarStatusPage />
+</ComponentPreview>
+
+### Green for up
+
+`colors` overrides the colour of any status. This one sets a green that changes between light and dark mode through a CSS variable, and uses 3px cells.
+
+<ComponentPreview src="examples/uptime-bar-colors.tsx">
+  <UptimeBarColors />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "label",
+      type: "string",
+      description: "The service name.",
+      required: true,
+    },
+    {
+      name: "days",
+      type: "UptimeDay[]",
+      description:
+        "{ date: string; uptime: number | null; status?: UptimeStatus; note?: string }, oldest first. date is an ISO date.",
+      required: true,
+    },
+    {
+      name: "colors",
+      type: "Partial<Record<UptimeStatus, DitherColor>>",
+      default: "Ink, amber, --destructive, --muted-foreground",
+      description: 'Colours for "up", "degraded", "down" and "none".',
+    },
+    {
+      name: "locale",
+      type: "string",
+      default: '"en-US"',
+      description: "Locale for the dates in tooltips.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description:
+        "Size of one dither cell in CSS pixels. Small, so narrow bars still show a pattern.",
+    },
+  ]}
+/>
+
+## Notes
+
+- Status shows in density as well as colour: up is nearly solid, degraded is under half, an outage is solid and no data is sparse. The statuses stay apart for colour-blind readers and in greyscale.
+- Each bar is a button with a full description, such as "Oct 9, 2026, Degraded, 99.62% uptime". Only one bar is in the tab order; the arrow keys, Home and End move between days, and Escape closes the tooltip. Tapping a bar shows its tooltip on touch screens.
+- Dates are formatted in UTC, so the server and the browser agree.
