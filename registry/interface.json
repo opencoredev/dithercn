@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "name": "skeleton",
+    "type": "registry:component",
+    "title": "Skeleton",
+    "description": "Loading placeholders for blocks, text lines and avatars, with a shimmer that sweeps through the dither levels.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/skeleton.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/skeleton.tsx"
+      }
+    ]
+  },
+  {
+    "name": "loader",
+    "type": "registry:component",
+    "title": "Loader",
+    "description": "A small dithered loading indicator: ring, dot matrix, bar scanner or dissolving square.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/loader.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/loader.tsx"
+      }
+    ]
+  }
+]

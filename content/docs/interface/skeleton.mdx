@@ -1,0 +1,111 @@
+---
+title: "Skeleton"
+description: "Loading placeholders for blocks, text and avatars, with a shimmer that sweeps through the dither levels."
+---
+
+import SkeletonDemo from "@/examples/skeleton-demo";
+import SkeletonTable from "@/examples/skeleton-table";
+import SkeletonNeutral from "@/examples/skeleton-neutral";
+
+<ComponentPreview src="examples/skeleton-demo.tsx" size="lg">
+  <SkeletonDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="skeleton" />
+
+## Usage
+
+```tsx
+import { Skeleton } from "@/components/dithercn/skeleton";
+
+export function ProfileLoading() {
+  return (
+    <div aria-busy="true" className="flex items-center gap-3">
+      <span className="sr-only">Loading profile</span>
+      <Skeleton shape="circle" size={40} />
+      <Skeleton shape="text" lines={2} />
+    </div>
+  );
+}
+```
+
+A skeleton is a block by default: give it a size with `className`. `shape="text"` draws a stack of lines that fills its width, the last one shorter. `shape="circle"` draws an avatar of `size` pixels.
+
+Each skeleton is a sparse dither with a denser band sweeping across it. The band is five slices, each a step up the Bayer ramp, so its centre is the densest and its edges fall off level by level.
+
+## Examples
+
+### A table that is still loading
+
+Rows offset their `delay` so the sweep runs down the table as a wave instead of every row flashing at once.
+
+<ComponentPreview src="examples/skeleton-table.tsx" size="lg">
+  <SkeletonTable />
+</ComponentPreview>
+
+### Neutral colour, finer cells
+
+`color` takes any CSS colour or variable name. `--foreground` gives a grey skeleton that sits quietly in light and dark mode. Setting `--dither-cell` on a parent makes the dots finer.
+
+<ComponentPreview src="examples/skeleton-neutral.tsx" size="lg">
+  <SkeletonNeutral />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "shape",
+      type: '"block" | "text" | "circle"',
+      default: '"block"',
+      description: "A rectangle, lines of text, or an avatar.",
+    },
+    {
+      name: "lines",
+      type: "number",
+      default: "3",
+      description: "Text only. How many lines to draw.",
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "40",
+      description: "Circle only. Diameter in pixels.",
+    },
+    {
+      name: "color",
+      type: "string",
+      default: '"--dither-ink"',
+      description: "Colour of the dots. A CSS variable name or any CSS colour.",
+    },
+    {
+      name: "duration",
+      type: "number",
+      default: "2",
+      description: "Seconds for one sweep, including the short pause after it.",
+    },
+    {
+      name: "delay",
+      type: "number",
+      default: "0",
+      description:
+        "Seconds before the first sweep. Offset neighbours to make a wave.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and radius. Text skeletons fill their width.",
+    },
+  ]}
+/>
+
+## Notes
+
+- Skeletons are hidden from assistive technology. Put `aria-busy="true"` on the region that is loading and a short visually hidden label, such as `<span className="sr-only">Loading profile</span>`. Remove `aria-busy` when the content arrives.
+- With reduced motion turned on, the sweep is removed and the sparse dither stays still.
+- The shimmer is a CSS animation of `clip-path` only, so the dots never leave the cell grid. Offscreen skeletons cost nothing to paint.
+- The masks and keyframes ship in one small `<style>` tag that React hoists into the head once, however many skeletons are on the page.
