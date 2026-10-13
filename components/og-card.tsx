@@ -1,10 +1,10 @@
 import { SITE } from "@/constants/site";
 
 /** Satori markup shared by /og and /og/docs/*. Hex colours only. */
-const INK = "#14161c";
-const PAPER = "#e6e8ee";
+const INK = "#000000";
+const PAPER = "#fafafa";
 const BLUE = "#9aa3ff";
-const MUTED = "#9aa0b4";
+const MUTED = "#a3a3a3";
 
 const BAYER_4 = [
   [0, 8, 2, 10],

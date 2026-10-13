@@ -5,7 +5,7 @@ import { SITE, META_THEME_COLORS } from "@/constants/site";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    background_color: META_THEME_COLORS.light,
+    background_color: META_THEME_COLORS.dark,
     description: SITE.DESCRIPTION.LONG,
     display: "standalone",
     icons: [
@@ -23,6 +23,6 @@ export default function manifest(): MetadataRoute.Manifest {
     name: SITE.NAME,
     short_name: SITE.NAME,
     start_url: ROUTES.HOME,
-    theme_color: META_THEME_COLORS.light,
+    theme_color: META_THEME_COLORS.dark,
   };
 }
