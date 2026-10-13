@@ -15,11 +15,11 @@ import { DitherShader, ditherMaskStyle, ditherImage } from "@/lib/dither";
 
 It draws dithers three ways, and each component uses whichever fits:
 
-| You want | Use | Drawn with |
-| --- | --- | --- |
-| An animated or full-bleed surface | `DitherShader` | WebGL |
+| You want                           | Use                                | Drawn with        |
+| ---------------------------------- | ---------------------------------- | ----------------- |
+| An animated or full-bleed surface  | `DitherShader`                     | WebGL             |
 | A static fill for a shape or block | `DitherPattern`, `ditherMaskStyle` | SVG or a CSS mask |
-| A dithered photo or logo | `ditherImage` | The CPU, once |
+| A dithered photo or logo           | `ditherImage`                      | The CPU, once     |
 
 ## From tone to dots
 
