@@ -1,344 +1,270 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps, CSSProperties, ReactNode } from "react";
 
-import { isInked } from "@/lib/dither";
-import type { DitherColor, DitherMatrix } from "@/lib/dither";
+import { cssColor, isInked } from "@/lib/dither";
+import type { DitherColor, FillVariant } from "@/lib/dither";
 import { cn } from "@/lib/utils";
 
 /*
- * Each motif is a list of shapes on a 44x32 grid of cells, painted in
- * order. A shape is either shading, with a tone from 0 to 1 that the Bayer
- * matrix turns into dots of ink, or a line: solid one-cell outlines in the
- * line colour that give the drawing its edges. Behind everything sits a
- * soft round halo. The grid is rasterised once per motif and matrix into
- * two SVG paths, so the drawing is pixel art with real dither shading,
- * never a scaled or blurred image.
+ * The scene is a grid of cells, rasterised once into SVG paths, with a
+ * glyph tile at its centre. `rings` draws four concentric bands around
+ * the tile, each a step lighter than the one inside it, and ripples them
+ * outward by fading each band up and down in turn. `grid` draws a
+ * lattice of single cells that thins out towards the edges, like a floor
+ * the tile sits on. Both fade at the top and bottom through blue noise,
+ * so the scene dissolves into the surface instead of stopping at a line.
  */
 
-const COLS = 44;
-const ROWS = 32;
+const COLS = 84;
+const ROWS = 52;
+const CX = COLS / 2;
+const CY = ROWS / 2;
 
-export type EmptyStateMotif = "inbox" | "search" | "folder" | "chart";
+export type EmptyStateScene = "rings" | "grid" | "none";
 
-type Test = (x: number, y: number) => boolean;
+/** Rings: radius and width in cells, and coverage for a gradient fill. */
+const RINGS = [
+  { level: 0.6, radius: 15, width: 2.4 },
+  { level: 0.4, radius: 21, width: 2.2 },
+  { level: 0.26, radius: 27, width: 2 },
+  { level: 0.16, radius: 33, width: 1.8 },
+] as const;
 
-type Shape =
-  | { kind: "shade"; test: Test; tone: number }
-  | { kind: "line"; test: Test };
+const SOLID_OPACITY = [0.7, 0.45, 0.3, 0.18] as const;
 
-const rect =
-  (x0: number, y0: number, x1: number, y1: number): Test =>
-  (x, y) =>
-    x >= x0 && x <= x1 && y >= y0 && y <= y1;
+const mod4 = (value: number) => value % 4;
 
-/** The one-cell border of a rectangle. */
-const frame =
-  (x0: number, y0: number, x1: number, y1: number): Test =>
-  (x, y) =>
-    rect(x0, y0, x1, y1)(x, y) &&
-    (x === x0 || x === x1 || y === y0 || y === y1);
+const TEXTURE = {
+  dotted: (x: number, y: number) => y % 2 === 0 && (mod4(x) + y / 2) % 2 === 0,
+  hatched: (x: number, y: number) => mod4(x + y) === 3,
+} as const;
 
-const disc =
-  (cx: number, cy: number, radius: number): Test =>
-  (x, y) =>
-    Math.hypot(x + 0.5 - cx, y + 0.5 - cy) <= radius;
-
-const ring =
-  (cx: number, cy: number, inner: number, outer: number): Test =>
-  (x, y) => {
-    const distance = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
-    return distance >= inner && distance <= outer;
-  };
-
-/** A thick line from (x0, y0) to (x1, y1) with round ends. */
-const capsule =
-  (x0: number, y0: number, x1: number, y1: number, radius: number): Test =>
-  (x, y) => {
-    const px = x + 0.5 - x0;
-    const py = y + 0.5 - y0;
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const t = Math.min(
-      1,
-      Math.max(0, (px * dx + py * dy) / (dx * dx + dy * dy))
-    );
-    return Math.hypot(px - dx * t, py - dy * t) <= radius;
-  };
-
-const any =
-  (...tests: Test[]): Test =>
-  (x, y) =>
-    tests.some((test) => test(x, y));
-
-const not =
-  (test: Test): Test =>
-  (x, y) =>
-    !test(x, y);
-
-const both =
-  (a: Test, b: Test): Test =>
-  (x, y) =>
-    a(x, y) && b(x, y);
-
-const shade = (test: Test, tone: number): Shape => ({
-  kind: "shade",
-  test,
-  tone,
-});
-const line = (test: Test): Shape => ({ kind: "line", test });
-
-const TRAY = both(rect(6, 17, 38, 28), not(rect(15, 17, 29, 19)));
-const TRAY_EDGE = any(
-  rect(6, 17, 15, 17),
-  rect(29, 17, 38, 17),
-  rect(15, 17, 15, 20),
-  rect(29, 17, 29, 20),
-  rect(15, 20, 29, 20),
-  rect(6, 17, 6, 28),
-  rect(38, 17, 38, 28),
-  rect(6, 28, 38, 28)
-);
-
-const MOTIFS = {
-  chart: [
-    // Ghost bars, waiting for data.
-    shade(rect(12, 17, 16, 25), 0.22),
-    shade(rect(12, 17, 16, 17), 1),
-    shade(rect(19, 10, 23, 25), 0.22),
-    shade(rect(19, 10, 23, 10), 1),
-    shade(rect(26, 20, 30, 25), 0.22),
-    shade(rect(26, 20, 30, 20), 1),
-    shade(rect(33, 13, 37, 25), 0.22),
-    shade(rect(33, 13, 37, 13), 1),
-    line(any(rect(8, 4, 8, 26), rect(8, 26, 39, 26))),
-  ],
-  folder: [
-    shade(any(rect(7, 4, 17, 7), rect(7, 7, 37, 26)), 0.28),
-    line(any(frame(7, 4, 17, 7), frame(7, 7, 37, 26))),
-    // A sheet of paper peeking out.
-    shade(rect(11, 9, 33, 15), 0.08),
-    line(frame(11, 9, 33, 15)),
-    shade(rect(14, 11, 25, 11), 1),
-    // The front flap.
-    shade(rect(5, 13, 39, 27), 0.5),
-    line(frame(5, 13, 39, 27)),
-  ],
-  inbox: [
-    // A letter sitting in the tray.
-    shade(rect(15, 4, 29, 19), 0.08),
-    line(frame(15, 4, 29, 20)),
-    shade(rect(18, 8, 26, 8), 1),
-    shade(rect(18, 11, 25, 11), 1),
-    shade(rect(18, 14, 23, 14), 1),
-    shade(TRAY, 0.5),
-    line(TRAY_EDGE),
-  ],
-  search: [
-    // Glass, brighter at the top left.
-    shade(disc(19, 14, 8.6), 0.1),
-    shade(disc(15.5, 10.5, 3.2), 0.5),
-    line(ring(19, 14, 8.6, 9.9)),
-    shade(capsule(27, 22, 35, 30, 2.4), 0.55),
-    line(both(capsule(27, 22, 35, 30, 2.6), not(capsule(27, 22, 35, 30, 1.5)))),
-  ],
-} as const satisfies Record<EmptyStateMotif, readonly Shape[]>;
-
-/** The halo's tone at a cell: strongest at the centre, gone by its edge. */
-const haloTone = (x: number, y: number) => {
-  const distance = Math.hypot((x + 0.5 - COLS / 2) / 1.3, y + 0.5 - ROWS / 2);
-  const falloff = Math.max(0, 1 - distance / 17);
-  return 0.32 * falloff ** 1.4;
+/** 1 in the middle band, falling to 0 at the top and bottom edges. */
+const edgeFade = (y: number) => {
+  const from = Math.min(y + 0.5, ROWS - y - 0.5) / (ROWS * 0.32);
+  return Math.min(1, from);
 };
 
-interface Paths {
-  /** Dithered shading, in the ink colour. */
-  ink: string;
-  /** Solid outlines, in the line colour. */
-  line: string;
-}
+const ringInked = (fill: FillVariant, level: number, x: number, y: number) => {
+  if (!isInked("blue-noise", x, y, edgeFade(y))) {
+    return false;
+  }
+  switch (fill) {
+    case "gradient": {
+      return isInked("bayer4", x, y, level);
+    }
+    case "dotted":
+    case "hatched": {
+      return TEXTURE[fill](x, y);
+    }
+    case "solid": {
+      return true;
+    }
+    default: {
+      const exhaustive: never = fill;
+      return exhaustive;
+    }
+  }
+};
 
-const pathCache = new Map<string, Paths>();
+const cellRect = (x: number, y: number) => `M${x} ${y}h1v1h-1z`;
 
-const cellRect = (x: number, y: number, length: number) =>
-  `M${x} ${y}h${length}v1h${-length}z`;
+const ringCache = new Map<FillVariant, readonly string[]>();
 
-/** Two SVG paths, ink and line, with neighbouring cells in a row merged. */
-const rasterise = (
-  key: string,
-  shapes: readonly Shape[],
-  matrix: DitherMatrix
-): Paths => {
-  const cached = pathCache.get(key);
+/** One path per ring, so each can fade on its own. */
+const ringPaths = (fill: FillVariant) => {
+  const cached = ringCache.get(fill);
   if (cached !== undefined) {
     return cached;
   }
-  let ink = "";
-  let outline = "";
-  for (let y = 0; y < ROWS; y += 1) {
-    let inkStart = -1;
-    let lineStart = -1;
-    for (let x = 0; x <= COLS; x += 1) {
-      let tone = haloTone(x, y);
-      let isLine = false;
-      for (const shape of shapes) {
-        if (shape.test(x, y)) {
-          isLine = shape.kind === "line";
-          tone = shape.kind === "shade" ? shape.tone : 0;
+  const paths = RINGS.map(({ radius, width, level }) => {
+    let d = "";
+    for (let y = 0; y < ROWS; y += 1) {
+      for (let x = 0; x < COLS; x += 1) {
+        const distance = Math.hypot(x + 0.5 - CX, (y + 0.5 - CY) * 1.08);
+        if (
+          Math.abs(distance - radius) < width / 2 &&
+          ringInked(fill, level, x, y)
+        ) {
+          d += cellRect(x, y);
         }
       }
-      const inside = x < COLS;
-      const inked = inside && !isLine && isInked(matrix, x, y, tone);
-      const lined = inside && isLine;
-      if (inked && inkStart === -1) {
-        inkStart = x;
-      } else if (!inked && inkStart !== -1) {
-        ink += cellRect(inkStart, y, x - inkStart);
-        inkStart = -1;
-      }
-      if (lined && lineStart === -1) {
-        lineStart = x;
-      } else if (!lined && lineStart !== -1) {
-        outline += cellRect(lineStart, y, x - lineStart);
-        lineStart = -1;
-      }
     }
-  }
-  const paths = { ink, line: outline };
-  pathCache.set(key, paths);
+    return d;
+  });
+  ringCache.set(fill, paths);
   return paths;
 };
 
-const toCss = (color: DitherColor) =>
-  color.startsWith("--") ? `var(${color})` : color;
+let gridCache: string | undefined;
 
-interface MotifIllustration {
-  /** A built-in illustration. Default `"inbox"`. */
-  motif?: EmptyStateMotif;
-  icon?: never;
-}
+/** A lattice every third cell, thinning out with distance from the centre. */
+const gridPath = () => {
+  if (gridCache !== undefined) {
+    return gridCache;
+  }
+  let d = "";
+  for (let y = 1; y < ROWS; y += 3) {
+    for (let x = 0; x < COLS; x += 3) {
+      const distance = Math.hypot((x + 0.5 - CX) / CX, (y + 0.5 - CY) / CY);
+      const tone = Math.max(0, 1 - distance) ** 0.8 * 1.15;
+      if (isInked("bayer4", x / 3, (y - 1) / 3, tone)) {
+        d += cellRect(x, y);
+      }
+    }
+  }
+  gridCache = d;
+  return d;
+};
 
-interface IconIllustration {
-  /** Your own glyph, drawn over the dithered halo instead of a motif. */
-  icon: ReactNode;
-  motif?: never;
-}
+const STYLES = [
+  "@keyframes dcn-empty-ripple{0%,100%{opacity:0.4}30%{opacity:1}}",
+  ".dcn-empty-ring{animation:dcn-empty-ripple 3.6s cubic-bezier(0.77,0,0.175,1) var(--dcn-delay) infinite both}",
+  "@media (prefers-reduced-motion: reduce){.dcn-empty-ring{animation:none}}",
+].join("");
 
-export type EmptyStateIllustration = MotifIllustration | IconIllustration;
+type StyleWithVars = CSSProperties & Record<`--${string}`, string>;
 
-export type EmptyStateProps = Omit<ComponentProps<"div">, "title" | "color"> &
-  EmptyStateIllustration & {
-    /** The heading. Say what is empty, plainly. */
-    title: ReactNode;
-    /** One or two sentences: why it is empty and what to do next. */
-    description?: ReactNode;
-    /** Buttons or links, under the text. */
-    action?: ReactNode;
-    /** Colour of the dithered shading and halo. Default `--dither-ink`. */
-    color?: DitherColor;
-    /** Colour of the motif's outlines. Default `--foreground`. */
-    lineColor?: DitherColor;
-    /** Threshold matrix. Default `"bayer4"`. */
-    matrix?: DitherMatrix;
-    /** Size of one dither cell in CSS pixels. Default 3. */
-    cell?: number;
-  };
-
-const Illustration = ({
-  illustration,
-  color,
-  lineColor,
-  matrix,
-  cell,
-}: {
-  illustration: EmptyStateIllustration;
+interface SceneProps {
+  scene: EmptyStateScene;
+  fill: FillVariant;
   color: DitherColor;
-  lineColor: DitherColor;
-  matrix: DitherMatrix;
-  cell: number;
-}) => {
-  const motif = illustration.motif ?? "inbox";
-  const hasIcon = illustration.icon !== undefined;
-  const shapes = hasIcon ? [] : MOTIFS[motif];
-  const paths = rasterise(
-    `${hasIcon ? "icon" : motif}:${matrix}`,
-    shapes,
-    matrix
-  );
+  animate: boolean;
+}
+
+const Scene = ({ scene, fill, color, animate }: SceneProps) => {
+  if (scene === "none") {
+    return null;
+  }
+  const ink = cssColor(color);
   return (
-    <div
-      className="relative grid place-items-center"
-      style={{ height: ROWS * cell, width: COLS * cell }}
-    >
+    <>
+      <style href="dithercn-empty-state" precedence="dithercn">
+        {STYLES}
+      </style>
       <svg
         aria-hidden="true"
         viewBox={`0 0 ${COLS} ${ROWS}`}
-        width={COLS * cell}
-        height={ROWS * cell}
         shapeRendering="crispEdges"
-        className="absolute inset-0"
+        preserveAspectRatio="xMidYMid meet"
+        className="absolute inset-0 size-full"
       >
-        <path d={paths.ink} style={{ fill: toCss(color) }} />
-        <path d={paths.line} style={{ fill: toCss(lineColor) }} />
+        {scene === "grid" ? (
+          <path d={gridPath()} style={{ fill: ink, opacity: 0.6 }} />
+        ) : (
+          ringPaths(fill).map((d, index) => {
+            const style: StyleWithVars = {
+              "--dcn-delay": `${index * 0.45}s`,
+              fill: ink,
+              opacity: fill === "solid" ? SOLID_OPACITY[index] : undefined,
+            };
+            return (
+              <path
+                key={RINGS[index]?.radius ?? index}
+                d={d}
+                className={animate ? "dcn-empty-ring" : undefined}
+                style={style}
+              />
+            );
+          })
+        )}
       </svg>
-      {hasIcon ? (
-        <div className="bg-background text-foreground ring-border relative grid size-12 place-items-center rounded-xl shadow-sm ring-1 [&_svg:not([class*='size-'])]:size-5">
-          {illustration.icon}
-        </div>
-      ) : null}
-    </div>
+    </>
   );
 };
 
+/** A dashed square: the default glyph, for "nothing here yet". */
+const EmptyGlyph = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect
+      x="4.5"
+      y="4.5"
+      width="15"
+      height="15"
+      rx="3"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeDasharray="3 2.6"
+    />
+    <path
+      d="M9.5 12h5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+export type EmptyStateProps = Omit<ComponentProps<"div">, "title" | "color"> & {
+  /** The heading. Say what is empty, plainly. */
+  title: ReactNode;
+  /** One or two sentences: why it is empty and what to do next. */
+  description?: ReactNode;
+  /** Buttons or links, under the text. */
+  action?: ReactNode;
+  /** The glyph in the tile, such as an icon from your icon set. Default: a dashed square. */
+  icon?: ReactNode;
+  /** What surrounds the tile. Default `"rings"`. */
+  scene?: EmptyStateScene;
+  /** Texture of the rings. Default `"gradient"`. */
+  fill?: FillVariant;
+  /** Colour of the scene: a palette name or any CSS colour. Default `"ink"`. */
+  color?: DitherColor;
+  /** Ripple the rings outward. Default `true`. */
+  animate?: boolean;
+  /** Heading level. Default `"h3"`. */
+  titleAs?: "h2" | "h3" | "h4";
+};
+
 /**
- * A placeholder for a view with nothing in it yet: a dithered
- * illustration, a title, a short description and an action. Pick a
- * built-in `motif`, or pass your own `icon`.
+ * A placeholder for a view with nothing in it yet: a glyph tile in a
+ * dithered scene, a title, a short description and an action.
  */
 export const EmptyState = ({
   title,
   description,
   action,
-  color = "--dither-ink",
-  lineColor = "--foreground",
-  matrix = "bayer4",
-  cell = 3,
-  motif,
   icon,
+  scene = "rings",
+  fill = "gradient",
+  color = "ink",
+  animate = true,
+  titleAs: Heading = "h3",
   className,
   ...props
-}: EmptyStateProps) => {
-  const illustration: EmptyStateIllustration =
-    icon === undefined ? { motif } : { icon };
-  return (
+}: EmptyStateProps) => (
+  <div
+    data-slot="empty-state"
+    className={cn(
+      "flex flex-col items-center px-6 py-10 text-center",
+      className
+    )}
+    {...props}
+  >
     <div
-      data-slot="empty-state"
       className={cn(
-        "flex flex-col items-center px-6 py-10 text-center",
-        className
+        "relative grid w-full max-w-[336px] place-items-center",
+        scene === "none" ? "h-auto" : "aspect-[84/52]"
       )}
-      {...props}
     >
-      <Illustration
-        illustration={illustration}
-        color={color}
-        lineColor={lineColor}
-        matrix={matrix}
-        cell={Math.max(1, Math.round(cell))}
-      />
-      <div className="mt-5 flex max-w-sm flex-col gap-1.5">
-        <h3 className="text-base font-semibold tracking-tight text-balance">
-          {title}
-        </h3>
-        {description === undefined ? null : (
-          <p className="text-muted-foreground text-sm text-pretty">
-            {description}
-          </p>
-        )}
+      <Scene scene={scene} fill={fill} color={color} animate={animate} />
+      <div className="bg-background text-foreground ring-border relative grid size-14 place-items-center rounded-2xl shadow-[0_1px_2px_oklch(0_0_0/0.12),0_8px_24px_-8px_oklch(0_0_0/0.35)] ring-1 [&_svg:not([class*='size-'])]:size-6">
+        {icon ?? <EmptyGlyph />}
       </div>
-      {action === undefined ? null : (
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-          {action}
-        </div>
+    </div>
+    <div className="mt-4 flex max-w-sm flex-col gap-1.5">
+      <Heading className="text-base font-semibold tracking-tight text-balance">
+        {title}
+      </Heading>
+      {description === undefined ? null : (
+        <p className="text-muted-foreground text-sm text-pretty">
+          {description}
+        </p>
       )}
     </div>
-  );
-};
+    {action === undefined ? null : (
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+        {action}
+      </div>
+    )}
+  </div>
+);

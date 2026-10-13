@@ -1,9 +1,21 @@
+"use client";
+
 import { DitherCard } from "@/components/dithercn/dither-card";
+import { usePreviewValue } from "@/components/preview-controls";
+import * as knobs from "@/examples/dither-card-controls";
 
 export default function DitherCardDemo() {
+  const fill = usePreviewValue(knobs.fill);
+  const color = usePreviewValue(knobs.tint);
+  const glow = usePreviewValue(knobs.glow);
+  const strength = usePreviewValue(knobs.strength);
+
   return (
     <DitherCard
-      glow="top-right"
+      glow={glow}
+      fill={fill}
+      color={color}
+      strength={strength}
       interactive
       reach={170}
       tabIndex={0}

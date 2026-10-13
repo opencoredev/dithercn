@@ -1,6 +1,8 @@
+import Link from "next/link";
+
 import { DitherButton } from "@/components/dithercn/dither-button";
 
-export default function DitherButtonLinks() {
+export default function DitherButtonLink() {
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
       <div className="flex flex-col gap-2">
@@ -11,10 +13,12 @@ export default function DitherButtonLinks() {
           Copy them in with the shadcn CLI. Own the code.
         </span>
       </div>
-      <div className="flex flex-wrap justify-center gap-3 [--dither-cell:2px]">
-        <DitherButton href="/docs/installation">Install dithercn</DitherButton>
-        <DitherButton href="/docs/catalog" variant="outline">
-          Browse the catalog
+      <div className="flex flex-wrap justify-center gap-3">
+        <DitherButton asChild size="lg" bloom="low">
+          <Link href="/docs/installation">Install dithercn</Link>
+        </DitherButton>
+        <DitherButton asChild size="lg" variant="outline" fill="dotted">
+          <Link href="/docs/catalog">Browse the catalog</Link>
         </DitherButton>
       </div>
     </div>

@@ -1,13 +1,19 @@
 ---
 title: "Dither button"
-description: "A button whose hover and press fill dissolves in through the Bayer levels."
+description: "A button filled with a dither texture that grows denser on hover and denser again while you press it."
 ---
 
 import DitherButtonDemo from "@/examples/dither-button-demo";
-import DitherButtonSizes from "@/examples/dither-button-sizes";
-import DitherButtonLinks from "@/examples/dither-button-links";
+import { controls as ditherButtonControls } from "@/examples/dither-button-controls";
+import DitherButtonPalette from "@/examples/dither-button-palette";
+import DitherButtonForm from "@/examples/dither-button-form";
+import DitherButtonLink from "@/examples/dither-button-link";
 
-<ComponentPreview src="examples/dither-button-demo.tsx" size="sm">
+<ComponentPreview
+  src="examples/dither-button-demo.tsx"
+  size="sm"
+  controls={ditherButtonControls}
+>
   <DitherButtonDemo />
 </ComponentPreview>
 
@@ -23,33 +29,43 @@ import { DitherButton } from "@/components/dithercn/dither-button";
 export function Actions() {
   return (
     <>
-      <DitherButton>Get started</DitherButton>
-      <DitherButton variant="outline" href="/docs">
-        Read the docs
+      <DitherButton color="blue">Deploy</DitherButton>
+      <DitherButton variant="outline" fill="dotted">
+        View logs
       </DitherButton>
     </>
   );
 }
 ```
 
-Behind the label sit eight copies of the hover fill, each masked to one Bayer level. On hover they switch on lightest first, about 25 milliseconds apart, so the fill dissolves in through the matrix. When the pointer leaves, they switch off densest first. Pressing runs the same dissolve twice as fast, which also gives touch screens feedback.
+`DitherButton` renders a real `<button>` with `type="button"` unless you pass another `type`. The fill sits in three layers behind the label: rest, hover and press. Each layer has more inked cells than the one below it, so as the hover layer fades in the texture eases denser, and pressing adds the third. Only opacity animates, so the cells stay on the grid.
+
+`filled` buttons show the rest texture over a light tint of their colour. `outline` buttons start bare with a thin edge and take on the texture when you point at them, which suits secondary actions.
 
 ## Examples
 
-### Sizes and icons
+### Fills and colours
 
-Three sizes, with icons on either side. Disabled buttons drop to half opacity and ignore the pointer.
+Every fill in four colours. `gradient` is densest at the bottom edge and thins upward through the Bayer levels; `dotted` adds dots to a staggered lattice; `hatched` doubles its diagonals and then crosses them; `solid` is flat colour with a lighter dither rising on hover.
 
-<ComponentPreview src="examples/dither-button-sizes.tsx">
-  <DitherButtonSizes />
+<ComponentPreview src="examples/dither-button-palette.tsx" size="md">
+  <DitherButtonPalette />
 </ComponentPreview>
 
-### As links
+### Loading in a form
 
-Give the button `href` and it renders an `<a>` with the same look, no `asChild` needed. Here `--dither-cell: 2px` on the parent makes the dissolve finer.
+`loading` keeps the label and the button's width, steps three cells before the label, pulses the hover texture, and sets `aria-busy`. Clicks are ignored until it clears. Submit this one to see it.
 
-<ComponentPreview src="examples/dither-button-links.tsx">
-  <DitherButtonLinks />
+<ComponentPreview src="examples/dither-button-form.tsx" size="md">
+  <DitherButtonForm />
+</ComponentPreview>
+
+### As a link
+
+Pass `asChild` and a single child, such as Next.js `Link` or a plain `<a>`, and the child gets the button's look and fill. It stays a link: right click and middle click work, and the router handles navigation.
+
+<ComponentPreview src="examples/dither-button-link.tsx" size="md">
+  <DitherButtonLink />
 </ComponentPreview>
 
 ## Props
@@ -58,39 +74,66 @@ Give the button `href` and it renders an `<a>` with the same look, no `asChild` 
   rows={[
     {
       name: "variant",
-      type: '"solid" | "outline" | "ghost"',
-      default: '"solid"',
+      type: '"filled" | "outline"',
+      default: '"filled"',
       description:
-        "Solid fills with a lighter primary in dark mode and a darker one in light mode. Outline fills with a light tint of the ink; ghost with the accent colour.",
+        "Filled shows the texture at rest. Outline starts bare and fills in on hover.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description: "The texture of the fill.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        'A palette name such as "blue" or "green", a CSS variable name, or any CSS colour.',
     },
     {
       name: "size",
-      type: '"sm" | "md" | "lg"',
+      type: '"sm" | "md" | "lg" | "icon"',
       default: '"md"',
-      description: "Heights of 32, 36 and 44 pixels.",
-    },
-    {
-      name: "href",
-      type: "string",
-      default: "–",
       description:
-        "Render a link instead of a button. Every other anchor attribute passes through.",
+        "Heights of 32, 36 and 44 pixels. icon is a 36 pixel square for a lone icon; give it an aria-label.",
     },
     {
-      name: "type",
-      type: '"button" | "submit" | "reset"',
-      default: '"button"',
-      description: "Button only. Set submit inside forms.",
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "A soft glow in the button's colour that follows the cells.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "loading",
+      type: "boolean",
+      default: "false",
+      description:
+        "Busy state: keeps the label, ignores clicks and sets aria-busy.",
+    },
+    {
+      name: "asChild",
+      type: "boolean",
+      default: "false",
+      description:
+        "Render your own single child, such as a link, with the button's look.",
     },
   ]}
 />
 
-All other props pass through to the `<button>` or `<a>`.
+All other props pass through to the `<button>`, or to your child with `asChild`.
 
 ## Notes
 
-- Focus shows a 3 pixel ring with `:focus-visible`, so it appears for the keyboard and not for clicks.
-- The hover fill only runs on devices that can hover. With reduced motion turned on, the fill changes in one step and the press does not scale.
-- Every copy switches with a zero-length transition and its own delay, so a hover that ends halfway reverses from where it got to instead of restarting.
-- The masks ship in one small hoisted `<style>` tag shared by every button on the page. The button needs no client JavaScript.
-- With `href`, the button renders a plain `<a>`, so navigation is a full page load. For client-side navigation in Next.js, call `router.push` from `onClick` on a button instead.
+- Focus shows a 2 pixel outline with `:focus-visible` and the hover texture, so keyboard users see the same density step as pointer users.
+- Hover only applies on devices that can hover. Press works everywhere, so touch screens get the denser fill as feedback.
+- With reduced motion, the layers switch without fading, the press does not scale, and the loading cells hold still.
+- Disabled and loading buttons drop to 45% opacity and a not-allowed or progress cursor. For a disabled link, set `aria-disabled` on it and leave out `href`.
+- The fill is plain CSS masks in one shared `<style>` tag. The button only needs client JavaScript for `asChild` and `loading`.

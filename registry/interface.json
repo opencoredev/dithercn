@@ -14,6 +14,20 @@
     ]
   },
   {
+    "name": "avatar",
+    "type": "registry:component",
+    "title": "Avatar",
+    "description": "A generative avatar drawn from a string as a mirrored dither face, with an overlapping avatar group.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/avatar.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/avatar.tsx"
+      }
+    ]
+  },
+  {
     "name": "loader",
     "type": "registry:component",
     "title": "Loader",
@@ -87,7 +101,7 @@
     "name": "dither-button",
     "type": "registry:component",
     "title": "Dither button",
-    "description": "A button whose hover and press fill dissolves in through the Bayer levels.",
+    "description": "A button filled with a dither texture in any palette colour that grows denser on hover and press, with sizes, loading and asChild.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
@@ -95,6 +109,7 @@
         "type": "registry:component",
         "target": "components/dithercn/dither-button.tsx"
       }
-    ]
+    ],
+    "dependencies": ["radix-ui"]
   }
 ]

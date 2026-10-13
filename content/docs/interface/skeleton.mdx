@@ -1,13 +1,18 @@
 ---
 title: "Skeleton"
-description: "Loading placeholders for blocks, text and avatars, with a shimmer that sweeps through the dither levels."
+description: "Quiet loading placeholders for blocks, text lines and avatars, with a band of denser dither that sweeps across."
 ---
 
 import SkeletonDemo from "@/examples/skeleton-demo";
+import { controls as skeletonControls } from "@/examples/skeleton-controls";
+import SkeletonDashboard from "@/examples/skeleton-dashboard";
 import SkeletonTable from "@/examples/skeleton-table";
-import SkeletonNeutral from "@/examples/skeleton-neutral";
 
-<ComponentPreview src="examples/skeleton-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/skeleton-demo.tsx"
+  size="lg"
+  controls={skeletonControls}
+>
   <SkeletonDemo />
 </ComponentPreview>
 
@@ -33,9 +38,17 @@ export function ProfileLoading() {
 
 A skeleton is a block by default: give it a size with `className`. `shape="text"` draws a stack of lines that fills its width, the last one shorter. `shape="circle"` draws an avatar of `size` pixels.
 
-Each skeleton is a sparse dither with a denser band sweeping across it. The band is five slices, each a step up the Bayer ramp, so its centre is the densest and its edges fall off level by level.
+Each skeleton has three layers in one colour: a faint tint, a sparse texture in the `fill` you pick, and a band of denser dither that sweeps across. The band is four slices, each a step up the Bayer ramp, so its middle is the densest and its edges fall off level by level. The levels stay low on purpose, so the placeholder sits below the content it stands in for. The default colour is grey; use your ink or a palette colour where the real content will be coloured.
 
 ## Examples
+
+### A dashboard that is still loading
+
+Labels you already know stay as text; only the numbers and the chart are placeholders. The figures use `ink`, so they hint at the coloured values on the way, and the chart uses a `gradient` texture that thickens towards the left.
+
+<ComponentPreview src="examples/skeleton-dashboard.tsx" size="lg">
+  <SkeletonDashboard />
+</ComponentPreview>
 
 ### A table that is still loading
 
@@ -43,14 +56,6 @@ Rows offset their `delay` so the sweep runs down the table as a wave instead of 
 
 <ComponentPreview src="examples/skeleton-table.tsx" size="lg">
   <SkeletonTable />
-</ComponentPreview>
-
-### Neutral colour, finer cells
-
-`color` takes any CSS colour or variable name. `--foreground` gives a grey skeleton that sits quietly in light and dark mode. Setting `--dither-cell` on a parent makes the dots finer.
-
-<ComponentPreview src="examples/skeleton-neutral.tsx" size="lg">
-  <SkeletonNeutral />
 </ComponentPreview>
 
 ## Props
@@ -67,7 +72,7 @@ Rows offset their `delay` so the sweep runs down the table as a wave instead of 
       name: "lines",
       type: "number",
       default: "3",
-      description: "Text only. How many lines to draw.",
+      description: "Text only. How many lines; the last one is shorter.",
     },
     {
       name: "size",
@@ -77,35 +82,48 @@ Rows offset their `delay` so the sweep runs down the table as a wave instead of 
     },
     {
       name: "color",
-      type: "string",
-      default: '"--dither-ink"',
-      description: "Colour of the dots. A CSS variable name or any CSS colour.",
+      type: "DitherColor",
+      default: '"grey"',
+      description:
+        'A palette name such as "ink" or "blue", a CSS variable name, or any CSS colour.',
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"dotted"',
+      description: "Texture of the resting layer. Solid is a plain tint.",
+    },
+    {
+      name: "animation",
+      type: '"sweep" | "pulse" | "none"',
+      default: '"sweep"',
+      description:
+        "A dense band sweeping across, the texture breathing, or nothing.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description: "Size of one dither cell in CSS pixels.",
     },
     {
       name: "duration",
       type: "number",
-      default: "2",
-      description: "Seconds for one sweep, including the short pause after it.",
+      default: "2.2",
+      description: "Seconds for one sweep, including the pause after it.",
     },
     {
       name: "delay",
       type: "number",
       default: "0",
       description:
-        "Seconds before the first sweep. Offset neighbours to make a wave.",
-    },
-    {
-      name: "className",
-      type: "string",
-      default: "–",
-      description: "Size and radius. Text skeletons fill their width.",
+        "Seconds to wait before the first sweep. Offset it per row for a wave.",
     },
   ]}
 />
 
 ## Notes
 
-- Skeletons are hidden from assistive technology. Put `aria-busy="true"` on the region that is loading and a short visually hidden label, such as `<span className="sr-only">Loading profile</span>`. Remove `aria-busy` when the content arrives.
-- With reduced motion turned on, the sweep is removed and the sparse dither stays still.
-- The shimmer is a CSS animation of `clip-path` only, so the dots never leave the cell grid. Offscreen skeletons cost nothing to paint.
-- The masks and keyframes ship in one small `<style>` tag that React hoists into the head once, however many skeletons are on the page.
+- Skeletons are hidden from assistive technology. Put `aria-busy="true"` on the region that is loading and a visually hidden sentence such as "Loading members", as the examples do.
+- With reduced motion, the sweep is removed and the pulse holds still; the texture stays, so the placeholder still reads as one.
+- The sweep animates `clip-path` on masked layers, and the pulse animates opacity. There is no JavaScript and no canvas, so a page full of skeletons costs one small shared `<style>` tag.

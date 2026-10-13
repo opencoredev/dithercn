@@ -3,11 +3,16 @@ title: "Dither card"
 description: "A card surface with a dithered glow in a corner or along an edge, which can grow through the levels on hover."
 ---
 
+import { controls as ditherCardControls } from "@/examples/dither-card-controls";
 import DitherCardDemo from "@/examples/dither-card-demo";
 import DitherCardGlows from "@/examples/dither-card-glows";
 import DitherCardPalette from "@/examples/dither-card-palette";
 
-<ComponentPreview src="examples/dither-card-demo.tsx" size="lg">
+<ComponentPreview
+  src="examples/dither-card-demo.tsx"
+  size="lg"
+  controls={ditherCardControls}
+>
   <DitherCardDemo />
 </ComponentPreview>
 
@@ -47,9 +52,9 @@ The glow is a stack of rings, each filled with a denser dither than the one belo
   <DitherCardGlows />
 </ComponentPreview>
 
-### Colour and grain
+### Colour and texture
 
-Any colour works, including chart colours and `--foreground` for a neutral light. Blue noise with 2 pixel cells gives a fine, even grain; Bayer 8×8 gives the smoothest falloff.
+`color` takes a palette name or any CSS colour, and `fill` changes the texture. On the left, green with blue noise and 2 pixel cells for a fine, even grain. On the right, orange with a hatched fill: every ring shares the hatching, and where the rings overlap near the edge the lines build up.
 
 <ComponentPreview src="examples/dither-card-palette.tsx" size="lg">
   <DitherCardPalette />
@@ -85,9 +90,17 @@ Any colour works, including chart colours and `--foreground` for a neutral light
     },
     {
       name: "color",
-      type: "string",
-      default: '"--dither-ink"',
-      description: "Glow colour. A CSS variable name or any CSS colour.",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        'Glow colour: a palette name such as "green", a CSS variable name, or any CSS colour.',
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description:
+        "Texture of the glow. Gradient steps through dither levels; the others stack one texture and fade it by overlap.",
     },
     {
       name: "matrix",

@@ -1,18 +1,24 @@
+import { DitherButton } from "@/components/dithercn/dither-button";
 import { NotFound } from "@/components/dithercn/not-found";
-import { Button } from "@/components/ui/button";
 
 export default function NotFoundCompact() {
   return (
-    <div className="bg-background w-full max-w-md rounded-2xl border">
+    <div className="bg-background ring-border w-full max-w-md rounded-xl ring-1">
       <NotFound
         titleAs="h2"
         animate={false}
-        cell={2}
-        color="--foreground"
+        cell={3}
+        depth={2}
+        color="grey"
+        fill="dotted"
         title="Project not found"
         description="It may have been deleted, or you may not have access."
-        actions={<Button size="sm">See all projects</Button>}
-        className="py-10 [&>div:first-of-type]:text-[6rem]"
+        actions={
+          <DitherButton size="sm" variant="outline" color="grey">
+            See all projects
+          </DitherButton>
+        }
+        className="py-10 [&_h2]:text-lg"
       />
     </div>
   );
