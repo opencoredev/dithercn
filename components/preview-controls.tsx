@@ -317,20 +317,37 @@ const ControlRow = ({
   }
 };
 
+/** `tray` sits under the stage; `sidebar` is one column beside it. */
+export type PreviewControlsLayout = "tray" | "sidebar";
+
+const LAYOUT_CLASS = {
+  sidebar: {
+    grid: "grid-cols-1 lg:grid-cols-1",
+    root: "border-t lg:border-t-0",
+  },
+  tray: { grid: "grid-cols-1 sm:grid-cols-2", root: "border-t" },
+} as const satisfies Record<
+  PreviewControlsLayout,
+  { grid: string; root: string }
+>;
+
 /**
- * The controls tray under the stage, one or two columns wide. Each
- * change re-renders the demo with the new value; Replay keeps the values.
+ * The controls tray under the stage, one or two columns wide, or a single
+ * column beside a full-screen stage. Each change re-renders the demo with
+ * the new value; Replay keeps the values.
  */
 export const PreviewControlsPanel = ({
   controls,
   values,
   onChange,
   onReset,
+  layout = "tray",
 }: {
   controls: readonly PreviewControl[];
   values: Values;
   onChange: (id: string, value: PreviewValue) => void;
   onReset: () => void;
+  layout?: PreviewControlsLayout;
 }) => {
   const changed = controls.some(
     (control) => readControl(control, values[control.id]) !== control.default
@@ -339,7 +356,10 @@ export const PreviewControlsPanel = ({
     <div
       role="group"
       aria-label="Preview controls"
-      className="border-border/70 flex flex-col gap-4 border-t px-5 pt-4 pb-5 sm:px-6"
+      className={cn(
+        "border-border/70 flex flex-col gap-4 px-5 pt-4 pb-5 sm:px-6",
+        LAYOUT_CLASS[layout].root
+      )}
     >
       <div className="flex h-5 items-center justify-between">
         <span className="text-foreground font-mono text-[11px] tracking-[0.08em] uppercase">
@@ -354,7 +374,7 @@ export const PreviewControlsPanel = ({
           Reset
         </button>
       </div>
-      <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+      <div className={cn("grid gap-x-6 gap-y-4", LAYOUT_CLASS[layout].grid)}>
         {controls.map((control) => (
           <ControlRow
             key={control.id}

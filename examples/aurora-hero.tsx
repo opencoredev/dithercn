@@ -5,7 +5,9 @@ export default function AuroraHero() {
     <section className="relative isolate flex size-full flex-col items-center justify-end gap-3 px-6 pb-14 text-center">
       <Aurora
         height={0.55}
+        tipColor="blue"
         intensity={0.85}
+        mask="edges"
         className="absolute inset-0 -z-10"
       />
       <h3 className="max-w-md text-3xl font-medium tracking-[-0.03em] text-balance sm:text-4xl">

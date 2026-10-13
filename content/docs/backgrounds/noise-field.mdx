@@ -1,13 +1,14 @@
 ---
 title: "Noise field"
-description: "A slow, folding noise texture drawn as a dither, with a mask that clears space for the text on top."
+description: "A slow, folding noise texture drawn as a dither, in four styles, with a mask that clears space for the text on top."
 ---
 
 import NoiseFieldDemo from "@/examples/noise-field-demo";
 import { controls as noiseFieldControls } from "@/examples/noise-field-controls";
 import NoiseFieldMasked from "@/examples/noise-field-masked";
 import NoiseFieldCard from "@/examples/noise-field-card";
-import NoiseFieldContour from "@/examples/noise-field-contour";
+import NoiseFieldTopography from "@/examples/noise-field-topography";
+import NoiseFieldMarble from "@/examples/noise-field-marble";
 
 <ComponentPreview
   src="examples/noise-field-demo.tsx"
@@ -37,13 +38,20 @@ export function Section() {
 }
 ```
 
-The field is fractal noise folded back on itself, so it flows like smoke rather than scrolling. It uses `bayer8` by default, whose 64 tones keep the folds smooth. Blue noise gives a grainier, film-like look.
+The field is fractal noise folded back on itself, so it flows like smoke rather than scrolling. `variant` changes what the noise draws:
+
+- `smoke`, the default: soft folds that dither into smooth gradients.
+- `ridges`: sharp creases, like veins or lightning.
+- `contours`: topographic lines, spaced by `bands`.
+- `marble`: warped stripes, also set by `bands`.
+
+`warp`, `detail` and `scale` shape the noise itself. `contrast`, `coverage` and `intensity` decide how much of it turns to ink. `angle` and `flow` set where it drifts, and `mask` with `maskSize` clears room for your text.
 
 ## Examples
 
 ### Cleared under a headline
 
-`mask="center"` fades the field to paper in the middle of the box. Use `"top"` or `"bottom"` when the text sits at one end instead.
+`mask="center"` fades the field to paper in the middle of the box. Use `"top"` or `"bottom"` when the text sits at one end, and `maskSize` to clear more or less.
 
 <ComponentPreview
   src="examples/noise-field-masked.tsx"
@@ -61,22 +69,56 @@ A high `scale`, a low `intensity` and 2px cells turn it into a texture you notic
   <NoiseFieldCard />
 </ComponentPreview>
 
-### Hard contours
+### Topographic lines
 
-High `contrast` with only three `levels` snaps the noise into islands with dithered shores, like a topographic map.
+`variant="contours"` draws the noise as height lines, a good fit for maps and region stats. A bottom `mask` keeps the numbers on clean paper, and a low `flow` lets the terrain shift slowly.
+
+<ComponentPreview src="examples/noise-field-topography.tsx">
+  <NoiseFieldTopography />
+</ComponentPreview>
+
+### Marble with a highlight
+
+`variant="marble"` with more `warp` bends the stripes into veins. `highlight` adds a third colour for the brightest peaks, here the foreground, so the stripes catch the light.
 
 <ComponentPreview
-  src="examples/noise-field-contour.tsx"
+  src="examples/noise-field-marble.tsx"
   size="lg"
   align="stretch"
 >
-  <NoiseFieldContour />
+  <NoiseFieldMarble />
 </ComponentPreview>
 
 ## Props
 
 <PropsTable
   rows={[
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"--dither-ink"',
+      description: "The ink of the texture.",
+    },
+    {
+      name: "highlight",
+      type: "DitherColor",
+      default: "\u2013",
+      description:
+        "A third colour for the brightest peaks. Leave it out for two tones.",
+    },
+    {
+      name: "background",
+      type: "DitherColor",
+      default: '"--dither-paper"',
+      description: "The paper behind.",
+    },
+    {
+      name: "variant",
+      type: '"smoke" | "ridges" | "contours" | "marble"',
+      default: '"smoke"',
+      description:
+        "The shape of the texture: soft folds, sharp creases, topographic lines or warped stripes.",
+    },
     {
       name: "scale",
       type: "number",
@@ -85,42 +127,95 @@ High `contrast` with only three `levels` snaps the noise into islands with dithe
         "Size of the features. Higher values give smaller, busier noise.",
     },
     {
+      name: "warp",
+      type: "number",
+      default: "1.7",
+      description:
+        "How far the noise folds back on itself, from 0 (plain noise) to 4.",
+    },
+    {
+      name: "detail",
+      type: "number",
+      default: "4",
+      description:
+        "Octaves of noise, from 1 (smooth blobs) to 6 (fine grain on top).",
+    },
+    {
       name: "contrast",
       type: "number",
       default: "1.2",
       description: "1 is soft. 2 and up give hard-edged islands.",
     },
     {
+      name: "coverage",
+      type: "number",
+      default: "0",
+      description:
+        "How much of the box is inked, from -0.5 (sparse) to 0.5 (dense).",
+    },
+    {
       name: "intensity",
       type: "number",
-      default: "0.75",
+      default: "0.9",
       description: "Brightest tone the field reaches, from 0 to 1.",
     },
     {
-      name: "mask",
-      type: '"none" | "center" | "top" | "bottom"',
-      default: '"none"',
-      description: "Fades the field out where your text sits.",
+      name: "bands",
+      type: "number",
+      default: "8",
+      description:
+        'Lines for "contours" and stripes for "marble", from 2 to 24.',
     },
     {
-      name: "levels",
+      name: "angle",
       type: "number",
-      default: "All the matrix can draw",
+      default: "90",
+      description: "Direction it drifts in, in degrees. 0 is right, 90 is up.",
+    },
+    {
+      name: "flow",
+      type: "number",
+      default: "1",
+      description: "How fast it drifts along angle, from 0 to 4.",
+    },
+    {
+      name: "invert",
+      type: "boolean",
+      default: "false",
+      description: "Swaps paper and ink.",
+    },
+    {
+      name: "mask",
+      type: '"none" | "center" | "top" | "bottom" | "edges"',
+      default: '"none"',
       description:
-        "Tones the field snaps to before dithering. Low values give contours.",
+        'Fades the field out where your text sits. "edges" keeps only the middle.',
+    },
+    {
+      name: "maskSize",
+      type: "number",
+      default: "0.5",
+      description: "How much of the box the mask clears, from 0 to 1.",
     },
     {
       name: "palette",
       type: "[DitherColor, DitherColor, ...DitherColor[]]",
-      default: '["--dither-paper", "--dither-ink"]',
+      default: "Built from the colour props",
       description:
-        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+        "Takes over the colours: paper first, brightest last. Palette names, CSS variable names or any CSS colour.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer8"',
       description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "levels",
+      type: "number",
+      default: "All the matrix can draw",
+      description:
+        "Tones the field snaps to before dithering. Low values give hard steps.",
     },
     {
       name: "cell",
@@ -141,9 +236,16 @@ High `contrast` with only three `levels` snaps the noise into islands with dithe
       description: "false draws one still frame.",
     },
     {
+      name: "stillTime",
+      type: "number",
+      default: "0",
+      description:
+        "The moment drawn when motion is off or reduced, in seconds.",
+    },
+    {
       name: "className",
       type: "string",
-      default: "–",
+      default: "\u2013",
       description: "Size and position. The background fills this box.",
     },
   ]}
@@ -154,4 +256,4 @@ High `contrast` with only three `levels` snaps the noise into islands with dithe
 - It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
 - With reduced motion turned on, it draws one still frame and stops.
 - It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a CSS approximation in the same colours.
-- It costs one small draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/concepts/performance).
+- It costs one small draw per frame at 30 fps, at one pixel per dither cell. Each step of `detail` adds a layer of noise, so lower it on large, busy pages. See [Performance](/docs/concepts/performance).
