@@ -18,7 +18,19 @@ import { countPieces, getCatalog } from "@/lib/catalog";
 import { BreadcrumbJsonLd } from "@/seo/json-ld";
 
 const H2_CLS =
-  "text-[1.75rem] leading-tight font-medium tracking-[-0.03em] sm:text-[2rem]";
+  "text-[2.5rem] leading-[1.02] font-medium tracking-[-0.045em] text-balance sm:text-5xl lg:text-[3.75rem]";
+
+const LEAD_CLS = "text-muted-foreground max-w-xl text-lg text-pretty";
+
+const LINK_CLS =
+  "group/see text-foreground focus-visible:ring-ring/50 inline-flex w-fit items-center gap-1 rounded-full text-sm font-medium outline-none focus-visible:ring-[3px]";
+
+const LinkArrow = () => (
+  <Icon
+    icon={ArrowRight01Icon}
+    className="size-4 transition-transform duration-200 ease-(--ease-out) group-hover/see:translate-x-0.5 motion-reduce:transition-none"
+  />
+);
 
 /** Entrance order for `.rise-in`, read by its animation-delay. */
 const stagger = (order: number): React.CSSProperties & { "--i": number } => ({
@@ -29,10 +41,21 @@ export const dynamic = "force-static";
 export const revalidate = false;
 
 const INSTALLS = [
-  ["lib/dither/", "the engine: shader, fills, image dithering, export"],
-  [".agents/skills/dithercn/", "the skill, for Codex, Cursor and others"],
-  [".claude/skills/dithercn/", "the same skill, for Claude Code"],
-  ["globals.css", "--dither-ink, --dither-paper and friends, from your theme"],
+  ["lib/dither/", "The engine: shader, fills, image dithering, export."],
+  [".agents/skills/dithercn/", "The skill, for Codex, Cursor and others."],
+  [".claude/skills/dithercn/", "The same skill, for Claude Code."],
+  ["globals.css", "--dither-ink, --dither-paper and friends, from your theme."],
+] as const;
+
+/** The engine's techniques, as the skill chooses between them. */
+const TECHNIQUES = [
+  [
+    "WebGL fields",
+    "Anything that moves or varies per pixel: backgrounds, glows, meters.",
+  ],
+  ["SVG patterns", "Chart and meter fills that stay crisp at any size."],
+  ["CSS masks", "Blocks, bars and skeletons, with no script at all."],
+  ["Image dithering", "Photos and logos in your theme's colours, or as files."],
 ] as const;
 
 export default function IndexPage() {
@@ -48,28 +71,15 @@ export default function IndexPage() {
           {/* Always the dark plate, in both site themes. */}
           <div className="dark bg-background text-foreground relative isolate flex min-h-[580px] flex-col items-center overflow-hidden rounded-[24px] border md:min-h-[680px]">
             <DitherHero className="-z-10" />
-            <div className="flex w-full max-w-4xl flex-col items-center gap-6 px-5 pt-20 pb-52 text-center md:pt-32 md:pb-64">
-              <Link
-                href={ROUTES.DOCS_BUILD_WITH_AGENTS}
-                transitionTypes={["nav-forward"]}
-                style={stagger(0)}
-                className="rise-in bg-card/80 hover:bg-accent focus-visible:ring-ring/50 inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium backdrop-blur-sm transition-colors duration-150 outline-none focus-visible:ring-[3px]"
-              >
-                <span className="text-primary font-mono">dithercn</span>
-                skill for coding agents
-                <Icon
-                  icon={ArrowRight01Icon}
-                  className="text-muted-foreground -mr-1 size-3.5"
-                />
-              </Link>
+            <div className="flex w-full max-w-4xl flex-col items-center gap-6 px-5 pt-24 pb-52 text-center md:pt-36 md:pb-64">
               <h1
-                style={stagger(1)}
+                style={stagger(0)}
                 className="rise-in text-[2.6rem] leading-[1.02] font-medium tracking-[-0.045em] text-balance sm:text-6xl lg:text-[4.75rem]"
               >
                 Beautiful dithers for landing pages and dashboards.
               </h1>
               <div
-                style={stagger(2)}
+                style={stagger(1)}
                 className="rise-in flex flex-col items-center gap-2"
               >
                 <p className="text-muted-foreground max-w-xl text-lg text-pretty sm:text-xl">
@@ -79,10 +89,9 @@ export default function IndexPage() {
                   dithercn is a dither engine with an agent skill. Describe the
                   dither you want and your agent builds it in your shadcn theme.
                 </p>
-                {/* Fixed width for the rotating word so "Made for" never shifts. */}
-                <HeroUseCases className="text-muted-foreground font-mono text-sm [&_[aria-hidden]>span]:min-w-[16ch] [&_[aria-hidden]>span]:text-left" />
+                <HeroUseCases className="text-muted-foreground font-mono text-sm" />
               </div>
-              <div style={stagger(3)} className="rise-in">
+              <div style={stagger(2)} className="rise-in">
                 <HeroActions />
               </div>
             </div>
@@ -90,20 +99,53 @@ export default function IndexPage() {
         </section>
 
         <section className="container-wrapper" aria-labelledby="ask-heading">
-          <div className="container pt-20 pb-10 md:pt-28 md:pb-14">
-            <div className="scroll-reveal bg-card flex flex-col gap-8 rounded-[24px] p-5 sm:p-8 md:p-10">
-              <div className="flex flex-col gap-2">
-                <h2 id="ask-heading" className={H2_CLS}>
-                  Ask for any dither
-                </h2>
-                <p className="text-muted-foreground max-w-xl text-pretty">
-                  The skill teaches your agent the engine, so a sentence is
-                  enough. Each result here is a few lines of GLSL on the engine,
-                  not a component from the catalog.
-                </p>
-              </div>
-              <AgentShowcase />
+          <div className="container flex flex-col gap-10 pt-24 pb-20 md:pt-36 md:pb-28">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-12">
+              <h2 id="ask-heading" className={H2_CLS}>
+                Ask for any dither.
+              </h2>
+              <p className={LEAD_CLS}>
+                The skill teaches your agent the engine, so one sentence is
+                enough: what it is, where it goes, how it should feel.
+              </p>
             </div>
+            <AgentShowcase />
+          </div>
+        </section>
+
+        <section className="container-wrapper" aria-labelledby="engine-heading">
+          <div className="container flex flex-col gap-10 py-20 md:py-28">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-12">
+              <h2 id="engine-heading" className={H2_CLS}>
+                Every dither is a tone and a threshold.
+              </h2>
+              <div className="flex flex-col gap-4">
+                <p className={LEAD_CLS}>
+                  Your agent builds on one engine. A field gives each cell a
+                  tone, a threshold matrix decides which cells take ink, and
+                  your theme picks the colours.
+                </p>
+                <Link
+                  href={ROUTES.DOCS_WRITE_YOUR_OWN}
+                  transitionTypes={["nav-forward"]}
+                  className={LINK_CLS}
+                >
+                  Write your own dither
+                  <LinkArrow />
+                </Link>
+              </div>
+            </div>
+            <BayerRamp />
+            <dl className="grid gap-x-8 gap-y-6 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+              {TECHNIQUES.map(([name, use]) => (
+                <div key={name} className="flex flex-col gap-1.5 border-t pt-4">
+                  <dt className="font-medium">{name}</dt>
+                  <dd className="text-muted-foreground text-sm text-pretty">
+                    {use}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
 
@@ -111,86 +153,65 @@ export default function IndexPage() {
           className="container-wrapper"
           aria-labelledby="catalog-heading"
         >
-          <div className="container flex flex-col gap-8 py-10 md:py-14">
-            <div className="scroll-reveal flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
-              <div className="flex flex-col gap-2">
-                <h2 id="catalog-heading" className={H2_CLS}>
-                  Start from an example
-                </h2>
-                <p className="text-muted-foreground max-w-xl text-pretty">
+          <div className="container flex flex-col gap-10 py-20 md:py-28">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-12">
+              <h2 id="catalog-heading" className={H2_CLS}>
+                Start from an example.
+              </h2>
+              <div className="flex flex-col gap-4">
+                <p className={LEAD_CLS}>
                   {`${pieceCount === 1 ? "1 component" : `${pieceCount} components`} in ${catalog.length} groups, all built on the engine.`}{" "}
-                  Install one as it is, or hand it to your agent as a starting
-                  point.
+                  Install one as it is, or hand it to your agent to change.
                 </p>
+                <Link
+                  href={ROUTES.DOCS_EXAMPLES}
+                  transitionTypes={["nav-forward"]}
+                  className={LINK_CLS}
+                >
+                  See every example
+                  <LinkArrow />
+                </Link>
               </div>
-              <Link
-                href={ROUTES.DOCS_EXAMPLES}
-                transitionTypes={["nav-forward"]}
-                className="group/see text-foreground focus-visible:ring-ring/50 inline-flex items-center gap-1 rounded-full text-sm font-medium outline-none focus-visible:ring-[3px]"
-              >
-                See every example
-                <Icon
-                  icon={ArrowRight01Icon}
-                  className="size-4 transition-transform duration-300 ease-(--ease-out) group-hover/see:translate-x-0.5 motion-reduce:transition-none"
-                />
-              </Link>
             </div>
             <CatalogTiles catalog={catalog} />
           </div>
         </section>
 
-        <section className="container-wrapper" aria-labelledby="ramp-heading">
-          <div className="container py-10 md:py-14">
-            <div className="scroll-reveal bg-card flex flex-col gap-8 rounded-[24px] p-5 sm:p-8 md:p-10">
-              <h2 id="ramp-heading" className={H2_CLS}>
-                How a dither is made
-              </h2>
-              <BayerRamp />
-            </div>
-          </div>
-        </section>
-
         <section className="container-wrapper" aria-labelledby="start-heading">
-          <div className="container pt-10 pb-20 md:pt-14 md:pb-28">
-            <div className="scroll-reveal bg-card grid items-start gap-8 rounded-[24px] p-5 sm:p-8 md:p-10 lg:grid-cols-2 lg:gap-12">
-              <div className="flex min-w-0 flex-col gap-4">
-                <h2 id="start-heading" className={H2_CLS}>
-                  One command, then ask
-                </h2>
-                <p className="text-muted-foreground max-w-lg text-pretty">
-                  Add the engine and the skill to any shadcn project. Your agent
-                  picks the skill up on its next request.
-                </p>
-                <CommandBox
-                  itemUrl={`${SITE.REGISTRY}/dithercn-skill.json`}
-                  className="max-w-xl"
-                />
-                <Link
-                  href={ROUTES.DOCS_BUILD_WITH_AGENTS}
-                  transitionTypes={["nav-forward"]}
-                  className="group/see text-foreground focus-visible:ring-ring/50 inline-flex w-fit items-center gap-1 rounded-full text-sm font-medium outline-none focus-visible:ring-[3px]"
-                >
-                  How to build with agents
-                  <Icon
-                    icon={ArrowRight01Icon}
-                    className="size-4 transition-transform duration-300 ease-(--ease-out) group-hover/see:translate-x-0.5 motion-reduce:transition-none"
-                  />
-                </Link>
-              </div>
-              <dl className="flex min-w-0 flex-col divide-y rounded-[16px] border">
-                {INSTALLS.map(([path, what]) => (
-                  <div
-                    key={path}
-                    className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-baseline sm:gap-4"
-                  >
-                    <dt className="text-foreground shrink-0 font-mono text-sm sm:w-56">
-                      {path}
-                    </dt>
-                    <dd className="text-muted-foreground text-sm">{what}</dd>
-                  </div>
-                ))}
-              </dl>
+          <div className="container flex flex-col items-center gap-10 pt-20 pb-20 text-center md:pt-28 md:pb-28">
+            <div className="flex flex-col items-center gap-5">
+              <h2 id="start-heading" className={H2_CLS}>
+                One command, then ask.
+              </h2>
+              <p className={LEAD_CLS}>
+                Add the engine and the skill to any shadcn project. Your agent
+                picks the skill up on its next request.
+              </p>
             </div>
+            <CommandBox
+              itemUrl={`${SITE.REGISTRY}/dithercn-skill.json`}
+              className="w-full max-w-3xl text-left"
+            />
+            <dl className="grid w-full max-w-5xl gap-x-8 gap-y-6 text-left sm:grid-cols-2 lg:grid-cols-4">
+              {INSTALLS.map(([path, what]) => (
+                <div key={path} className="flex flex-col gap-1.5 border-t pt-4">
+                  <dt className="text-foreground font-mono text-sm break-all">
+                    {path}
+                  </dt>
+                  <dd className="text-muted-foreground text-sm text-pretty">
+                    {what}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <Link
+              href={ROUTES.DOCS_BUILD_WITH_AGENTS}
+              transitionTypes={["nav-forward"]}
+              className={LINK_CLS}
+            >
+              How to build with agents
+              <LinkArrow />
+            </Link>
           </div>
         </section>
       </PageTransition>
