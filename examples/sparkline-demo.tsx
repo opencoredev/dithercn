@@ -4,7 +4,7 @@ const STATS = [
   {
     data: [41, 43, 42, 46, 48, 47, 51, 54, 53, 57, 60, 63],
     delta: "+11.9%",
-    label: "Monthly recurring revenue",
+    label: "Recurring revenue",
     value: "$63.2K",
   },
   {
@@ -27,28 +27,25 @@ export default function SparklineDemo() {
       {STATS.map((stat) => (
         <div
           key={stat.label}
-          className="bg-background border-border flex flex-col gap-3 rounded-2xl border p-4 [--dither-paper:var(--background)]"
+          className="bg-background border-border flex flex-col gap-1 rounded-2xl border p-4 [--dither-paper:var(--background)]"
         >
-          <span className="text-muted-foreground text-sm">{stat.label}</span>
-          <div className="flex items-end justify-between gap-3">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-2xl font-semibold tracking-tight">
-                {stat.value}
-              </span>
-              <span className="text-muted-foreground text-xs">
-                <span className="text-foreground font-medium">
-                  {stat.delta}
-                </span>{" "}
-                in 12 months
-              </span>
-            </div>
-            <Sparkline
-              data={stat.data}
-              label={`${stat.label}, last 12 months`}
-              className="w-24"
-              height={36}
-            />
+          <span className="text-muted-foreground truncate text-sm">
+            {stat.label}
+          </span>
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-2xl font-semibold tracking-tight">
+              {stat.value}
+            </span>
+            <span className="text-foreground text-xs font-medium">
+              {stat.delta}
+            </span>
           </div>
+          <Sparkline
+            data={stat.data}
+            label={`${stat.label}, last 12 months`}
+            height={40}
+            className="mt-3"
+          />
         </div>
       ))}
     </div>

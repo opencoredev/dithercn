@@ -31,7 +31,7 @@ export function RevenueTrend() {
 }
 ```
 
-A sparkline takes a plain array of numbers, oldest first. Its height is a prop and its width follows the element, so set it with `className` or let it fill a table cell. The value range fits the data, because a sparkline shows the shape of a trend, not its distance from zero.
+A sparkline takes a plain array of numbers, oldest first. Its height is a prop and its width follows the element, so set it with `className` or let it fill a table cell. By default the value range fits the data, because a sparkline shows the shape of a trend. Pass the same `domain` to every sparkline in a column when the rows should be compared.
 
 `label` is required. Screen readers hear it followed by a summary of the data, such as "Revenue, last 8 weeks: 41 to 54, low 41, high 54".
 
@@ -47,7 +47,7 @@ Each row's trend sits in its own cell at 24px high. `dot={false}` keeps a column
 
 ### Line only, one in ink
 
-`area={false}` drops the fill. Drawing the normal rows in `--muted-foreground` and the one that needs attention in ink makes the spike the first thing you see.
+`area={false}` drops the fill. Each row shares `domain={[0, 180]}`, so a flat service draws flat instead of stretching its small wobble to full height, and the one spike drawn in ink is the first thing you see.
 
 <ComponentPreview src="examples/sparkline-line.tsx">
   <SparklineLine />
@@ -112,6 +112,13 @@ Each row's trend sits in its own cell at 24px high. `dot={false}` keeps a column
       default: "--dither-cell minus 1",
       description:
         "Size of one dither cell in px, rounded to whole device pixels. Smaller than other charts so the texture reads at small sizes.",
+    },
+    {
+      name: "domain",
+      type: "[min: number, max: number]",
+      default: "The data's range",
+      description:
+        "The value range the height covers. Share one across a column so rows compare.",
     },
     {
       name: "format",
