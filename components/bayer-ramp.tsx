@@ -6,16 +6,17 @@ import { cn } from "@/lib/utils";
  * Each level is a CSS mask tile, so the dots take their colour from
  * `--dither-ink` and stay crisp at any width.
  */
-const BAYER_4 = [
+export const BAYER_4 = [
   [0, 8, 2, 10],
   [12, 4, 14, 6],
   [3, 11, 1, 9],
   [15, 7, 13, 5],
 ] as const;
 
-const LEVEL_COUNT = 17;
+export const LEVEL_COUNT = 17;
 
-const maskForLevel = (level: number) => {
+/** A 4x4 tile with the cells of every threshold below `level` filled. */
+export const maskForLevel = (level: number) => {
   const dots = BAYER_4.flatMap((row, y) =>
     row.flatMap((threshold, x) =>
       threshold < level
@@ -27,9 +28,23 @@ const maskForLevel = (level: number) => {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 };
 
+/**
+ * Inline style that paints an element's background through one Bayer level,
+ * repeated at `--dither-cell`. Pair it with `bg-dither-ink` (or any colour).
+ */
+export const bayerMask = (level: number): React.CSSProperties => {
+  const mask = maskForLevel(level);
+  return {
+    WebkitMaskImage: mask,
+    WebkitMaskSize: "calc(var(--dither-cell) * 4)",
+    maskImage: mask,
+    maskSize: "calc(var(--dither-cell) * 4)",
+  };
+};
+
 const LEVELS = Array.from({ length: LEVEL_COUNT }, (_, level) => ({
   level,
-  mask: maskForLevel(level),
+  style: bayerMask(level),
 }));
 
 export const BayerRamp = ({ className }: { className?: string }) => (
@@ -38,17 +53,11 @@ export const BayerRamp = ({ className }: { className?: string }) => (
       className="grid h-24 grid-cols-17 gap-px sm:h-32 lg:h-40"
       aria-hidden="true"
     >
-      {LEVELS.map(({ level, mask }) => (
+      {LEVELS.map(({ level, style }) => (
         <div
           key={level}
           className="bayer-ramp-step bg-dither-ink"
-          style={{
-            WebkitMaskImage: mask,
-            WebkitMaskSize: "calc(var(--dither-cell) * 4)",
-            animationDelay: `${level * 24 + 120}ms`,
-            maskImage: mask,
-            maskSize: "calc(var(--dither-cell) * 4)",
-          }}
+          style={{ ...style, animationDelay: `${level * 24 + 120}ms` }}
         />
       ))}
     </div>

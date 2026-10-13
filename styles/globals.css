@@ -553,3 +553,21 @@
     animation: none;
   }
 }
+
+/* Landing hero: the WebGL canvas fades in over the static CSS dither once
+ * it has drawn a frame. One canvas pixel is one dither cell. */
+.dither-hero canvas {
+  image-rendering: pixelated;
+  opacity: 0;
+  transition: opacity 900ms var(--ease-out);
+}
+
+.dither-hero:not([data-state="fallback"]) canvas {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dither-hero canvas {
+    transition: none;
+  }
+}
