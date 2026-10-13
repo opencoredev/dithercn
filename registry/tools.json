@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "name": "dither-export",
+    "type": "registry:lib",
+    "title": "Dither export",
+    "description": "Save dithers as files: PNG through a canvas, compact SVG with merged runs, and CSS backgrounds or masks from a data-URI tile.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "lib/dither/export.ts",
+        "type": "registry:lib",
+        "target": "lib/dither/export.ts"
+      }
+    ]
+  }
+]
