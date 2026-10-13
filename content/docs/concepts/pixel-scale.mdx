@@ -1,0 +1,52 @@
+---
+title: "Pixel scale"
+description: "How big one dither cell is, how it stays crisp on every screen, and how to change it."
+---
+
+import ConceptCell from "@/examples/concept-cell";
+
+Every dither is drawn on a grid of square cells, and each cell is either ink or paper. The size of one cell sets the grain: small cells read as texture, large ones as pixel art.
+
+<ComponentPreview src="examples/concept-cell.tsx" size="lg" align="stretch">
+  <ConceptCell />
+</ComponentPreview>
+
+## Setting the size
+
+The size comes from the `--dither-cell` CSS variable, 3px by default. Change it for the whole site in your CSS, or for one section by setting it on a wrapper:
+
+```css
+.pricing-hero {
+  --dither-cell: 5px;
+}
+```
+
+To size one component directly, pass `cell` in CSS pixels. It wins over the variable:
+
+```tsx
+<DitherGradient cell={6} />
+```
+
+## Crisp on every screen
+
+`DitherShader` renders one canvas pixel per cell and scales the canvas up with `image-rendering: pixelated`, so a large hero costs about as much as a thumbnail. A 1440×700 hero at 3px cells is 480×234 pixels of shading.
+
+To keep every cell the same size, the cell is rounded to whole device pixels. On a 2× screen a 3px cell is exactly 6 device pixels. At 1.5× it would be 4.5, so it becomes 5 device pixels, 3.33 CSS pixels. Without this rounding, neighbouring cells would alternate between 4 and 5 pixels and the pattern would shimmer.
+
+The canvas covers its box to the next whole cell and the overflow is clipped, so the grid always starts at the top left corner.
+
+## Static fills
+
+`ditherMaskStyle` tiles its mask at `--dither-cell` too. Its `cell` option takes CSS pixels or any CSS length:
+
+```tsx
+<div className="bg-dither-ink" style={ditherMaskStyle(0.5, { cell: 4 })} />
+```
+
+`DitherPattern` lives inside an SVG, so its `cell` is in SVG user units: CSS pixels when the SVG is drawn at its natural size. If the SVG scales with a `viewBox`, the cells scale with it.
+
+## Choosing a size
+
+- 2 to 3px reads as fine grain. It's the right default for large backgrounds behind text.
+- 4 to 6px is clearly a dither from across the room, good for heroes that are the main visual.
+- 8px and up is pixel art. Pair it with fewer `levels` for a bold, posterised look.

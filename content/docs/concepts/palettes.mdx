@@ -1,0 +1,49 @@
+---
+title: "Palettes"
+description: "How dithers take their colours from your theme, and how to use more than two."
+---
+
+import ConceptPalettes from "@/examples/concept-palettes";
+
+A palette is the list of colours a dither can use, ordered from paper (tone 0) to ink (tone 1). By default it's two colours, `--dither-paper` and `--dither-ink`, which [`dither-tokens`](/docs/theming) points at your `--background` and `--primary`.
+
+<ComponentPreview src="examples/concept-palettes.tsx">
+  <ConceptPalettes />
+</ComponentPreview>
+
+## More than two colours
+
+Components that draw with `DitherShader` take a `palette` prop with two or more colours. The tone is spread across the list, and each cell is dithered between the two neighbouring colours. With four colours, a tone of 0.5 sits halfway between the second and third:
+
+```tsx
+<DitherGradient
+  palette={["--background", "--chart-3", "--chart-2", "--chart-1"]}
+/>
+```
+
+Each entry is a CSS variable name such as `"--chart-1"`, or any CSS colour: `"var(--chart-1)"`, `"oklch(0.72 0.15 272)"`, `"#7c8cff"`, even `"transparent"` to let the page show through the paper. The type is `DitherPalette`, a tuple of at least two `DitherColor` strings, so a one-colour palette fails to compile.
+
+Order matters more than hue. Put colours in order of how much they stand out against the paper, or the ramp will jump back and forth.
+
+## Following the theme
+
+Colours are resolved in the browser, in the context of the component, so a variable you override on a wrapper applies to everything inside it. Formats the GPU can't read, such as `oklch()`, are converted by painting them once into a 1×1 canvas.
+
+When the class or style on `<html>` changes, as it does when next-themes switches between light and dark, every dither re-reads its colours and redraws. Nothing else needs to happen.
+
+For your own canvas work, `useDitherColors` does the same and returns the colours as `[r, g, b, a]` in [0, 1]:
+
+```tsx
+const ref = useRef<HTMLDivElement>(null);
+const colors = useDitherColors(ref); // [ink, paper], or null before mount
+```
+
+Pass a list of names as the second argument to read other variables, such as `useDitherColors(ref, ["--chart-1", "--chart-2"])`.
+
+## Static fills
+
+`DitherPattern` takes a `color` and an optional `background`, and `ditherMaskStyle` masks whatever background colour the element already has. Both accept CSS variables, so they follow the theme without JavaScript.
+
+## Contrast
+
+A dither reads only when ink and paper differ enough. For charts and anything that carries information, aim for the contrast you would want for body text, about 4.5:1. Quiet backgrounds can go lower, since nobody needs to read them. The defaults, your primary on your background, usually clear that bar in both modes.

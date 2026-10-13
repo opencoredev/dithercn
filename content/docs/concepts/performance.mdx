@@ -1,0 +1,42 @@
+---
+title: "Performance"
+description: "What a dither costs to draw, and how dither-core keeps a page of them cheap."
+---
+
+Dithers look heavy and draw light. Each technique has a predictable cost, and the expensive parts happen once.
+
+## What each technique costs
+
+| Technique                          | Cost                                                                                                                    |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `DitherShader`                     | One draw call per frame, at one pixel per cell, capped at 30 fps. No allocations per frame.                             |
+| `DitherPattern`, `ditherMaskStyle` | One small SVG, built once per level and matrix and cached. No JavaScript after the first paint.                         |
+| `ditherImage`                      | One pass over the image, with no DOM. Error diffusion visits every pixel in order, so run large images in a Web Worker. |
+
+A full-width hero at 3px cells shades about 110,000 pixels a frame. A 1080p video frame is two million.
+
+## Pausing
+
+A shader stops drawing when it scrolls out of view or the tab is hidden, and holds a still frame under reduced motion. Its uniforms can still change while paused, and it redraws once when they do.
+
+## The WebGL context budget
+
+Browsers cap how many WebGL contexts a page can hold. Chrome drops the oldest past 16, and phones can run out of GPU memory sooner. `dither-core` shares a budget between every `DitherShader` on the page:
+
+- A shader holds a context only while it is within 200px of the viewport. Further away, it releases the context and shows its `fallback`.
+- At most 8 contexts are live at once (`MAX_LIVE_CONTEXTS`). When a ninth shader comes into view, the one seen least recently gives its context up.
+- When a shader scrolls back, it gets a fresh context and fades its canvas in over the fallback.
+
+So a long docs page with a dozen backgrounds keeps at most 8 contexts, and normally only the two or three on screen. Give each shader a `fallback` that resembles it, such as the CSS gradient `DitherGradient` uses, and a released one is hard to spot.
+
+## Galleries and thumbnails
+
+A grid of 30 live backgrounds would spend its budget on the first 8. For catalog pages and galleries, show a static image or a `ditherMaskStyle` composition instead, and mount the live shader on the detail page. The docs on this site do the same: each preview mounts its demo only when it nears the viewport.
+
+## Images
+
+`ditherImage` is synchronous. A 512×512 image takes 10 to 30 ms; a 4K photo, 32 times the pixels, can block the main thread for half a second or more. Dither at the size you display, after scaling the image down to one pixel per cell, and move larger jobs to a Web Worker. The function is pure and has no DOM dependency beyond `ImageData`, so the same import works there.
+
+## Blue noise in masks
+
+The blue-noise tile is 64×64 cells, against 4×4 for `bayer4`. Its SVG mask is correspondingly larger, 15 to 20 KB per level against about 100 bytes. Use it in shaders freely, where it is a single texture. For CSS masks, prefer a Bayer matrix unless you need only a level or two.
