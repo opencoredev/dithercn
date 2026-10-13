@@ -88,15 +88,21 @@ float warped = fbm(p * 2.0 + 0.6 * vec2(fbm(p * 1.5 + t * 0.03), fbm(p * 1.5 - t
 
 The trick for thin lines: measure the distance to the line in cells, then turn it into a tone that is 1 on the line and 0 a cell or two away. Distances in cells keep lines the same thickness at any box size.
 
+Lines need a smooth source. `fbm`'s fine octaves wiggle faster than a line is wide, so contours of raw `fbm` at a high scale break into dots. Use one or two low-frequency `snoise` layers (`0.5 + 0.35 * snoise(p * 0.9) + 0.15 * snoise(p * 2.1)`), or `fbm` at a small scale (`fbm(p * 1.2)`), and add detail by warping the coordinates rather than the height.
+
 ```glsl
 // Contour lines of a height function. `count` lines across the 0..1 height range,
 // each about `width` cells wide. hx and hy are the height one cell to the right
 // and one cell up, so the line keeps its width where the slope changes.
 float contourLine(float h, float hx, float hy, float count, float width) {
   float v = h * count;
+  float offset = abs(fract(v + 0.5) - 0.5); // distance to the nearest line, in contour steps
   float perCell = max(length(vec2(hx - h, hy - h)) * count, 1e-4);
-  float d = abs(fract(v + 0.5) - 0.5) / perCell; // distance to the nearest line, in cells
-  return 1.0 - smoothstep(width * 0.5 - 0.5, width * 0.5 + 0.5, d);
+  float d = offset / perCell; // the same distance, in cells
+  float line = 1.0 - smoothstep(width * 0.5 - 0.5, width * 0.5 + 0.5, d);
+  // On flat ground the slope is near zero and a line would spread into a blob:
+  // only cells within a tenth of a step of the line can ink.
+  return line * (1.0 - smoothstep(0.06, 0.1, offset));
 }
 
 // In the field, with p in square units (one cell is 1.0 / res.y on both axes):

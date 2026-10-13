@@ -18,7 +18,8 @@ A `DitherShader` fills its nearest positioned ancestor. Content goes in a siblin
 
 ## Landing pages
 
-- **Hero:** a full-bleed background behind the headline. Keep the tone low (0.3 to 0.6) under the text and let it peak towards an edge or corner. Fade it out at the bottom with `smoothstep` on `uv.y` so the next section starts clean.
+- **Hero:** a full-bleed background behind the headline. Clear the area under the text (tone 0 for lines and sparse patterns, 0.2 or less for soft fills) and let the dither peak towards the edges or a corner. Fade it out at the bottom with `smoothstep` on `uv.y` so the next section starts clean.
+- **Clearing space for text:** fade the tone with an ellipse around the text, sized like the text. Text has a fixed size in pixels, so measure the ellipse in cells: `float clear = smoothstep(0.0, 0.5, length((uv - textCentre) * res / textHalfCells) - 1.0);` then `tone *= clear;`, with `textHalfCells` the text block's half width and height in pixels divided by the cell size (about 3). A headline 600px wide is `vec2(110.0, 30.0)` or so. Measured this way the clearing fits the text on a wide desktop and on a phone alike; in square units or `uv` it is too big on one and too small on the other. Check both widths, and pass the size as a uniform when it changes with the breakpoint.
 - **Section break:** a band 80 to 160px tall between sections, a dithered gradient from ink at one edge to paper at the other.
 - **Feature card:** a small shader or a `fillStyle("gradient")` layer behind a card's top half, under the icon and title.
 - **Dark plate:** a hero that is always dark wraps the section in `className="dark"` so `--dither-ink` and `--dither-paper` take the dark values there, whatever the site theme.

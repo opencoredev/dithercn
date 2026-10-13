@@ -78,12 +78,14 @@ All server-safe and free after first paint.
 | `fill`   | `"gradient" \| "dotted" \| "hatched" \| "solid"`                                                | required   | `dotted`: a sparse lattice. `hatched`: diagonal lines.                                    |
 | `color`  | `DitherColor`                                                                                   | `"ink"`    |                                                                                           |
 | `cell`   | `number`                                                                                        | `3`        | In SVG user units. With a scaling `viewBox` the cells scale too.                          |
-| `level`  | `number`                                                                                        | `1`        | Gradient: coverage at the dense edge, or the even coverage without `ramp`.                |
+| `level`  | `number`                                                                                        | `1`        | Gradient only: coverage at the dense edge, or the even coverage without `ramp`.           |
 | `floor`  | `number`                                                                                        | `0.0625`   | Gradient: coverage past the fade.                                                         |
 | `matrix` | `DitherMatrix`                                                                                  | `"bayer4"` | Gradient only.                                                                            |
 | `ramp`   | `{ edge: "top" \| "bottom" \| "left" \| "right"; at: number; length: number; extent?: number }` | none       | Gradient: densest at `edge`, located at coordinate `at`, fading over `length` user units. |
 
-`DitherPattern` is the older, simpler pattern: `<DitherPattern id level matrix? cell? color? background? />` fills one even `level`, with an optional `background` colour behind the ink.
+`dotted` and `hatched` have a fixed coverage (a quarter of the cells); vary their strength with `opacity` or the colour. `fill="gradient"` without `ramp` fills one even `level`, like `DitherPattern`.
+
+`DitherPattern` is the older, simpler pattern: `<DitherPattern id level matrix? cell? color? background? />` fills one even `level`, with an optional `background` colour behind the ink. Prefer `FillPattern` unless you need `background`.
 
 For exact pixel cells inside an SVG, give it a `viewBox` in CSS pixels that matches its rendered size (measure with a `ResizeObserver`), or keep the SVG at a fixed pixel size.
 

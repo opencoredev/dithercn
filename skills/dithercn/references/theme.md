@@ -33,7 +33,9 @@ Order the colours by how strongly they stand out against the paper, from weakest
 
 ## Light and dark
 
-Theme switches that change the class or style on `<html>` (next-themes and most others) make every shader re-read its colours and redraw. SVG and CSS fills use `var()` and follow instantly.
+The tokens switch on a `.dark` class (shadcn's convention). Theme switches that change the class or style on `<html>` (next-themes and most others) make every shader re-read its colours and redraw. SVG and CSS fills use `var()` and follow instantly.
+
+If the app has no theme switcher, nothing adds `.dark`, so the dark values never apply, even when the operating system is in dark mode. Look for `next-themes` or a `dark` class in the root layout. Without one, ask before adding next-themes (`<ThemeProvider attribute="class" defaultTheme="system" enableSystem>` around the body, `suppressHydrationWarning` on `<html>`); to test dark mode meanwhile, add the class by hand in the browser: `document.documentElement.classList.add("dark")`.
 
 Check both themes. Common fixes:
 

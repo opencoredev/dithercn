@@ -54,5 +54,5 @@ Done when every check in quality.md passes. A screenshot that shows flat colour,
 - A field returns a continuous tone in [0, 1]: 0 paper, 1 ink. The engine quantises and dithers it, so write smooth math (`smoothstep`, `exp`, `mix`) and leave thresholds and Bayer matrices to the engine.
 - `uv` runs 0 to 1 on both axes with y up. Multiply x by `res.x / res.y` before measuring distances, or circles stretch into ovals.
 - Paint with theme colours (`"ink"`, palette names, `--css-variables`). Literal colours are for when the user names one.
-- A dither behind content stays quiet: peak tone around 0.5 to 0.8 where text sits, and text contrast at 4.5:1 or better.
+- Text sits on clear ground. Fade the tone down where text goes: to 0 for lines and sparse patterns, to 0.2 or less for soft fills. Text contrast stays at 4.5:1 or better.
 - Motion is slow, a drift of a few percent of the box per second. Choose `stillTime` so the reduced-motion frame looks finished.
