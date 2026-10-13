@@ -68,5 +68,19 @@
         "target": "components/dithercn/horizon.tsx"
       }
     ]
+  },
+  {
+    "name": "beams",
+    "type": "registry:component",
+    "title": "Beams",
+    "description": "God rays from a point or an edge that sweep slowly and fade with distance.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/beams.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/beams.tsx"
+      }
+    ]
   }
 ]
