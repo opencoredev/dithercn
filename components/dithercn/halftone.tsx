@@ -1,13 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { cssColor, DitherShader } from "@/lib/dither";
-import type { DitherPalette, DitherShaderProps } from "@/lib/dither";
+import type {
+  DitherColor,
+  DitherPalette,
+  DitherShaderProps,
+} from "@/lib/dither";
 
 /** A point in the box: x from the left, y from the top, both 0 to 1. */
 export type HalftonePoint = readonly [number, number];
 
 interface NoiseSource {
-  /** A slow, warped noise field that drifts across the box. */
+  /** Soft, slowly drifting clouds. */
   source?: "noise";
   center?: never;
   radius?: never;
@@ -15,7 +21,7 @@ interface NoiseSource {
 }
 
 interface RadialSource {
-  /** Dots are largest at `center` and shrink towards the corners. */
+  /** Dots are largest at `center` and shrink away from it. */
   source: "radial";
   /** Where the dots are largest. Default `[0.5, 0.5]`. */
   center?: HalftonePoint;
@@ -35,35 +41,72 @@ interface LinearSource {
 
 export type HalftoneSource = NoiseSource | RadialSource | LinearSource;
 
+/** Two or three inks, printed as separate screens that overlap like CMYK. */
+export type HalftoneChannels =
+  | readonly [DitherColor, DitherColor]
+  | readonly [DitherColor, DitherColor, DitherColor];
+
+interface MonoInk {
+  /** Colour of the dots: a palette name such as `"blue"`, a CSS variable name, or any CSS colour. Default `"ink"`. */
+  color?: DitherColor;
+  channels?: never;
+}
+
+interface MultiInk {
+  /**
+   * Two or three inks, each on its own screen turned 30° from the last.
+   * Where dots overlap, their colours mix.
+   */
+  channels: HalftoneChannels;
+  color?: never;
+}
+
+export type HalftoneInk = MonoInk | MultiInk;
+
 export type HalftoneProps = Omit<
   DitherShaderProps,
-  "field" | "uniforms" | "fallback" | "matrix"
+  "field" | "uniforms" | "fallback" | "matrix" | "palette" | "levels"
 > &
-  HalftoneSource & {
-    /** Distance between dot centres, in cells. Default 12. */
-    spacing?: number;
-    /** Rotation of the dot grid in degrees. Print uses 45 for black. Default 45. */
-    rotation?: number;
-    /** Size of one cell in CSS pixels. Default 1, finer than other backgrounds so dots stay round. */
-    cell?: number;
-    /** Size of the noise features. Noise source only. Default 1. */
+  HalftoneSource &
+  HalftoneInk & {
+    /** Colour behind the dots. `"transparent"` lays the screen over whatever is underneath. Default `"--dither-paper"`. */
+    background?: DitherColor;
+    /** Distance between dot centres in CSS pixels. Default 10. */
+    size?: number;
+    /** Screen angle in degrees. Extra channels add 30° each. Default 45. */
+    angle?: number;
+    /** Size of the noise clouds. Noise source only. Default 1. */
     scale?: number;
-    /** Size of the largest dot, 0 to 1. At 1 neighbouring dots just touch. Default 1. */
+    /** Size of the largest dot, 0 to 1. At 1 the biggest dots just touch. Default 0.95. */
     intensity?: number;
+    /** How fast the screen slides along its angle, so dots swell and shrink as they cross the source. 0 holds it still. Default 1. */
+    drift?: number;
+    /** Size of one rendered pixel in CSS pixels. Default: one device pixel, so dot edges stay crisp. Larger cells give blockier dots. */
+    cell?: number;
   };
 
 const FIELD = `
-float halftoneSource(vec2 uv, float aspect, float t) {
+float halftoneBayer2(vec2 a) {
+  a = floor(a);
+  return fract(a.x / 2.0 + a.y * a.y * 0.75);
+}
+
+// 4x4 ordered threshold, so dot edges dither instead of stair-stepping.
+float halftoneBayer(vec2 a) {
+  return halftoneBayer2(0.5 * a) * 0.25 + halftoneBayer2(a) + 0.03125;
+}
+
+float halftoneSource(vec2 uv, float aspect, float t, float channel) {
   vec2 p = vec2((uv.x - 0.5) * aspect, uv.y - 0.5);
+  vec2 phase = vec2(3.7, 1.9) * channel;
   if (halftoneMode < 0.5) {
-    vec2 q = p * 1.15 * halftoneScale;
-    vec2 w = vec2(
-      fbm(q + vec2(t * 0.035, 0.0)),
-      fbm(q + vec2(5.2, 1.3) - vec2(0.0, t * 0.03))
-    );
-    return 0.9 * pow(smoothstep(0.34, 0.86, fbm(q + 0.9 * w)), 1.5);
+    // Two broad octaves only: wide, soft swells give the dots room to grade.
+    vec2 q = p * 1.1 * halftoneScale + phase;
+    float n = snoise(q + vec2(t * 0.05, -t * 0.03)) * 0.75
+      + snoise(q * 2.1 + vec2(-t * 0.04, t * 0.06) + 7.3) * 0.25;
+    return smoothstep(-0.25, 0.85, n);
   }
-  float drift = (fbm(p * 1.5 + vec2(t * 0.04, -t * 0.03)) - 0.5) * 0.18;
+  float drift = (fbm(p * 1.4 + phase + vec2(t * 0.04, -t * 0.03)) - 0.5) * 0.22;
   if (halftoneMode < 1.5) {
     vec2 c = vec2((halftoneCenter.x - 0.5) * aspect, 0.5 - halftoneCenter.y);
     vec2 corner = vec2(aspect * 0.5 + abs(c.x), 0.5 + abs(c.y));
@@ -75,95 +118,172 @@ float halftoneSource(vec2 uv, float aspect, float t) {
   return clamp(dot(p, dir) / (2.0 * extent) + 0.5 + drift, 0.0, 1.0);
 }
 
-float field(vec2 uv, vec2 res, float t) {
-  float a = radians(halftoneRotation);
+// 1 when this pixel is inked by the screen of one channel.
+float halftoneScreen(vec2 px, vec2 res, float t, float channel) {
+  float a = radians(halftoneAngle + 30.0 * channel);
   mat2 toGrid = mat2(cos(a), -sin(a), sin(a), cos(a));
   mat2 fromGrid = mat2(cos(a), sin(a), -sin(a), cos(a));
-  vec2 q = toGrid * (uv * res) / halftoneSpacing;
+  vec2 slide = fromGrid * vec2(t * halftoneDrift * 4.0, 0.0);
+  vec2 q = toGrid * (px + slide) / halftonePitch;
   vec2 id = floor(q) + 0.5;
   vec2 local = q - id;
 
-  // Every dot takes one value, sampled at its centre, as in print.
-  vec2 centre = fromGrid * (id * halftoneSpacing) / res;
-  float value = halftoneSource(centre, res.x / res.y, t);
-  float radius = sqrt(value) * 0.58 * halftoneIntensity;
-  float inside = step(length(local), radius) * step(0.02, value);
+  // Each dot takes one value, sampled at its centre, as in print.
+  vec2 centre = (fromGrid * (id * halftonePitch) - slide) / res;
+  float value = halftoneSource(centre, res.x / res.y, t, channel);
+  float radius = 0.5 * sqrt(value) * halftoneIntensity;
+  float cover = clamp((radius - length(local)) * halftonePitch + 0.5, 0.0, 1.0);
+  return step(halftoneBayer(px + vec2(2.0, 1.0) * channel), cover);
+}
 
-  // In a palette, bigger dots take later colours.
-  float tone = ceil(value * halftoneSteps) / halftoneSteps;
-  return inside * tone;
+float field(vec2 uv, vec2 res, float t) {
+  vec2 px = uv * res - 0.5;
+  float index = halftoneScreen(px, res, t, 0.0);
+  if (halftoneChannels > 1.5) {
+    index += 2.0 * halftoneScreen(px, res, t, 1.0);
+  }
+  if (halftoneChannels > 2.5) {
+    index += 4.0 * halftoneScreen(px, res, t, 2.0);
+  }
+  // Pick a palette entry exactly: the palette lists every overlap.
+  return index / (pow(2.0, halftoneChannels) - 1.0);
 }
 `;
 
 const MODES = { linear: 2, noise: 0, radial: 1 } as const;
 const CENTRE: HalftonePoint = [0.5, 0.5];
 
-/** CSS dots on a rotated grid, shown without WebGL. */
-const fallbackStyle = ({
-  palette,
+const mix = (a: DitherColor, b: DitherColor, share = 50) =>
+  `color-mix(in oklch, ${cssColor(a)} ${share}%, ${cssColor(b)})`;
+
+/**
+ * Background, then every combination of inks in bit order: one entry per
+ * overlap, so the shader can pick a colour without blending.
+ */
+const screenPalette = (
+  background: DitherColor,
+  inks: readonly DitherColor[]
+): DitherPalette => {
+  const [a = "ink", b, c] = inks;
+  if (b === undefined) {
+    return [background, a];
+  }
+  if (c === undefined) {
+    return [background, a, b, mix(a, b)];
+  }
+  return [
+    background,
+    a,
+    b,
+    mix(a, b),
+    c,
+    mix(a, c),
+    mix(b, c),
+    mix(mix(a, b), c, 67),
+  ];
+};
+
+/** CSS dot screens, one per ink, shown without WebGL. */
+const Fallback = ({
+  background,
+  inks,
   pitch,
-  rotation,
+  angle,
 }: {
-  palette: DitherPalette;
+  background: DitherColor;
+  inks: readonly DitherColor[];
   pitch: number;
-  rotation: number;
-}) => {
-  const ink = cssColor(palette.at(-1) ?? palette[1]);
-  const size = `${pitch}px`;
-  return {
-    backgroundImage: `radial-gradient(circle, ${ink} 28%, transparent 30%)`,
-    backgroundSize: `${size} ${size}`,
-    inset: "-50%",
-    maskImage: "radial-gradient(closest-side, #000, transparent)",
-    transform: `rotate(${rotation}deg)`,
-  };
+  angle: number;
+}) => (
+  <div
+    className="absolute inset-0 overflow-hidden"
+    style={{ backgroundColor: cssColor(background) }}
+  >
+    {inks.map((ink, index) => (
+      <div
+        key={index}
+        className="absolute -inset-1/2"
+        style={{
+          backgroundImage: `radial-gradient(circle, ${cssColor(ink)} 30%, transparent 32%)`,
+          backgroundSize: `${pitch}px ${pitch}px`,
+          maskImage: "radial-gradient(closest-side, #000, transparent)",
+          mixBlendMode: index > 0 ? "screen" : undefined,
+          transform: `rotate(${angle + 30 * index}deg)`,
+        }}
+      />
+    ))}
+  </div>
+);
+
+/** The device pixel ratio, kept current when the window moves between screens or zooms. */
+const useDevicePixelRatio = () => {
+  const [ratio, setRatio] = useState(1);
+  useEffect(() => {
+    const update = () => setRatio(window.devicePixelRatio || 1);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return ratio;
 };
 
 /**
- * A print-style halftone: round dots on a rotated grid that grow with the
- * value underneath, from slow noise, a radial spot or a linear ramp. Not an
- * ordered dither; dots are solid. Decorative and full-bleed: size it with
- * `className`, usually `absolute inset-0`.
+ * A print halftone: round dots on a rotated screen that grow smoothly with
+ * a noise, radial or linear source, in one ink or two to three overlapping
+ * channels like CMYK. The screen slides slowly so dots swell and shrink
+ * as they travel. Decorative and full-bleed: size it with `className`,
+ * usually `absolute inset-0`.
  */
 export const Halftone = (props: HalftoneProps) => {
   const {
-    spacing = 12,
-    cell = 1,
-    rotation = 45,
+    size = 10,
+    cell,
+    angle = 45,
     scale = 1,
-    intensity = 1,
-    palette = ["--dither-paper", "--dither-ink"],
-    levels,
+    intensity = 0.9,
+    drift = 1,
+    color = "ink",
+    channels,
+    background = "--dither-paper",
     source = "noise",
     center = CENTRE,
     radius = 1,
     direction = 0,
     ...shaderProps
   } = props;
-  const steps = palette.length - 1;
+  const inks = channels ?? [color];
+  const palette = screenPalette(background, inks);
+  const pitch = Math.max(3, size);
+  const ratio = useDevicePixelRatio();
+  const cssCell = cell ?? 1 / ratio;
+  // DitherShader snaps cells to whole device pixels; measure the screen in those.
+  const snapped = Math.max(1, Math.round(cssCell * ratio)) / ratio;
 
   return (
     <DitherShader
       {...shaderProps}
       field={FIELD}
-      cell={cell}
+      cell={cssCell}
       palette={palette}
-      levels={levels ?? Math.min(256, steps * 16 + 1)}
+      levels={palette.length}
       uniforms={{
+        halftoneAngle: angle,
         halftoneCenter: center,
+        halftoneChannels: inks.length,
         halftoneDirection: direction,
+        halftoneDrift: drift,
         halftoneIntensity: Math.min(1, Math.max(0, intensity)),
         halftoneMode: MODES[source],
+        halftonePitch: pitch / snapped,
         halftoneRadius: Math.max(0.01, radius),
-        halftoneRotation: rotation,
         halftoneScale: Math.max(0.05, scale),
-        halftoneSpacing: Math.max(2, spacing),
-        halftoneSteps: steps,
       }}
       fallback={
-        <div
-          className="absolute"
-          style={fallbackStyle({ palette, pitch: cell * spacing, rotation })}
+        <Fallback
+          background={background}
+          inks={inks}
+          pitch={pitch}
+          angle={angle}
         />
       }
     />

@@ -7,14 +7,16 @@ export default function HalftoneSpotlight() {
         source="radial"
         center={[0.5, 1.2]}
         radius={0.62}
+        color="orange"
+        background="transparent"
         className="absolute inset-0 -z-10"
       />
       <h3 className="max-w-md text-3xl font-medium tracking-[-0.03em] text-balance">
-        Printed in four colours, sold out in one day
+        Printed overnight, sold out by noon
       </h3>
       <p className="text-muted-foreground max-w-sm text-sm text-pretty">
-        A radial source centred below the edge, so the dots swell from the
-        bottom and leave the top clear.
+        Limited risograph prints, numbered and signed. The next run opens on
+        Friday.
       </p>
     </section>
   );
