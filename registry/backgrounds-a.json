@@ -1,0 +1,86 @@
+[
+  {
+    "name": "dither-glow",
+    "type": "registry:component",
+    "title": "Dither glow",
+    "description": "A soft dithered spotlight from an edge, a corner or any point, for heroes and cards.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-glow.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-glow.tsx"
+      }
+    ]
+  },
+  {
+    "name": "mesh-gradient",
+    "type": "registry:component",
+    "title": "Mesh gradient",
+    "description": "Three to five colour blobs that drift and blend, drawn as a dither.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/mesh-gradient.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/mesh-gradient.tsx"
+      }
+    ]
+  },
+  {
+    "name": "noise-field",
+    "type": "registry:component",
+    "title": "Noise field",
+    "description": "A slow, folding fbm texture with an optional mask that clears space for text.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/noise-field.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/noise-field.tsx"
+      }
+    ]
+  },
+  {
+    "name": "aurora",
+    "type": "registry:component",
+    "title": "Aurora",
+    "description": "Slow vertical curtains of light that sway and shimmer, drawn as a dither.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/aurora.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/aurora.tsx"
+      }
+    ]
+  },
+  {
+    "name": "waves",
+    "type": "registry:component",
+    "title": "Waves",
+    "description": "Layered swells under a glowing horizon, or thin lines like a sound wave.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/waves.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/waves.tsx"
+      }
+    ]
+  },
+  {
+    "name": "dither-fade",
+    "type": "registry:component",
+    "title": "Dither fade",
+    "description": "A dithered edge that fades a section's content into a solid colour.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-fade.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-fade.tsx"
+      }
+    ]
+  }
+]
