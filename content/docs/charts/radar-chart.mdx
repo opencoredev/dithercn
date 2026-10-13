@@ -1,0 +1,169 @@
+---
+title: "Radar chart"
+description: "One or more series across several axes, drawn as polygons of dither cells whose density steps up ring by ring."
+---
+
+import RadarChartDemo from "@/examples/radar-chart-demo";
+import { controls as radarChartControls } from "@/examples/radar-chart-controls";
+import RadarChartCard from "@/examples/radar-chart-card";
+import RadarChartCompare from "@/examples/radar-chart-compare";
+
+<ComponentPreview
+  src="examples/radar-chart-demo.tsx"
+  size="lg"
+  controls={radarChartControls}
+>
+  <RadarChartDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="radar-chart" />
+
+## Usage
+
+```tsx
+import { RadarChart } from "@/components/dithercn/radar-chart";
+
+export function Evals() {
+  return (
+    <RadarChart
+      axes={["Reasoning", "Coding", "Math", "Writing", "Vision"]}
+      series={[
+        { label: "Model v3", values: [86, 91, 78, 72, 64] },
+        { label: "Model v2", values: [71, 74, 69, 76, 40] },
+      ]}
+      max={100}
+    />
+  );
+}
+```
+
+Axes run clockwise from 12 o'clock. Each series lists one value per axis in the same order. Without `max`, the outer ring sits at a round number above the largest value.
+
+Every series is a polygon of whole dither cells with a solid one-cell outline and square markers on its corners. With `fill="gradient"` the density steps up once per ring, thin at the centre and dense near the rim, so the grid reads straight through the shape. Later series draw on top of earlier ones and each takes the next palette colour.
+
+Move the pointer around the chart and the readout snaps to the nearest axis, with every series' value there. Focus the chart and the arrow keys step around the axes. Hover a legend entry to spotlight a series, click to keep it lit, and press Escape to let go.
+
+The chart fills its container up to `size` and shrinks with it, keeping room for the labels.
+
+## Examples
+
+### Single series in a card
+
+One series in `green` with `fill="dotted"` and a round grid. The legend hides itself when there is only one series.
+
+<ComponentPreview src="examples/radar-chart-card.tsx">
+  <RadarChartCard />
+</ComponentPreview>
+
+### Comparing plans
+
+Three series on seven axes with `fill="hatched"`, five rings and `bloom="high"`. Hatching keeps overlapping shapes readable because each one's lines run between the other's.
+
+<ComponentPreview src="examples/radar-chart-compare.tsx" size="lg">
+  <RadarChartCompare />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "axes",
+      type: "[string, ...string[]]",
+      required: true,
+      description: "Axis labels, clockwise from the top. Three or more read best.",
+    },
+    {
+      name: "series",
+      type: "[RadarSeries, ...RadarSeries[]]",
+      required: true,
+      description:
+        "{ label: string; values: number[]; color?: DitherColor; fill?: FillVariant }, one value per axis.",
+    },
+    {
+      name: "max",
+      type: "number",
+      default: "A round number above the largest value",
+      description: "The value at the outer ring.",
+    },
+    {
+      name: "rings",
+      type: "number",
+      default: "4",
+      description: "Grid rings. They also set the steps of the gradient fill.",
+    },
+    {
+      name: "grid",
+      type: '"polygon" | "circle"',
+      default: '"polygon"',
+      description: "Shape of the grid rings.",
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description: "Texture of every series. A series' own fill wins.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description: "Soft glow in each series' colour behind it.",
+    },
+    {
+      name: "colors",
+      type: "DitherColor[]",
+      description: "Colours by series position. A series' own color wins.",
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "360",
+      description: "Largest width and height in CSS pixels. It shrinks to fit its container.",
+    },
+    {
+      name: "format",
+      type: "Intl.NumberFormatOptions | ((value: number) => string)",
+      default: "Compact, as in 1.2K",
+      description: "How values are written in the readout and the data table.",
+    },
+    {
+      name: "legend",
+      type: "boolean",
+      default: "With two or more series",
+      description: "Show the legend.",
+    },
+    {
+      name: "interactive",
+      type: "boolean",
+      default: "true",
+      description: "The axis scrub, keyboard and legend spotlight. false draws a static image.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "Grow out from the centre the first time the chart is seen.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "Threshold pattern of the gradient fill.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The chart is a focusable group with a summary label. The arrow keys move between axes, a live region reads each axis's values, and a hidden table lists every value.
+- The shapes grow out from the centre once when the chart scrolls into view. With reduced motion they appear at once and the readout moves without easing.
+- The drawing is one SVG path per series, built from whole cells snapped to device pixels. Scrubbing only moves the readout by transform and restyles one spoke.

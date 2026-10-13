@@ -68,5 +68,19 @@
         "target": "components/dithercn/stat-card.tsx"
       }
     ]
+  },
+  {
+    "name": "radar-chart",
+    "type": "registry:component",
+    "title": "Radar chart",
+    "description": "Series across several axes, drawn as polygons of dither cells whose density steps up ring by ring, with an axis scrub and legend spotlight.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/radar-chart.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/radar-chart.tsx"
+      }
+    ]
   }
 ]
