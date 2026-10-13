@@ -32,7 +32,7 @@ export const glow = select({
 });
 
 export const strength = slider({
-  default: 0.45,
+  default: 0.6,
   id: "strength",
   label: "Strength",
   max: 1,

@@ -1,6 +1,6 @@
 ---
 title: "Dither card"
-description: "A card surface with a dithered glow in a corner or along an edge, which can grow through the levels on hover."
+description: "A card with a dithered glow in a corner or along an edge and a dithered rim on its border, which can grow through the levels on hover."
 ---
 
 import { controls as ditherCardControls } from "@/examples/dither-card-controls";
@@ -40,7 +40,7 @@ export function Revenue() {
 
 `DitherCard` has the same spacing, border and colours as shadcn's `Card`, so `CardHeader`, `CardContent` and `CardFooter` fit inside it. It does not depend on them: plain markup works too.
 
-The glow is a stack of rings, each filled with a denser dither than the one below it. With `interactive`, a second, larger stack switches on ring by ring when the card is hovered or something inside it has focus, so the glow grows outward through the levels.
+The glow is a stack of rings, each filled with a denser dither than the one below it. The rim is a wider stack masked to a band one cell wide inside the border: it is dense where the glow sits and thins out round the card, so the edge catches the light. Set `radius` if you round the card differently, so the rim follows the corners. With `interactive`, a second, larger stack switches on ring by ring when the card is hovered or something inside it has focus, so the glow grows outward through the levels.
 
 ## Examples
 
@@ -73,14 +73,26 @@ The glow is a stack of rings, each filled with a denser dither than the one belo
     {
       name: "reach",
       type: "number",
-      default: "200",
+      default: "240",
       description: "How far the glow spreads from its origin, in pixels.",
     },
     {
       name: "strength",
       type: "number",
-      default: "0.45",
+      default: "0.5",
       description: "Densest dither level, at the origin, from 0 to 1.",
+    },
+    {
+      name: "rim",
+      type: "boolean",
+      default: "true",
+      description: "Light the border with dither, densest near the glow.",
+    },
+    {
+      name: "radius",
+      type: "number",
+      default: "14",
+      description: "Corner radius in pixels. The rim follows it.",
     },
     {
       name: "interactive",
