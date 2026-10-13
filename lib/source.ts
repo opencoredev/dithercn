@@ -4,6 +4,7 @@ import { loader } from "fumadocs-core/source";
 import { docs } from "@/.source/server";
 import { ROUTES } from "@/constants/routes";
 import { AGENT_DOCS_DIRECTIVE_MARKDOWN } from "@/lib/agent-discovery/directive";
+import { propsTablesToMarkdown } from "@/lib/agent-discovery/props-table-markdown";
 import { docsContentRoute, docsImageRoute } from "@/lib/docs";
 
 export const source = loader({
@@ -35,7 +36,7 @@ export const getLLMText = async (page: InferPageType<typeof source>) => {
   const sections = [
     page.data.description,
     AGENT_DOCS_DIRECTIVE_MARKDOWN,
-    processed.trim(),
+    propsTablesToMarkdown(processed).trim(),
   ].filter(Boolean);
 
   return `# ${page.data.title}
