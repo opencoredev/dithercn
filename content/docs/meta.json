@@ -2,12 +2,12 @@
   "root": true,
   "pages": [
     "(root)",
-    "concepts",
+    "engine",
+    "examples",
     "backgrounds",
     "charts",
     "interface",
     "text",
-    "images",
-    "tools"
+    "images"
   ]
 }

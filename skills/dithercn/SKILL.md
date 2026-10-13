@@ -1,0 +1,58 @@
+---
+name: dithercn
+description: Build any dithered visual with the dithercn engine (dither-core, in lib/dither) in a React or shadcn app. Use when the user wants a dither, a dithered or Bayer or halftone or pixel texture, or a dithered background, hero, chart, meter, card, loader, text or image for a landing page or dashboard, or when code imports lib/dither or components/dithercn.
+---
+
+# dithercn
+
+dithercn is a dither engine. `dither-core` (installed into `lib/dither`) turns a tone you compute into ordered dither dots, in your theme's colours, with motion, resizing and reduced motion handled. You build the dither the user asked for on top of it. The dithercn components are examples of what the engine can do: start from one when it is close, and write your own when it isn't.
+
+## 1. Set up the engine
+
+Find the engine: `lib/dither/index.ts`, under the `lib` alias in `components.json` (imports below use `@/lib/dither`; use the project's alias). If it is missing, install it from the dithercn registry:
+
+```bash
+npx shadcn@latest add {{REGISTRY_URL}}/dither-core.json
+```
+
+That also installs `dither-tokens`: the CSS variables `--dither-ink`, `--dither-paper`, `--dither-cell`, `--dither-bloom` and `--dither-color-<name>`, written into the project's global CSS and mapped to the shadcn `--primary` and `--background`. The engine needs React 19 and Tailwind CSS v4.
+
+Done when `lib/dither/index.ts` exists and the global CSS defines `--dither-ink`.
+
+## 2. Pick the technique
+
+| The user wants                                                                                                                        | Use                                                                | Read                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------ |
+| A surface whose tone varies per pixel or moves: gradients, glows, noise, contours, waves, rings, any shape you can describe with math | `DitherShader` with a GLSL `field`                                 | [fields.md](references/fields.md)                      |
+| A static fill inside SVG shapes: bars, arcs, gauges, meters, rings, icons, maps                                                       | `FillPattern` or `DitherPattern` in `<defs>`, `fill="url(#id)"`    | [engine-api.md](references/engine-api.md#static-fills) |
+| A static fill on a DOM element: a block, band, border, progress bar, skeleton                                                         | `fillStyle(variant)` or `ditherMaskStyle(level)` on an empty layer | [engine-api.md](references/engine-api.md#static-fills) |
+| A photo or logo, dithered                                                                                                             | `ditherImage` on canvas pixels                                     | [engine-api.md](references/engine-api.md#images)       |
+| A PNG, SVG or CSS file, or a background with no JavaScript                                                                            | `dither-export`                                                    | [engine-api.md](references/engine-api.md#export)       |
+
+Combine them freely: a dashboard card can hold an SVG meter with `FillPattern` over a `DitherShader` glow. Before writing from scratch, scan [examples.md](references/examples.md): if an example is close, install it and edit its source, which is plain code in `components/dithercn/`.
+
+Done when every visual in the request has a technique.
+
+## 3. Build it
+
+1. Read the reference named for your technique, and [recipes.md](references/recipes.md) for complete, working components to adapt.
+2. Write the component in its own file. `"use client"` when it uses `DitherShader`, hooks or a canvas; `FillPattern`, `DitherPattern`, `fillStyle` and `ditherMaskStyle` render on the server.
+3. Give it typed props for what the user would tweak (colour, intensity, speed, scale, value), with defaults that already look good.
+4. Place it with [placement.md](references/placement.md): a shader fills a positioned parent (`absolute inset-0`), and content sits in a sibling above it.
+5. Colour it with [theme.md](references/theme.md): palette names such as `"ink"` and `"blue"`, or CSS variables, so it follows light and dark.
+
+Done when the component renders the requested look with no `[dither-core]` errors in the console.
+
+## 4. Check it in a browser
+
+Open the page and look at it. Screenshot it if you can, at desktop and phone widths, in light and dark mode, and once with reduced motion (`prefers-reduced-motion: reduce`). Hold it to [quality.md](references/quality.md).
+
+Done when every check in quality.md passes. A screenshot that shows flat colour, a solid block or an empty box means the field returns the wrong range or the parent has no size: fix it and look again.
+
+## Rules for every dither
+
+- A field returns a continuous tone in [0, 1]: 0 paper, 1 ink. The engine quantises and dithers it, so write smooth math (`smoothstep`, `exp`, `mix`) and leave thresholds and Bayer matrices to the engine.
+- `uv` runs 0 to 1 on both axes with y up. Multiply x by `res.x / res.y` before measuring distances, or circles stretch into ovals.
+- Paint with theme colours (`"ink"`, palette names, `--css-variables`). Literal colours are for when the user names one.
+- Text sits on clear ground. Fade the tone down where text goes: to 0 for lines and sparse patterns, to 0.2 or less for soft fills. Text contrast stays at 4.5:1 or better.
+- Motion is slow, a drift of a few percent of the box per second. Choose `stillTime` so the reduced-motion frame looks finished.

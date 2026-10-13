@@ -1,53 +1,25 @@
 ---
 title: "Export"
-description: "Save any dither as a PNG, a compact SVG or a CSS rule, with a ready-made export panel or from your own code."
+description: "Turn any dither into a PNG, a compact SVG or a CSS rule from your own code, with dither-export."
 ---
 
-import ExportDemo from "@/examples/export-demo";
 import ExportTile from "@/examples/export-tile";
-import { controls as exportControls } from "@/examples/export-controls";
 
-<ComponentPreview
-  src="examples/export-demo.tsx"
-  size="lg"
-  controls={exportControls}
->
-  <ExportDemo />
-</ComponentPreview>
-
-Export comes in two parts. `dither-export-panel` is the panel above, the same one the [Dither maker](/docs/tools/dither-maker) opens: pick PNG, SVG or CSS and a size, see the file and its weight, then copy or download it. Underneath, `dither-export` is a small library that turns the `ImageData` from `ditherImage`, one pixel per cell, into files.
+`dither-export` turns a dither into files. It takes the `ImageData` from `ditherImage`, one pixel per cell, or a grid of palette indices you worked out yourself, and returns a PNG, an SVG or a CSS rule. Use it to bake a dither into a static asset, to ship a background with no JavaScript, or to give your users a download button.
 
 ## Which format
 
 | Format | Use it for                                               |
 | ------ | -------------------------------------------------------- |
-| PNG    | Photos and diffusion dithers. Pixel-exact, 1× to 4×.     |
+| PNG    | Photos and diffusion dithers. Pixel-exact at any scale.  |
 | SVG    | Ordered dithers and flat art. Sharp at any size.         |
 | CSS    | Backgrounds in a stylesheet: the whole image, or a tile. |
 
 ## Installation
 
-The panel brings the library with it.
-
-<InstallBlock name="dither-export-panel" />
-
-For the library alone:
-
 <InstallBlock name="dither-export" />
 
 ## Usage
-
-### The panel
-
-```tsx
-import { DitherExportPanel } from "@/components/dithercn/dither-export-panel";
-
-<DitherExportPanel image={dither} cell={4} filename="hero" />;
-```
-
-`image` is a dither with one pixel per cell, and `cell` is how many pixels each cell becomes at 1×. Pass `null` while the dither is being made; the panel shows itself disabled.
-
-### The library
 
 ```tsx
 import { ditherImage } from "@/lib/dither";
@@ -109,53 +81,6 @@ const svg = toSVG(
 ```
 
 ## API
-
-### DitherExportPanel
-
-<PropsTable
-  rows={[
-    {
-      name: "image",
-      type: "ImageData | null",
-      description: "The dither, one pixel per cell. null disables the panel.",
-      required: true,
-    },
-    {
-      name: "cell",
-      type: "number",
-      default: "4",
-      description: "Pixels per cell at 1×. The size choice multiplies it.",
-    },
-    {
-      name: "filename",
-      type: "string",
-      default: '"dither"',
-      description:
-        "File name without the extension. 2× and up add @2x. Also the CSS class name.",
-    },
-    {
-      name: "defaultFormat",
-      type: '"png" | "svg" | "css"',
-      default: '"png"',
-      description: "The tab selected first.",
-    },
-    {
-      name: "matrix",
-      type: "DitherMatrix",
-      default: '"bayer4"',
-      description: "The pattern of the CSS tile.",
-    },
-    {
-      name: "onExport",
-      type: "(event: ExportEvent) => void",
-      default: "–",
-      description:
-        "Called after each copy or download with the format, action, file name and size in bytes.",
-    },
-  ]}
-/>
-
-The CSS tab writes the whole image by default, embedded as whichever of PNG or SVG comes out smaller. **Tile** writes a repeating tile instead (under 1 KB for Bayer patterns), using the image's lightest colour as ink and its darkest as paper.
 
 ### toPNG
 
@@ -272,7 +197,6 @@ Saves a Blob or a string through the browser's download flow. Strings are saved 
 
 ## Notes
 
-- PNG and SVG exports match pixel for pixel at their own size. Shown smaller than one pixel per cell, an SVG drops cells in stripes, as any cell-based vector does; use PNG for thumbnails. The panel's SVG preview draws the file at full size and shrinks it smoothly, so it shows what you get.
-- Copying a PNG needs the async clipboard with image support (Chrome, Edge, Safari). Where it is missing, Copy is disabled for PNG and Download still works.
-- PNG exports are capped at 16,384 pixels on the longest side, the most every current browser can draw; larger sizes are disabled in the panel.
+- PNG and SVG exports match pixel for pixel at their own size. Shown smaller than one pixel per cell, an SVG drops cells in stripes, as any cell-based vector does; use PNG for thumbnails.
+- PNG exports are capped at 16,384 pixels on the longest side, the most every current browser can draw. A larger `scale` is reduced to fit.
 - The functions never change their input.

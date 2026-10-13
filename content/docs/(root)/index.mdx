@@ -1,28 +1,32 @@
 ---
 title: Introduction
-description: Beautiful dithers for landing pages and dashboards, installed with npx shadcn add.
+description: A dither engine your coding agent uses to build any dither for your landing page or dashboard.
 ---
 
-dithercn is a [shadcn registry](https://ui.shadcn.com/docs/registry) of dithered backgrounds, charts, interface pieces, type and images. Each piece is copied into your project as source, reads its colours from your shadcn theme, and works in light and dark mode.
+dithercn is a dither engine with an agent skill. Ask your coding agent for a dither, say "a dithered topographic background behind the hero" or "a radial usage meter for the billing card", and it builds that component on the engine, in your shadcn theme, with motion, light and dark mode and reduced motion handled.
+
+The components in these docs are examples of what the engine can make. Install one when it fits, read its source when you want to see how it was done, and ask your agent for something new when it doesn't.
+
+## What you get
+
+- **The engine.** `dither-core` installs into `lib/dither` as plain source. It turns a tone you compute into dither dots: a WebGL shader for anything that moves or varies per pixel, SVG patterns and CSS masks for static fills, image dithering, and export to PNG, SVG and CSS.
+- **The agent skill.** A `SKILL.md` and references that teach Claude Code, Codex, Cursor and other agents the engine: how to pick a technique, write a field, place it on a page, colour it from your theme and check it in a browser. See [Build with agents](/docs/build-with-agents).
+- **The examples.** More than forty backgrounds, charts, interface pieces, text effects and image treatments, each installable with `npx shadcn add`. See [Examples](/docs/examples).
 
 ## What a dither is
 
-A dither draws a smooth tone using only a few colours. It places dots of ink at a density that matches the tone, so your eye blends them into a gradient. Dithering began as a workaround for limited screens and printers. It now reads as a deliberate texture, a little like risograph print, and it's what dithercn is for.
+A dither draws a smooth tone using only a few colours. It places dots of ink at a density that matches the tone, so your eye blends them into a gradient. Dithering began as a workaround for limited screens and printers. It now reads as a deliberate texture, a little like risograph print, and it suits both a hero that should feel crafted and a dashboard that should feel calm.
 
 ## How the docs are organised
 
-- [Concepts](/docs/concepts/dither-engine) explain `dither-core`, the engine every component shares: threshold matrices, palettes, cell size, motion and performance.
-- [Backgrounds](/docs/catalog#catalog-backgrounds) are full-bleed surfaces for heroes, sections and cards.
-- [Charts](/docs/catalog#catalog-charts) are charts and status displays with a dithered fill.
-- [Interface](/docs/catalog#catalog-interface) pieces are skeletons, loaders, dividers, cards, empty states and a 404 block.
-- [Text](/docs/catalog#catalog-text) and [Images](/docs/catalog#catalog-images) dither your headings, pictures and logos.
-- [Tools](/docs/catalog#catalog-tools) let you make and export dithers without writing code.
-
-The [catalog](/docs/catalog) lists every component on one page.
+- **Get started:** [Installation](/docs/installation), [Build with agents](/docs/build-with-agents) and [Theming](/docs/theming).
+- **Engine:** how `dither-core` works, starting with the [dither engine](/docs/engine/dither-engine) and a guide to [writing your own dither](/docs/engine/write-your-own).
+- **Examples:** [every component](/docs/examples), grouped into Backgrounds, Charts, Interface, Text and Images.
 
 ## Principles
 
 - **Your theme, not ours.** Dithers read your `--primary` and `--background` tokens through the [`--dither-*` variables](/docs/theming), so they change when your theme changes.
-- **Quiet by default.** Motion is opt-in and slow, and every animated piece holds still when the visitor prefers reduced motion.
-- **Cheap on dashboards.** Charts are static SVG patterns, and animated backgrounds draw one cell per pixel and stop when they scroll out of view.
-- **Real text stays text.** Dithered headings are still HTML, so they can be selected, read aloud and indexed.
+- **Quiet by default.** Motion is slow, and every animated dither holds still when the visitor prefers reduced motion.
+- **Cheap on dashboards.** Static fills are SVG patterns and CSS masks, and shaders draw one pixel per cell and stop when they scroll out of view.
+- **Real text stays text.** Dithered headings and labels are still HTML, so they can be selected, read aloud and indexed.
+- **Source you own.** Everything installs as files in your project. You and your agent can read and change all of it.

@@ -1,19 +1,19 @@
 ---
 title: "Dither engine"
-description: "How dither-core turns a tone into dots: threshold matrices, levels, error diffusion, and the three ways to draw."
+description: "How dither-core, the engine behind every dithercn dither, turns a tone into dots: threshold matrices, levels, error diffusion, and the three ways to draw."
 ---
 
 import ConceptMatrices from "@/examples/concept-matrices";
 import ConceptLevels from "@/examples/concept-levels";
 import ConceptDiffusion from "@/examples/concept-diffusion";
 
-Every dithercn component is built on `dither-core`, a small library that installs into `lib/dither` the first time you add a component. You can import it yourself to build your own pieces:
+`dither-core` is the dither engine. It installs into `lib/dither` as plain source, with the [agent skill](/docs/build-with-agents) or the first time you add an example, and every dither on this site is built on it. Import it to build your own:
 
 ```tsx
 import { DitherShader, ditherMaskStyle, ditherImage } from "@/lib/dither";
 ```
 
-It draws dithers three ways, and each component uses whichever fits:
+It draws dithers three ways. Pick by what you're making:
 
 | You want                           | Use                                | Drawn with        |
 | ---------------------------------- | ---------------------------------- | ----------------- |
@@ -67,7 +67,7 @@ context.putImageData(dithered, 0, 0);
 
 ## Writing a field
 
-`DitherShader` runs a GLSL function you write, called the field. It receives the cell's position and returns its tone; the core does the rest: resizing, quantising, the palette, motion and cleanup.
+`DitherShader` runs a GLSL function you write, called the field. [Write your own dither](/docs/engine/write-your-own) builds one step by step; this is the short version. It receives the cell's position and returns its tone; the core does the rest: resizing, quantising, the palette, motion and cleanup.
 
 ```tsx
 const FIELD = `

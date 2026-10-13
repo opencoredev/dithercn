@@ -33,7 +33,7 @@ ${documentationIndex(base)}
 - [Homepage markdown](${base}${ROUTES.LLMS_MD}/content.md)
 - [OpenAPI description](${base}${ROUTES.OPENAPI})
 - [API catalog](${base}${ROUTES.API_CATALOG})
-- [Agent skill](${base}${ROUTES.AGENT_SKILLS_SITE_SKILL})
+- [dithercn agent skill](${base}${ROUTES.AGENT_SKILL}): build any dither on the engine
 - [shadcn MCP server documentation](${LINK.SHADCN_MCP_DOCS})
 `;
 };

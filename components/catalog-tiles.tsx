@@ -127,26 +127,12 @@ const LandscapeArt = () => (
   </>
 );
 
-// Tools: a diagonal ramp, the kind of test strip an export tool would print.
-const DIAGONAL_LEVELS = [1, 3, 5, 7, 9, 11, 13, 15] as const;
-
-const DiagonalArt = () => (
-  <div className="absolute -inset-[60%] flex -rotate-30">
-    {DIAGONAL_LEVELS.map((level) => (
-      <div key={level} className="relative flex-1">
-        <Dots level={level} className="inset-0" />
-      </div>
-    ))}
-  </div>
-);
-
 const ART = {
   backgrounds: GlowArt,
   charts: BarsArt,
   images: LandscapeArt,
   interface: SkeletonArt,
   text: GlyphArt,
-  tools: DiagonalArt,
 } as const satisfies Record<string, () => React.ReactNode>;
 
 const isArtKey = (id: string): id is keyof typeof ART => Object.hasOwn(ART, id);
@@ -160,7 +146,7 @@ const countLabel = (count: number) =>
   count === 1 ? "1 component" : `${count} components`;
 
 const tileHref = (category: CatalogCategory) =>
-  category.pieces[0]?.url ?? `${ROUTES.DOCS_CATALOG}#catalog-${category.id}`;
+  category.pieces[0]?.url ?? `${ROUTES.DOCS_EXAMPLES}#catalog-${category.id}`;
 
 export const CatalogTiles = ({
   catalog,

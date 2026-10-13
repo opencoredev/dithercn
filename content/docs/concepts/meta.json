@@ -1,5 +1,0 @@
-{
-  "title": "Concepts",
-  "description": "How dither-core works: matrices, palettes, cell size, motion and performance.",
-  "pages": ["dither-engine", "palettes", "pixel-scale", "motion", "performance"]
-}

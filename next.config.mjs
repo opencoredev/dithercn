@@ -36,7 +36,7 @@ const nextConfig = {
     ],
   },
   outputFileTracingIncludes: {
-    "/*": ["./registry/**/*"],
+    "/*": ["./registry/**/*", "./skills/**/*", "./content/docs/**/*.mdx"],
   },
   redirects() {
     return [
@@ -49,6 +49,43 @@ const nextConfig = {
         destination: `${ROUTES.DOCS}/:path*.md`,
         permanent: true,
         source: `${ROUTES.DOCS}/:path*.mdx`,
+      },
+      {
+        destination: ROUTES.AGENT_SKILL,
+        permanent: true,
+        source: "/.well-known/agent-skills/site-skill.md",
+      },
+      // Round 3: the agent skill became the centre of the docs.
+      {
+        destination: ROUTES.DOCS_BUILD_WITH_AGENTS,
+        permanent: true,
+        source: `${ROUTES.DOCS}/ai-agents`,
+      },
+      {
+        destination: ROUTES.DOCS_EXAMPLES,
+        permanent: true,
+        source: `${ROUTES.DOCS}/catalog`,
+      },
+      {
+        destination: ROUTES.DOCS_EXAMPLES,
+        permanent: true,
+        source: `${ROUTES.DOCS}/usage`,
+      },
+      // Concepts became Engine; the Tools group was folded into it.
+      {
+        destination: `${ROUTES.DOCS}/engine/:path*`,
+        permanent: true,
+        source: `${ROUTES.DOCS}/concepts/:path*`,
+      },
+      {
+        destination: `${ROUTES.DOCS}/engine/export`,
+        permanent: true,
+        source: `${ROUTES.DOCS}/tools/export`,
+      },
+      {
+        destination: `${ROUTES.DOCS}/engine/export`,
+        permanent: true,
+        source: `${ROUTES.DOCS}/tools/:path*`,
       },
     ];
   },

@@ -50,7 +50,7 @@ export const BayerRamp = ({ className }: { className?: string }) => (
     </div>
     <figcaption className="text-muted-foreground text-sm">
       The 17 levels of a 4×4 Bayer matrix, from no ink to solid. Every ordered
-      dither in the catalog is built from steps like these.
+      dither the engine draws is built from steps like these.
     </figcaption>
   </figure>
 );

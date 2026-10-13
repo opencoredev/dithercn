@@ -3,17 +3,19 @@ title: Theming
 description: How dithercn reads your shadcn theme, and how to override colours and cell size.
 ---
 
-dithercn doesn't ship a colour palette. Every piece reads three CSS variables, and those variables point at your existing shadcn tokens by default.
+Every dither reads a few CSS variables, and the main two point at your existing shadcn tokens by default. Change them and every dither on the page follows, including the ones your agent writes.
 
 ## The variables
 
-| Variable         | Default             | What it controls                          |
-| ---------------- | ------------------- | ----------------------------------------- |
-| `--dither-ink`   | `var(--primary)`    | The colour of the dots                    |
-| `--dither-paper` | `var(--background)` | The colour behind the dots                |
-| `--dither-cell`  | `3px`               | The size of one dither cell in CSS pixels |
+| Variable                | Default               | What it controls                                                |
+| ----------------------- | --------------------- | --------------------------------------------------------------- |
+| `--dither-ink`          | `var(--primary)`      | The colour of the dots                                          |
+| `--dither-paper`        | `var(--background)`   | The colour behind the dots                                      |
+| `--dither-cell`         | `3px`                 | The size of one dither cell in CSS pixels                       |
+| `--dither-bloom`        | `1` dark, `0.6` light | How strong glows are                                            |
+| `--dither-color-<name>` | tuned per theme       | The named colours: blue, purple, green, pink, orange, red, grey |
 
-[`dither-tokens`](/docs/installation) writes these into both `:root` and `.dark`. When the visitor switches to dark mode, `--primary` and `--background` change, and every dither changes with them.
+[`dither-tokens`](/docs/installation) writes these into both `:root` and `.dark`. Components and the engine accept the names `"ink"`, `"blue"`, `"green"` and so on wherever they take a colour, and Tailwind gets matching utilities such as `bg-dither-blue`. When the visitor switches to dark mode, `--primary` and `--background` change, and every dither changes with them.
 
 ## Override for one section
 
@@ -34,4 +36,4 @@ A dither only reads when ink and paper differ enough. As a rule, keep the same c
 
 ## Multi-step palettes
 
-Two-tone dithers cover most backgrounds and interface pieces. Components that need more steps take a `palette` prop: a list of colours from paper to ink, such as your `--chart-1` to `--chart-5` tokens. [Palettes](/docs/concepts/palettes) shows how a palette ramp is dithered.
+Two-tone dithers cover most backgrounds and interface pieces. Components that need more steps take a `palette` prop: a list of colours from paper to ink, such as your `--chart-1` to `--chart-5` tokens. [Palettes](/docs/engine/palettes) shows how a palette ramp is dithered.

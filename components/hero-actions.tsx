@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen01Icon, GridViewIcon } from "@hugeicons/core-free-icons";
+import { AiMagicIcon, GridViewIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 
 import { Icon } from "@/components/icon";
@@ -16,15 +16,18 @@ import { ROUTES } from "@/constants/routes";
 export const HeroActions = () => (
   <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
     <Button asChild size="lg" className="group/roll">
-      <Link href={ROUTES.DOCS} transitionTypes={["nav-forward"]}>
-        <Icon icon={BookOpen01Icon} />
-        <RollLabel>Read the docs</RollLabel>
+      <Link
+        href={ROUTES.DOCS_BUILD_WITH_AGENTS}
+        transitionTypes={["nav-forward"]}
+      >
+        <Icon icon={AiMagicIcon} />
+        <RollLabel>Build with agents</RollLabel>
       </Link>
     </Button>
     <Button asChild size="lg" variant="inverse" className="group/roll">
-      <Link href={ROUTES.DOCS_CATALOG} transitionTypes={["nav-forward"]}>
+      <Link href={ROUTES.DOCS_EXAMPLES} transitionTypes={["nav-forward"]}>
         <Icon icon={GridViewIcon} />
-        <RollLabel>Browse the catalog</RollLabel>
+        <RollLabel>See the examples</RollLabel>
       </Link>
     </Button>
   </div>
