@@ -63,5 +63,19 @@
         "target": "components/dithercn/line-chart.tsx"
       }
     ]
+  },
+  {
+    "name": "sparkline",
+    "type": "registry:component",
+    "title": "Sparkline",
+    "description": "A tiny inline trend for tables and stat cards: a line, a dithered area and a dot on the latest value.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/sparkline.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/sparkline.tsx"
+      }
+    ]
   }
 ]

@@ -1,0 +1,129 @@
+---
+title: "Sparkline"
+description: "A tiny inline trend with a dithered fill and a dot on the latest value, for stat cards and table rows."
+---
+
+import SparklineDemo from "@/examples/sparkline-demo";
+import SparklineTable from "@/examples/sparkline-table";
+import SparklineLine from "@/examples/sparkline-line";
+
+<ComponentPreview src="examples/sparkline-demo.tsx">
+  <SparklineDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="sparkline" />
+
+## Usage
+
+```tsx
+import { Sparkline } from "@/components/dithercn/sparkline";
+
+export function RevenueTrend() {
+  return (
+    <Sparkline
+      data={[41, 43, 42, 46, 48, 47, 51, 54]}
+      label="Revenue, last 8 weeks"
+      className="w-24"
+    />
+  );
+}
+```
+
+A sparkline takes a plain array of numbers, oldest first. Its height is a prop and its width follows the element, so set it with `className` or let it fill a table cell. The value range fits the data, because a sparkline shows the shape of a trend, not its distance from zero.
+
+`label` is required. Screen readers hear it followed by a summary of the data, such as "Revenue, last 8 weeks: 41 to 54, low 41, high 54".
+
+## Examples
+
+### In a table
+
+Each row's trend sits in its own cell at 24px high. `dot={false}` keeps a column of sparklines quiet.
+
+<ComponentPreview src="examples/sparkline-table.tsx">
+  <SparklineTable />
+</ComponentPreview>
+
+### Line only, one in ink
+
+`area={false}` drops the fill. Drawing the normal rows in `--muted-foreground` and the one that needs attention in ink makes the spike the first thing you see.
+
+<ComponentPreview src="examples/sparkline-line.tsx">
+  <SparklineLine />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "data",
+      type: "readonly number[]",
+      required: true,
+      description: "Values in order, oldest first.",
+    },
+    {
+      name: "label",
+      type: "string",
+      required: true,
+      description:
+        "What the trend shows. Starts the accessible summary of the data.",
+    },
+    {
+      name: "height",
+      type: "number",
+      default: "32",
+      description: "Height in px. The width follows the element.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"--dither-ink"',
+      description: "Ink colour of the line, fill and dot.",
+    },
+    {
+      name: "area",
+      type: "boolean",
+      default: "true",
+      description: "Fill under the line, densest just below it.",
+    },
+    {
+      name: "dot",
+      type: "boolean",
+      default: "true",
+      description: "Mark the latest value with a dot.",
+    },
+    {
+      name: "level",
+      type: "number",
+      default: "0.5",
+      description: "Coverage of the fill just under the line, from 0 to 1.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The dither texture.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell minus 1",
+      description:
+        "Size of one dither cell in px, rounded to whole device pixels. Smaller than other charts so the texture reads at small sizes.",
+    },
+    {
+      name: "format",
+      type: "Intl.NumberFormatOptions",
+      default: "Compact, as in 1.2K",
+      description: "How values are written in the accessible summary.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The sparkline is a single image to assistive technology, named by `label` and a summary of its first, last, lowest and highest values. It has no hover readout; show the exact number next to it.
+- On entrance the line draws in, the fill fades up and the dot appears last. With reduced motion it appears finished.
+- It runs no animation loop and costs one small SVG, so a table with dozens of rows stays cheap.
