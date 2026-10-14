@@ -129,11 +129,11 @@ export const CommandMenu = ({
       <DialogTrigger asChild>
         <Button
           variant="secondary"
-          className="bg-surface text-muted-foreground dark:bg-card relative h-8 w-full justify-start pl-2.5 font-normal shadow-none sm:pr-12 md:w-40 lg:w-56 xl:w-64"
+          className="bg-surface text-muted-foreground dark:bg-card relative h-9 w-full justify-start rounded-full pl-4 font-normal shadow-none sm:pr-14 md:w-40 lg:w-56 xl:w-60"
         >
           <span className="hidden lg:inline-flex">Search documentation…</span>
           <span className="inline-flex lg:hidden">Search…</span>
-          <div className="absolute top-1.5 right-1.5 hidden gap-1 sm:flex">
+          <div className="absolute top-2 right-2.5 hidden gap-1 sm:flex">
             <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
             <Kbd className="aspect-square">K</Kbd>
           </div>
