@@ -39,7 +39,7 @@ const RootLayout = ({
     </head>
     <body
       className={cn(
-        "text-foreground group/body overscroll-none font-sans antialiased [font-feature-settings:'ss01','cv11'] [--footer-height:--spacing(14)] [--header-height:--spacing(14)] xl:[--footer-height:--spacing(24)]",
+        "text-foreground group/body overscroll-none font-sans antialiased [font-feature-settings:'ss01','cv11'] [--footer-height:--spacing(14)] [--header-height:--spacing(18)] xl:[--footer-height:--spacing(24)]",
         fontVariables
       )}
     >
