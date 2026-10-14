@@ -1,15 +1,14 @@
 "use client";
 
 import {
-  ArrowRight01Icon,
   ArrowTurnBackwardIcon,
+  Search01Icon,
 } from "@hugeicons/core-free-icons";
 import type { Root as PageTreeRoot } from "fumadocs-core/page-tree";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/icon";
-import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -26,16 +25,32 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Kbd } from "@/components/ui/kbd";
 import { useIsMac } from "@/hooks/use-is-mac";
+import { ditherMaskStyle } from "@/lib/dither";
 import { trackEvent } from "@/lib/events";
 import { getPagesFromFolder } from "@/lib/page-tree";
+import { cn } from "@/lib/utils";
 
-const GROUP_HEADING_CLS =
-  "!p-0 [&_[cmdk-group-heading]]:scroll-mt-16 [&_[cmdk-group-heading]]:!p-3 [&_[cmdk-group-heading]]:!pb-1";
+/*
+ * Direction: a ⌘K in the site's own voice, after Raycast and Linear. The
+ * input is the dialog's top bar, group names are small mono labels like the
+ * catalog counts, and the selected row sits on a fine wash of dither ink
+ * with its ↵ key. Avoiding:
+ * a boxed input inside a box, a chevron on every row, a "Pages" group that
+ * repeats the sidebar.
+ */
+
+const GROUP_CLS =
+  "p-0! [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:px-3! [&_[cmdk-group-heading]]:pt-4! [&_[cmdk-group-heading]]:pb-1.5! [&_[cmdk-group-heading]]:font-mono [&_[cmdk-group-heading]]:text-[0.7rem] [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:uppercase";
 
 const ITEM_CLS =
-  "data-[selected=true]:border-input data-[selected=true]:bg-input/50 h-9 rounded-md border border-transparent px-3! font-medium";
+  "group/item text-foreground/80 data-[selected=true]:text-foreground relative isolate h-10 gap-3 overflow-hidden rounded-lg px-3! text-[0.9rem] data-[selected=true]:bg-foreground/[0.06]";
+
+// The selected row's wash: dither ink at a fine, even level.
+const SELECTED_WASH = ditherMaskStyle(0.25, { cell: 2 });
+
+const KEY_CLS =
+  "border-border/80 text-foreground/70 inline-flex h-5 min-w-5 items-center justify-center rounded border px-1 font-mono text-[0.7rem]";
 
 const keywordsFromUrl = (url: string) =>
   url
@@ -52,11 +67,9 @@ const isTypingTarget = (target: EventTarget | null) =>
   target instanceof HTMLSelectElement;
 
 export const CommandMenu = ({
-  navItems,
   tree,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
-  navItems: { href: string; label: string }[];
   tree: PageTreeRoot;
 }) => {
   const router = useRouter();
@@ -127,56 +140,39 @@ export const CommandMenu = ({
   return (
     <Dialog open={open} onOpenChange={setOpen} {...props}>
       <DialogTrigger asChild>
-        <Button
-          variant="secondary"
-          className="bg-surface text-muted-foreground dark:bg-card relative h-9 w-full justify-start rounded-full pl-4 font-normal shadow-none sm:pr-14 md:w-40 lg:w-56 xl:w-60"
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex h-9 items-center gap-2 rounded-full pr-2 pl-3 text-sm outline-none focus-visible:ring-[3px]"
         >
-          <span className="hidden lg:inline-flex">Search documentation…</span>
-          <span className="inline-flex lg:hidden">Search…</span>
-          <div className="absolute top-2 right-2.5 hidden gap-1 sm:flex">
-            <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
-            <Kbd className="aspect-square">K</Kbd>
-          </div>
-        </Button>
+          <Icon icon={Search01Icon} className="size-4" />
+          Search
+          <kbd className={KEY_CLS}>{isMac ? "⌘K" : "Ctrl K"}</kbd>
+        </button>
       </DialogTrigger>
       <DialogContent
         showCloseButton={false}
-        className="bg-popover ring-border/60 rounded-xl border-none bg-clip-padding p-2 pb-11 shadow-2xl ring-4"
+        className="bg-popover top-[18vh] translate-y-0 gap-0 overflow-hidden rounded-[20px] p-0 shadow-[0_24px_64px_-16px_rgb(0_0_0/0.5)] sm:max-w-xl"
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Search documentation</DialogTitle>
+          <DialogTitle>Search the docs</DialogTitle>
           <DialogDescription>
             Find a docs page or catalog piece.
           </DialogDescription>
         </DialogHeader>
         <Command
-          className="**:data-[slot=command-input-wrapper]:bg-input/50 **:data-[slot=command-input-wrapper]:border-input rounded-none bg-transparent **:data-[slot=command-input]:h-9! **:data-[slot=command-input]:py-0 **:data-[slot=command-input-wrapper]:mb-0 **:data-[slot=command-input-wrapper]:h-9! **:data-[slot=command-input-wrapper]:rounded-md **:data-[slot=command-input-wrapper]:border"
+          className="rounded-none bg-transparent **:data-[slot=command-input-wrapper]:h-14 **:data-[slot=command-input-wrapper]:gap-3 **:data-[slot=command-input-wrapper]:px-5 **:data-[slot=command-input]:h-14 **:data-[slot=command-input]:text-base"
           filter={handleFilter}
         >
-          <CommandInput placeholder="Search documentation…" />
-          <CommandList className="no-scrollbar min-h-80 scroll-pt-2 scroll-pb-1.5">
-            <CommandEmpty className="text-muted-foreground py-12 text-center text-sm">
-              No pages match that search.
+          <CommandInput placeholder="Search pages and components" />
+          <CommandList className="no-scrollbar max-h-[min(26rem,55vh)] scroll-pt-10 scroll-pb-2 px-2 pb-2">
+            <CommandEmpty className="text-muted-foreground py-14 text-center text-sm">
+              Nothing matches that. Try a component name, like waves.
             </CommandEmpty>
-            <CommandGroup heading="Pages" className={GROUP_HEADING_CLS}>
-              {navItems.map((item) => (
-                <CommandItem
-                  key={item.href}
-                  value={`Navigation ${item.label}`}
-                  keywords={["nav", item.label.toLowerCase()]}
-                  onSelect={() => go(item.href)}
-                  className={ITEM_CLS}
-                >
-                  <Icon icon={ArrowRight01Icon} />
-                  {item.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
             {groups.map((group) => (
               <CommandGroup
                 key={group.label}
                 heading={group.label}
-                className={GROUP_HEADING_CLS}
+                className={GROUP_CLS}
               >
                 {group.pages.map((page) => (
                   <CommandItem
@@ -186,19 +182,42 @@ export const CommandMenu = ({
                     onSelect={() => go(page.url)}
                     className={ITEM_CLS}
                   >
-                    <Icon icon={ArrowRight01Icon} />
-                    {page.name}
+                    <span
+                      aria-hidden="true"
+                      className="bg-dither-ink absolute inset-0 -z-10 hidden opacity-30 group-data-[selected=true]/item:block"
+                      style={SELECTED_WASH}
+                    />
+                    <span className="truncate">{page.name}</span>
+                    <kbd
+                      className={cn(
+                        KEY_CLS,
+                        "ml-auto hidden group-data-[selected=true]/item:inline-flex"
+                      )}
+                    >
+                      <Icon icon={ArrowTurnBackwardIcon} className="size-3" />
+                    </kbd>
                   </CommandItem>
                 ))}
               </CommandGroup>
             ))}
           </CommandList>
         </Command>
-        <div className="text-muted-foreground bg-muted absolute inset-x-0 bottom-0 z-20 flex h-10 items-center gap-2 rounded-b-xl border-t px-4 text-xs font-medium">
-          <Kbd>
-            <Icon icon={ArrowTurnBackwardIcon} />
-          </Kbd>
-          Go to page
+        <div className="text-muted-foreground flex h-11 items-center gap-4 border-t px-5 font-mono text-[0.7rem]">
+          <span className="flex items-center gap-1.5">
+            <kbd className={KEY_CLS}>↑</kbd>
+            <kbd className={KEY_CLS}>↓</kbd>
+            move
+          </span>
+          <span className="flex items-center gap-1.5">
+            <kbd className={KEY_CLS}>
+              <Icon icon={ArrowTurnBackwardIcon} className="size-3" />
+            </kbd>
+            open
+          </span>
+          <span className="flex items-center gap-1.5">
+            <kbd className={KEY_CLS}>esc</kbd>
+            close
+          </span>
         </div>
       </DialogContent>
     </Dialog>
