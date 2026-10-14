@@ -6,6 +6,7 @@ export const ROUTES = {
   API_STATUS: "/api/status",
   DOCS: "/docs",
   DOCS_ASK_YOUR_AGENT: "/docs#ask-your-agent-for-a-dither",
+  DOCS_ENGINE: "/docs/engine/dither-engine",
   DOCS_EXAMPLES: "/docs/examples",
   DOCS_INSTALLATION: "/docs/installation",
   DOCS_THEMING: "/docs/theming",
