@@ -10,6 +10,14 @@
     "waves",
     "plasma",
     "beams",
+    "silk",
+    "smoke",
+    "contours",
+    "ripples",
+    "ridgelines",
+    "metaballs",
+    "tunnel",
+    "retro-grid",
     "eclipse",
     "horizon",
     "starfield",
@@ -17,10 +25,6 @@
     "dither-globe",
     "dot-map",
     "dither-orb",
-    "dither-fade",
-    "contours",
-    "ripples",
-    "retro-grid",
-    "silk"
+    "dither-fade"
   ]
 }

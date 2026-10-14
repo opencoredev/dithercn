@@ -1,0 +1,58 @@
+[
+  {
+    "name": "tunnel",
+    "type": "registry:component",
+    "title": "Tunnel",
+    "description": "A slow flight down a tunnel of round or square rings, with spokes along the walls and fog at the vanishing point.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/tunnel.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/tunnel.tsx"
+      }
+    ]
+  },
+  {
+    "name": "smoke",
+    "type": "registry:component",
+    "title": "Smoke",
+    "description": "Soft smoke billowing upward and thinning out, lit from above, with props for scale, height, wind and density.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/smoke.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/smoke.tsx"
+      }
+    ]
+  },
+  {
+    "name": "metaballs",
+    "type": "registry:component",
+    "title": "Metaballs",
+    "description": "Soft blobs that drift, merge and split like a lava lamp, as shaded shapes or rings of contour lines.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/metaballs.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/metaballs.tsx"
+      }
+    ]
+  },
+  {
+    "name": "ridgelines",
+    "type": "registry:component",
+    "title": "Ridgelines",
+    "description": "Stacked ridge lines like a pulsar plot, each hiding the ones behind it, with peaks that shift slowly.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/ridgelines.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/ridgelines.tsx"
+      }
+    ]
+  }
+]
