@@ -33,9 +33,9 @@ A client component that draws a GLSL field as a dither on a WebGL canvas at one 
   cell={3} // cell size in CSS px. Default: --dither-cell, or 3
   palette={["--dither-paper", "--dither-ink"]} // default
   speed={1} // time multiplier, default 1. Changing it never jumps the motion
-  animate // default true. false draws one still frame at stillTime
+  animate // default true. false stops motion: holds the current frame, or draws stillTime if it never moved
   fps={30} // frame cap, default 30
-  stillTime={0} // seconds of field time shown when motion is off or reduced
+  stillTime={0} // seconds of field time shown when motion is off or reduced before it ever ran
   fallback={
     <div className="absolute inset-0 bg-linear-to-t from-dither-ink/30 to-transparent" />
   }

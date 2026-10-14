@@ -6,7 +6,7 @@ A field is the one GLSL function you write for `DitherShader`. It returns a tone
 float field(vec2 uv, vec2 res, float t) {
   // uv:  the cell centre, 0 to 1 on both axes, (0, 0) bottom left, y up
   // res: the canvas size in cells (columns, rows)
-  // t:   seconds of motion, already multiplied by `speed`; frozen at stillTime when motion is off
+  // t:   seconds of motion, already multiplied by `speed`; stillTime when motion starts off; held where it was when motion is turned off
   return uv.y; // 0 = paper (palette[0]), 1 = ink (palette[last])
 }
 ```

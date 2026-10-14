@@ -457,7 +457,10 @@ export interface DitherShaderProps extends Omit<
   palette?: DitherPalette;
   /** Time multiplier. Default 1. */
   speed?: number;
-  /** `false` draws one still frame at `stillTime`. Default `true`. */
+  /**
+   * `false` stops the motion. A shader that never moved draws `stillTime`;
+   * one that was moving holds its current frame. Default `true`.
+   */
   animate?: boolean;
   /** Frame rate cap. Default 30. */
   fps?: number;
@@ -561,11 +564,22 @@ export const DitherShader = ({
     };
   });
 
+  // Once motion has run, turning `animate` off holds the frame on screen
+  // instead of jumping to `stillTime`. A new `stillTime` still applies.
+  const hasRunRef = useRef(false);
+  useEffect(() => {
+    hasRunRef.current = false;
+  }, [stillTime]);
+
   const loopState = useFrameLoop(
     (time, delta) => {
-      // Accumulate so a change of `speed` never jumps the motion.
-      timeRef.current =
-        delta === 0 ? time : timeRef.current + delta * live.current.speed;
+      if (delta > 0) {
+        // Accumulate so a change of `speed` never jumps the motion.
+        timeRef.current += delta * live.current.speed;
+        hasRunRef.current = true;
+      } else if (!hasRunRef.current) {
+        timeRef.current = time;
+      }
       drawRef.current?.();
     },
     { enabled: animate, fps, stillTime, target: rootRef }
