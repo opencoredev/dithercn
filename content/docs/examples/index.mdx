@@ -1,11 +1,15 @@
 ---
-title: All examples
-description: Components built on the dithercn engine. Install one as it is, or use it as the starting point for your own.
+title: Catalog
+description: Every example component built on the dithercn engine, grouped by what it's for.
 ---
 
-Every component here is built on the [engine](/docs/engine/dither-engine), and each one installs as plain source into `components/dithercn/`. Use them three ways: drop one into your page as it is, open its source to see how a dither like it is made, or point your agent at one and ask for a variation. For anything not on this list, [ask your agent](/docs/build-with-agents) or [write your own](/docs/engine/write-your-own).
+Each component installs as plain source into `components/dithercn/`. Drop one into your page as it is, read its source to see how it's made, or point your agent at one and ask for a variation. For anything not here, [ask your agent](/docs#ask-your-agent-for-a-dither) or [write your own](/docs/engine/write-your-own).
 
-## Install and render an example
+<CatalogIndex className="mt-8" />
+
+## Using an example
+
+Install any example by its registry URL. It brings the engine with it the first time:
 
 ```bash
 npx shadcn@latest add http://localhost:3000/r/dither-gradient.json
@@ -38,7 +42,3 @@ Backgrounds built on `DitherShader` share these props:
 | `speed`   | How fast it moves                                                           | `1`                              |
 
 Charts and interface pieces take a `color` from the [named palette](/docs/theming) and a `fill` of `"gradient"`, `"dotted"`, `"hatched"` or `"solid"`. Each page lists every prop.
-
-## All examples
-
-<CatalogIndex />

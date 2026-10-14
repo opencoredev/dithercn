@@ -16,12 +16,9 @@ import { ROUTES } from "@/constants/routes";
 export const HeroActions = () => (
   <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
     <Button asChild size="lg" className="group/roll">
-      <Link
-        href={ROUTES.DOCS_BUILD_WITH_AGENTS}
-        transitionTypes={["nav-forward"]}
-      >
+      <Link href={ROUTES.DOCS_INSTALLATION} transitionTypes={["nav-forward"]}>
         <Icon icon={AiMagicIcon} />
-        <RollLabel>Build with agents</RollLabel>
+        <RollLabel>Install the skill</RollLabel>
       </Link>
     </Button>
     <Button asChild size="lg" variant="inverse" className="group/roll">

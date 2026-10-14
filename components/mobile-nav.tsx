@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ROUTES } from "@/constants/routes";
-import { getPagesFromFolder } from "@/lib/page-tree";
+import { getDocsNav } from "@/lib/docs-nav";
 import { cn } from "@/lib/utils";
 
 const MobileLink = ({
@@ -142,21 +142,22 @@ export const MobileNav = ({
               ))}
             </div>
           </div>
-          {tree.children.map((item) => {
-            if (item.type !== "folder") {
-              return null;
-            }
-            const pages = getPagesFromFolder(item);
-
-            return (
-              <MobileNavGroup
-                key={item.$id}
-                label={item.name}
-                pages={pages}
-                setOpen={setOpen}
-              />
-            );
-          })}
+          {getDocsNav(tree).map((section) => (
+            <MobileNavGroup
+              key={section.id}
+              label={section.label}
+              pages={[
+                ...section.pages,
+                // Categories jump to their place in the catalog, which keeps
+                // the menu short; each component page links to its neighbours.
+                ...section.categories.map((category) => ({
+                  name: category.name,
+                  url: `${ROUTES.DOCS_EXAMPLES}#catalog-${category.id}`,
+                })),
+              ]}
+              setOpen={setOpen}
+            />
+          ))}
         </div>
       </PopoverContent>
     </Popover>

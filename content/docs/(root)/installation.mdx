@@ -63,7 +63,22 @@ Because the variables point at your theme tokens, there is nothing extra to set 
 
 </Steps>
 
-Then ask your agent for a dither. [Build with agents](/docs/build-with-agents) shows what to ask and what it does.
+Then ask your agent for a dither. The [introduction](/docs#ask-your-agent-for-a-dither) has example requests and explains what the agent does with them.
+
+## What's in the skill
+
+| File                       | What it covers                                                                                                          |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `SKILL.md`                 | The four steps the agent follows, and the rules for every dither                                                        |
+| `references/engine-api.md` | Every engine export: `DitherShader`, `FillPattern`, `fillStyle`, colours, motion hooks, `ditherImage` and export        |
+| `references/fields.md`     | How to write a GLSL field, with building blocks for gradients, noise, contour lines, rings, arcs and shading            |
+| `references/recipes.md`    | Complete components to adapt: a shader background, an SVG chart fill, a progress bar, a dithered photo, a CSS-only band |
+| `references/placement.md`  | Putting a dither on a landing page or dashboard: layering, sizing, server and client components                         |
+| `references/theme.md`      | Tokens, named colours, palettes, light and dark mode                                                                    |
+| `references/quality.md`    | The checks: looks, contrast, reduced motion, accessibility, performance                                                 |
+| `references/examples.md`   | Every example component, with its install command and docs link                                                         |
+
+The skill matches the engine it installs with and points your agent at the files in your project, so it never has to guess at an API.
 
 ## Install the skill for every project
 
@@ -116,8 +131,17 @@ npx shadcn@latest add @dithercn/dithercn-skill
 
 See the shadcn docs on [namespaced registries](https://ui.shadcn.com/docs/registry/namespace) for more options, including authentication.
 
+## Other ways in for agents
+
+The skill is the main way in. The site also publishes plain-text surfaces for agents that browse:
+
+- [`/llms.txt`](/llms.txt) lists every docs page with a one-line description and a Markdown link, and [`/llms-full.txt`](/llms-full.txt) is the whole documentation as one file.
+- Add `.md` to any docs URL for its Markdown, for example [`/docs/installation.md`](/docs/installation.md), or send an `Accept: text/markdown` header. Every page also has a **Copy page** menu.
+- The registry index is at [`/r/registry.json`](/r/registry.json), and each item at `/r/<name>.json`. The [shadcn MCP server](https://ui.shadcn.com/docs/mcp) can browse and install from it once you have [added the `@dithercn` namespace](#use-a-namespace).
+- [`/.well-known/api-catalog`](/.well-known/api-catalog) links every machine-readable surface (RFC 9727), [`/openapi.json`](/openapi.json) describes the read-only endpoints, and [`/api/status`](/api/status) returns `{"status":"ok"}`. The home page sends these as `Link` headers too.
+
 ## Next steps
 
-- [Build with agents](/docs/build-with-agents) explains what the skill teaches and how to ask for a dither.
-- [Write your own dither](/docs/engine/write-your-own) builds one by hand, step by step.
-- [Examples](/docs/examples) lists every component.
+- [Ask your agent for a dither](/docs#ask-your-agent-for-a-dither) with the skill installed.
+- Browse the [catalog](/docs/examples) for a component to install as it is.
+- [Write your own dither](/docs/engine/write-your-own) by hand, step by step.

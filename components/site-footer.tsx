@@ -14,7 +14,6 @@ interface FooterLink {
 const START: readonly FooterLink[] = [
   { href: ROUTES.DOCS, label: "Introduction" },
   { href: ROUTES.DOCS_INSTALLATION, label: "Installation" },
-  { href: ROUTES.DOCS_BUILD_WITH_AGENTS, label: "Build with agents" },
   { href: ROUTES.DOCS_THEMING, label: "Theming" },
   { href: ROUTES.DOCS_WRITE_YOUR_OWN, label: "Write your own dither" },
 ];
