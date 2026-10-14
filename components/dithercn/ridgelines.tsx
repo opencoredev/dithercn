@@ -40,12 +40,23 @@ float field(vec2 uv, vec2 res, float t) {
   // Peaks keep their shape in narrow boxes instead of crowding together.
   float freq = clamp(res.x / res.y / 1.3, 0.45, 1.4);
   float tone = 0.0;
+  // ridgeHeight never exceeds 6.3 spacings per unit of amplitude.
+  float reach = 6.3 * ridgeAmplitude * spacing + cellX * res.x / res.y;
 
   // Back to front: each line hides the ones behind it under its own paper fill.
   for (int i = 0; i < 64; i++) {
     float fi = float(i);
     if (fi >= count) break;
     float base = top - fi * spacing;
+    // Only lines that can reach this cell need their noise. A line whose
+    // highest peak stays below the cell leaves it alone, and one more than six
+    // spacings above it leaves a shade too faint for any threshold, so it
+    // just clears what the lines behind it drew.
+    if (uv.y > base + reach) continue;
+    if (base - uv.y > 6.0 * spacing) {
+      tone = 0.0;
+      continue;
+    }
     float h = ridgeHeight(uv.x, fi, t, freq);
     float y = base + h * spacing;
     // Under the line, its fill hides the lines behind. Raised peaks get a faint
