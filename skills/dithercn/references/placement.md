@@ -18,8 +18,10 @@ A `DitherShader` fills its nearest positioned ancestor. Content goes in a siblin
 
 ## Landing pages
 
+Read [landing-pages.md](landing-pages.md) first: it covers what the page is about and how it is composed. These are the placements.
+
 - **Hero:** a full-bleed background behind the headline. Clear the area under the text (tone 0 for lines and sparse patterns, 0.2 or less for soft fills) and let the dither peak towards the edges or a corner. Fade it out at the bottom with `smoothstep` on `uv.y` so the next section starts clean.
-- **Clearing space for text:** fade the tone with an ellipse around the text, sized like the text. Text has a fixed size in pixels, so measure the ellipse in cells: `float clear = smoothstep(0.0, 0.5, length((uv - textCentre) * res / textHalfCells) - 1.0);` then `tone *= clear;`, with `textHalfCells` the text block's half width and height in pixels divided by the cell size (about 3). A headline 600px wide is `vec2(110.0, 30.0)` or so. Measured this way the clearing fits the text on a wide desktop and on a phone alike; in square units or `uv` it is too big on one and too small on the other. Check both widths, and pass the size as a uniform when it changes with the breakpoint.
+- **Clearing space for text:** measure the text block and clear a rounded box around it, with the box passed to the field as a uniform. [recipes.md](recipes.md#a-hero-that-clears-its-headline) has the complete component. Measured this way the clearing fits the copy on a wide desktop and on a phone alike; an ellipse in `uv` is too big on one and too small on the other, and clips the corners of a text block.
 - **Section break:** a band 80 to 160px tall between sections, a dithered gradient from ink at one edge to paper at the other.
 - **Feature card:** a small shader or a `fillStyle("gradient")` layer behind a card's top half, under the icon and title.
 - **Dark plate:** a hero that is always dark wraps the section in `className="dark"` so `--dither-ink` and `--dither-paper` take the dark values there, whatever the site theme.
