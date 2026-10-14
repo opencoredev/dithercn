@@ -35,7 +35,7 @@ A client component that draws a GLSL field as a dither on a WebGL canvas at one 
   speed={1} // time multiplier, default 1. Changing it never jumps the motion
   animate // default true. false stops motion: holds the current frame, or draws stillTime if it never moved
   fps={30} // frame cap, default 30
-  stillTime={0} // seconds of field time shown when motion is off or reduced before it ever ran
+  stillTime={0} // seconds of field time shown under reduced motion, or when animate starts false
   fallback={
     <div className="absolute inset-0 bg-linear-to-t from-dither-ink/30 to-transparent" />
   }

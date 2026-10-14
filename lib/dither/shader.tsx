@@ -10,7 +10,7 @@ import {
 } from "@/lib/dither/color";
 import { getThresholdMap } from "@/lib/dither/matrices";
 import type { DitherMatrix, ThresholdMap } from "@/lib/dither/matrices";
-import { useFrameLoop } from "@/lib/dither/motion";
+import { useFrameLoop, usePrefersReducedMotion } from "@/lib/dither/motion";
 import { cssColor, DEFAULT_PALETTE } from "@/lib/dither/tokens";
 import type { DitherPalette, Rgba } from "@/lib/dither/tokens";
 import { cn } from "@/lib/utils";
@@ -565,7 +565,9 @@ export const DitherShader = ({
   });
 
   // Once motion has run, turning `animate` off holds the frame on screen
-  // instead of jumping to `stillTime`. A new `stillTime` still applies.
+  // instead of jumping to `stillTime`. A new `stillTime` still applies, and
+  // reduced motion always shows it.
+  const reducedMotion = usePrefersReducedMotion();
   const hasRunRef = useRef(false);
   useEffect(() => {
     hasRunRef.current = false;
@@ -577,7 +579,7 @@ export const DitherShader = ({
         // Accumulate so a change of `speed` never jumps the motion.
         timeRef.current += delta * live.current.speed;
         hasRunRef.current = true;
-      } else if (!hasRunRef.current) {
+      } else if (reducedMotion || !hasRunRef.current) {
         timeRef.current = time;
       }
       drawRef.current?.();

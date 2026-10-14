@@ -15,12 +15,12 @@ Animated dithers in dithercn are slow on purpose. A background should drift, not
 
 A `DitherShader` animates only while someone can see it. Its `data-state` attribute says what it is doing:
 
-| `data-state` | Meaning                                                                                                                                       |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `running`    | Drawing up to 30 frames a second.                                                                                                             |
-| `paused`     | Scrolled out of view or in a hidden tab. Time stops, so it resumes where it left off.                                                         |
-| `static`     | Motion is off: `animate={false}` or reduced motion. A dither that was moving holds its current frame. One that never moved draws `stillTime`. |
-| `fallback`   | Nothing drawn yet, WebGL is unavailable, or the shader is far offscreen and has released its context. The `fallback` content shows instead.   |
+| `data-state` | Meaning                                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `running`    | Drawing up to 30 frames a second.                                                                                                           |
+| `paused`     | Scrolled out of view or in a hidden tab. Time stops, so it resumes where it left off.                                                       |
+| `static`     | Motion is off. Reduced motion draws `stillTime`. `animate={false}` holds the current frame, or draws `stillTime` if the dither never moved. |
+| `fallback`   | Nothing drawn yet, WebGL is unavailable, or the shader is far offscreen and has released its context. The `fallback` content shows instead. |
 
 Time only advances while running, and a long frame (a tab switch, a debugger) counts as at most a tenth of a second, so the motion never jumps.
 
