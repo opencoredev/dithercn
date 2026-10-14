@@ -20,10 +20,19 @@ import {
 const ROOT = process.cwd();
 const REGISTRY_DIR = path.join(ROOT, "registry");
 const PLACEHOLDER = "{{REGISTRY_URL}}";
-const SITE_URL = (process.env.SITE_URL ?? "http://localhost:3000").replace(
-  /\/$/,
-  ""
-);
+// Without SITE_URL, a Vercel build points the registry at itself: the
+// production domain for production, the deployment for a preview. Builds
+// anywhere else use localhost, even with Vercel variables pulled locally.
+const vercelHost = () => {
+  if (process.env.VERCEL_ENV === "production") {
+    return process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  }
+  return process.env.VERCEL_ENV ? process.env.VERCEL_URL : undefined;
+};
+const host = vercelHost();
+const SITE_URL = (
+  process.env.SITE_URL || (host ? `https://${host}` : "http://localhost:3000")
+).replace(/\/$/, "");
 const REGISTRY_URL = `${SITE_URL}/r`;
 
 // The agent skill, rendered for SITE_URL, is what the dithercn-skill item ships.
