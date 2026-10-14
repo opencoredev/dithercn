@@ -7,7 +7,7 @@ import EngineFieldTone from "@/examples/engine-field-tone";
 import EngineFieldRings from "@/examples/engine-field-rings";
 import EngineFieldRipples from "@/examples/engine-field-ripples";
 
-This guide builds a dithered ripple background in three steps. You write one GLSL function, the field, and `DitherShader` does everything else: the dots, the colours, resizing, motion and reduced motion. The same steps make any background you can describe with a little math. Your agent follows them too, through the [dithercn skill](/docs/build-with-agents).
+This guide builds a dithered ripple background in three steps. You write one GLSL function, the field, and `DitherShader` does everything else: the dots, the colours, resizing, motion and reduced motion. The same steps make any background you can describe with a little math. Your agent follows them too, through the [dithercn skill](/docs/installation).
 
 You need the engine installed (see [Installation](/docs/installation)) and a section with a size to put the dither in.
 
@@ -156,4 +156,4 @@ The shader fills its positioned parent and ignores the pointer, so your content 
 
 - [Dither engine](/docs/engine/dither-engine) covers matrices and levels, and the static fills for charts and blocks.
 - [Palettes](/docs/engine/palettes), [Pixel scale](/docs/engine/pixel-scale) and [Motion](/docs/engine/motion) cover the shared props.
-- The [examples](/docs/examples) are all built this way. Open any background's source for a field to start from.
+- The examples in the [catalog](/docs/examples) are all built this way. Open any background's source for a field to start from.

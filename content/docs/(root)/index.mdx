@@ -10,18 +10,35 @@ The components in these docs are examples of what the engine can make. Install o
 ## What you get
 
 - **The engine.** `dither-core` installs into `lib/dither` as plain source. It turns a tone you compute into dither dots: a WebGL shader for anything that moves or varies per pixel, SVG patterns and CSS masks for static fills, image dithering, and export to PNG, SVG and CSS.
-- **The agent skill.** A `SKILL.md` and references that teach Claude Code, Codex, Cursor and other agents the engine: how to pick a technique, write a field, place it on a page, colour it from your theme and check it in a browser. See [Build with agents](/docs/build-with-agents).
-- **The examples.** More than forty backgrounds, charts, interface pieces, text effects and image treatments, each installable with `npx shadcn add`. See [Examples](/docs/examples).
+- **The agent skill.** A `SKILL.md` and references that teach Claude Code, Codex, Cursor and other agents the engine: how to pick a technique, write a field, place it on a page, colour it from your theme and check it in a browser. [Installation](/docs/installation) adds it to your project.
+- **The examples.** More than forty backgrounds, charts, interface pieces, text effects and image treatments, each installable with `npx shadcn add`. Browse them in the [catalog](/docs/examples).
 
 ## What a dither is
 
 A dither draws a smooth tone using only a few colours. It places dots of ink at a density that matches the tone, so your eye blends them into a gradient. Dithering began as a workaround for limited screens and printers. It now reads as a deliberate texture, a little like risograph print, and it suits both a hero that should feel crafted and a dashboard that should feel calm.
 
+## Ask your agent for a dither
+
+Once the skill is installed, describe what you want and where it goes. Name the page, the mood and anything that must stay readable:
+
+- "Add a dithered topographic contour background behind the hero on the home page. Slow, quiet, readable headline."
+- "On the billing page, add a dithered radial meter for storage used, 72%, with the number in the middle."
+- "Make the pricing section's top edge dissolve into the page with a dithered fade in our accent colour."
+- "Dither the team photos in the about page in our primary colour, and make them sharpen on hover."
+- "Replace the empty state on the inbox with a small dithered illustration of a paper plane."
+
+You don't need to know which component or API fits. The skill sends the agent through four steps:
+
+1. **Set up the engine.** It checks for `lib/dither` and installs `dither-core` if it's missing.
+2. **Pick a technique.** A WebGL field for anything that moves or varies per pixel, SVG patterns for chart and meter fills, CSS masks for blocks and bars, image dithering for photos, and export for files. If an example in the [catalog](/docs/examples) is close, it installs that and edits it.
+3. **Build the component.** It writes a typed component with props you can tweak, places it behind or inside your content, and colours it from your theme.
+4. **Check it in a browser.** It looks at the result in light and dark mode, at desktop and phone widths and with reduced motion, and fixes what doesn't read.
+
 ## How the docs are organised
 
-- **Get started:** [Installation](/docs/installation), [Build with agents](/docs/build-with-agents) and [Theming](/docs/theming).
-- **Engine:** how `dither-core` works, starting with the [dither engine](/docs/engine/dither-engine) and a guide to [writing your own dither](/docs/engine/write-your-own).
-- **Examples:** [every component](/docs/examples), grouped into Backgrounds, Charts, Interface, Text and Images.
+- **Get started:** this page, [Installation](/docs/installation) and [Theming](/docs/theming).
+- **Examples:** the [catalog](/docs/examples) of every component, then one page per component, grouped into Backgrounds, Charts, Interface, Text and Images.
+- **Engine:** how `dither-core` works, for when you want to build a dither yourself. Start with the [dither engine](/docs/engine/dither-engine) and [Write your own dither](/docs/engine/write-your-own).
 
 ## Principles
 

@@ -205,11 +205,11 @@ export default function IndexPage() {
               ))}
             </dl>
             <Link
-              href={ROUTES.DOCS_BUILD_WITH_AGENTS}
+              href={ROUTES.DOCS_ASK_YOUR_AGENT}
               transitionTypes={["nav-forward"]}
               className={LINK_CLS}
             >
-              How to build with agents
+              What to ask your agent
               <LinkArrow />
             </Link>
           </div>

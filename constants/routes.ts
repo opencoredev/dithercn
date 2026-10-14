@@ -4,7 +4,7 @@ export const ROUTES = {
   API_CATALOG: "/.well-known/api-catalog",
   API_STATUS: "/api/status",
   DOCS: "/docs",
-  DOCS_BUILD_WITH_AGENTS: "/docs/build-with-agents",
+  DOCS_ASK_YOUR_AGENT: "/docs#ask-your-agent-for-a-dither",
   DOCS_EXAMPLES: "/docs/examples",
   DOCS_INSTALLATION: "/docs/installation",
   DOCS_THEMING: "/docs/theming",

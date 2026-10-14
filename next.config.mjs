@@ -55,11 +55,17 @@ const nextConfig = {
         permanent: true,
         source: "/.well-known/agent-skills/site-skill.md",
       },
-      // Round 3: the agent skill became the centre of the docs.
+      // Round 3: the agent skill became the centre of the docs. Its page
+      // later split between the introduction and installation.
       {
-        destination: ROUTES.DOCS_BUILD_WITH_AGENTS,
+        destination: ROUTES.DOCS_ASK_YOUR_AGENT,
         permanent: true,
         source: `${ROUTES.DOCS}/ai-agents`,
+      },
+      {
+        destination: ROUTES.DOCS_ASK_YOUR_AGENT,
+        permanent: true,
+        source: `${ROUTES.DOCS}/build-with-agents`,
       },
       {
         destination: ROUTES.DOCS_EXAMPLES,
