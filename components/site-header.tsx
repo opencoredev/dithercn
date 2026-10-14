@@ -6,6 +6,7 @@ import { Wordmark } from "@/components/logo";
 import { MainNav } from "@/components/main-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { ModeSwitcher } from "@/components/mode-switcher";
+import { SiteHeaderFrame } from "@/components/site-header-frame";
 import { ROUTES } from "@/constants/routes";
 import { source } from "@/lib/source";
 
@@ -15,10 +16,7 @@ const navItems = [
 ];
 
 export const SiteHeader = () => (
-  <header
-    className="bg-background/90 sticky top-0 z-50 w-full border-b backdrop-blur-sm"
-    style={{ viewTransitionName: "site-header" }}
-  >
+  <SiteHeaderFrame>
     <div className="container-wrapper 3xl:fixed:px-0 px-6">
       <div className="3xl:fixed:container flex h-(--header-height) items-center gap-2">
         <MobileNav
@@ -44,5 +42,5 @@ export const SiteHeader = () => (
         </div>
       </div>
     </div>
-  </header>
+  </SiteHeaderFrame>
 );
