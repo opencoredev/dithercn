@@ -1,0 +1,128 @@
+---
+title: "Metaballs"
+description: "Soft blobs that drift, merge and split like a lava lamp, drawn as a dither."
+---
+
+import MetaballsDemo from "@/examples/metaballs-demo";
+import { controls as metaballsControls } from "@/examples/metaballs-controls";
+import MetaballsRings from "@/examples/metaballs-rings";
+import MetaballsLamp from "@/examples/metaballs-lamp";
+
+<ComponentPreview
+  src="examples/metaballs-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={metaballsControls}
+>
+  <MetaballsDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="metaballs" />
+
+## Usage
+
+```tsx
+import { Metaballs } from "@/components/dithercn/metaballs";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Metaballs className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+Each blob rises and sinks on its own slow loop. Where two come close, their edges reach for each other and join, then pull apart again. Every blob is densest at its core and has a soft halo around its edge.
+
+## Examples
+
+### Contour rings
+
+`variant="rings"` draws contour lines around the blobs instead of filling them. The rings merge and split with the blobs.
+
+<ComponentPreview src="examples/metaballs-rings.tsx" size="lg" align="stretch">
+  <MetaballsRings />
+</ComponentPreview>
+
+### Lava lamp
+
+Five blobs in warm colours, sped up a little, in a tall rounded box. In a narrow box the blobs are sized by its width.
+
+<ComponentPreview src="examples/metaballs-lamp.tsx">
+  <MetaballsLamp />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "variant",
+      type: '"solid" | "rings"',
+      default: '"solid"',
+      description:
+        "Shaded blobs with a soft halo, or contour lines around them.",
+    },
+    {
+      name: "count",
+      type: "number",
+      default: "5",
+      description: "How many blobs, from 2 to 8.",
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "1",
+      description:
+        "Size of the blobs. In a tall box they are sized by the width.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast it moves.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The background fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows soft CSS blobs in the same colours.
+- It costs one small draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/engine/performance).

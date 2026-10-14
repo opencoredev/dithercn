@@ -17,6 +17,10 @@
     "dither-globe",
     "dot-map",
     "dither-orb",
-    "dither-fade"
+    "dither-fade",
+    "tunnel",
+    "smoke",
+    "metaballs",
+    "ridgelines"
   ]
 }

@@ -1,0 +1,148 @@
+---
+title: "Tunnel"
+description: "A slow flight down a tunnel of round or square rings, drawn as a dither."
+---
+
+import TunnelDemo from "@/examples/tunnel-demo";
+import { controls as tunnelControls } from "@/examples/tunnel-controls";
+import TunnelHeadline from "@/examples/tunnel-headline";
+import TunnelSquare from "@/examples/tunnel-square";
+
+<ComponentPreview
+  src="examples/tunnel-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={tunnelControls}
+>
+  <TunnelDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="tunnel" />
+
+## Usage
+
+```tsx
+import { Tunnel } from "@/components/dithercn/tunnel";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Tunnel className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+Rings come out of the fog at the vanishing point and grow as they pass you. Spokes run along the walls, and every other panel between them is lit, like tiles. The middle stays empty, so a headline fits there.
+
+## Examples
+
+### Behind a headline
+
+`spokes={0}` leaves only the rings, and fewer `rings` spread them out. A larger `fog` widens the empty middle so the text sits clear of the rings.
+
+<ComponentPreview src="examples/tunnel-headline.tsx" size="lg" align="stretch">
+  <TunnelHeadline />
+</ComponentPreview>
+
+### Square corridor
+
+`shape="square"` turns the rings into frames. Moving the `center` up a little and lowering the `sway` gives a steadier corridor, and a three-colour palette lights the near walls.
+
+<ComponentPreview src="examples/tunnel-square.tsx" size="lg" align="stretch">
+  <TunnelSquare />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "shape",
+      type: '"circle" | "square"',
+      default: '"circle"',
+      description: "The cross-section of the tunnel.",
+    },
+    {
+      name: "rings",
+      type: "number",
+      default: "1",
+      description:
+        "How close together the rings are. 2 packs twice as many in.",
+    },
+    {
+      name: "spokes",
+      type: "number",
+      default: "12",
+      description:
+        "Lines along the walls, from 0 to 32. 0 leaves only the rings and drops the tiles.",
+    },
+    {
+      name: "center",
+      type: "[number, number]",
+      default: "[0.5, 0.5]",
+      description:
+        "The vanishing point, as fractions of the box from the top left.",
+    },
+    {
+      name: "sway",
+      type: "number",
+      default: "1",
+      description: "How far the vanishing point wanders. 0 holds it still.",
+    },
+    {
+      name: "fog",
+      type: "number",
+      default: "1",
+      description:
+        "Size of the empty fog in the middle. 2 doubles it to clear room for text.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast it moves.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The background fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows concentric CSS rings in the same colours.
+- It costs one small draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/engine/performance).
