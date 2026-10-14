@@ -156,29 +156,27 @@ const Plate = ({
   );
 };
 
-const Pane = ({ located }: { located: Located | undefined }) => (
-  <aside
-    aria-hidden="true"
-    className="hidden w-[42%] shrink-0 flex-col gap-4 border-l p-4 md:flex"
-  >
-    {located ? (
-      <>
-        <Plate located={located} size="pane" />
-        <div className="flex flex-col gap-1.5 px-1">
-          <span className="text-muted-foreground font-mono text-[0.7rem] tracking-wide uppercase">
-            {located.group.label}
-          </span>
-          <span className="font-medium tracking-[-0.01em]">
-            {located.entry.name}
-          </span>
-          <p className="text-muted-foreground line-clamp-4 text-sm text-pretty">
-            {located.entry.description}
-          </p>
-        </div>
-      </>
-    ) : null}
-  </aside>
-);
+// Nothing selected (no matches): no pane, so the list takes the width.
+const Pane = ({ located }: { located: Located | undefined }) =>
+  located ? (
+    <aside
+      aria-hidden="true"
+      className="hidden w-[42%] shrink-0 flex-col gap-4 border-l p-4 md:flex"
+    >
+      <Plate located={located} size="pane" />
+      <div className="flex flex-col gap-1.5 px-1">
+        <span className="text-muted-foreground font-mono text-[0.7rem] tracking-wide uppercase">
+          {located.group.label}
+        </span>
+        <span className="font-medium tracking-[-0.01em]">
+          {located.entry.name}
+        </span>
+        <p className="text-muted-foreground line-clamp-4 text-sm text-pretty">
+          {located.entry.description}
+        </p>
+      </div>
+    </aside>
+  ) : null;
 
 export const CommandMenu = ({
   groups,
@@ -203,12 +201,18 @@ export const CommandMenu = ({
     [groups]
   );
 
+  // Each opening starts from the first result, not the last selection.
+  const changeOpen = useCallback((next: boolean) => {
+    setOpen(next);
+    setSelected("");
+  }, []);
+
   const go = useCallback(
     (href: string) => {
-      setOpen(false);
+      changeOpen(false);
       router.push(href);
     },
-    [router]
+    [router, changeOpen]
   );
 
   const handleFilter = useCallback(
@@ -230,6 +234,7 @@ export const CommandMenu = ({
       }
 
       e.preventDefault();
+      setSelected("");
       setOpen((prev) => {
         if (!prev) {
           trackEvent({
@@ -249,7 +254,7 @@ export const CommandMenu = ({
   }, []);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen} {...props}>
+    <Dialog open={open} onOpenChange={changeOpen} {...props}>
       <DialogTrigger asChild>
         <button
           type="button"
