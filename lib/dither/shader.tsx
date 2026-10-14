@@ -446,8 +446,9 @@ const useContextSlot = (ref: RefObject<Element | null>): boolean => {
     return () => {
       nearObserver.disconnect();
       screenObserver.disconnect();
-      releaseContext(slot);
+      // Leave the set first, so the freed context goes to someone else.
       slots.delete(slot);
+      releaseContext(slot);
     };
   }, [ref]);
 
