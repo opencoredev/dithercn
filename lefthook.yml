@@ -6,6 +6,10 @@ pre-commit:
         - "**/*.jsx"
         - "**/*.ts"
         - "**/*.tsx"
+      stage_fixed: true
+    # Formatted only: oxlint exits 1 when it is given no files it lints.
+    - run: pnpm exec oxfmt {staged_files}
+      glob:
         - "**/*.json"
         - "**/*.jsonc"
         - "**/*.css"
