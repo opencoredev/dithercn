@@ -7,6 +7,7 @@ import { MainNav } from "@/components/main-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { ROUTES } from "@/constants/routes";
+import { getSearchGroups } from "@/lib/search-index";
 import { source } from "@/lib/source";
 
 const navItems = [
@@ -41,7 +42,7 @@ export const SiteHeader = () => (
       </BrandContextMenu>
       <MainNav items={navItems} className="hidden lg:flex" />
       <div className="ml-auto flex items-center gap-1.5">
-        <CommandMenu tree={source.pageTree} />
+        <CommandMenu groups={getSearchGroups()} />
         <ModeSwitcher />
       </div>
     </div>
