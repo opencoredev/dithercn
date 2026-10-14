@@ -13,7 +13,6 @@ import { SiteFooter } from "@/components/site-footer";
 import { HERO_ID } from "@/components/site-header-frame";
 import { SmoothScroll } from "@/components/smooth-scroll";
 import { ROUTES } from "@/constants/routes";
-import { SITE } from "@/constants/site";
 import { countPieces, getCatalog } from "@/lib/catalog";
 import { BreadcrumbJsonLd } from "@/seo/json-ld";
 
@@ -41,9 +40,15 @@ export const dynamic = "force-static";
 export const revalidate = false;
 
 const INSTALLS = [
-  ["lib/dither/", "The engine: shader, fills, image dithering, export."],
-  [".agents/skills/dithercn/", "The skill, for Codex, Cursor and others."],
+  [
+    ".agents/skills/dithercn/",
+    "The skill, for Codex, Cursor, Gemini and others.",
+  ],
   [".claude/skills/dithercn/", "The same skill, for Claude Code."],
+  [
+    "lib/dither/",
+    "The engine, added by your agent the first time it builds a dither.",
+  ],
   ["globals.css", "--dither-ink, --dither-paper and friends, from your theme."],
 ] as const;
 
@@ -141,14 +146,12 @@ export default function IndexPage() {
                 One command, then ask.
               </h2>
               <p className={LEAD_CLS}>
-                Add the engine and the skill to any shadcn project. Your agent
-                picks the skill up on its next request.
+                Add the skill with the skills CLI, for Claude Code, Codex,
+                Cursor or any other agent. Your agent adds the engine the first
+                time it builds a dither.
               </p>
             </div>
-            <CommandBox
-              itemUrl={`${SITE.REGISTRY}/dithercn-skill.json`}
-              className="w-full max-w-3xl text-left"
-            />
+            <CommandBox tool="skills" className="w-full max-w-3xl text-left" />
             <dl className="grid w-full max-w-5xl gap-x-8 gap-y-6 text-left sm:grid-cols-2 lg:grid-cols-4">
               {INSTALLS.map(([path, what]) => (
                 <div key={path} className="flex flex-col gap-1.5 border-t pt-4">
@@ -169,6 +172,21 @@ export default function IndexPage() {
               What to ask your agent
               <LinkArrow />
             </Link>
+            <p className="text-muted-foreground max-w-xl text-sm text-pretty">
+              Using shadcn?{" "}
+              <code className="text-foreground font-mono text-[0.8rem]">
+                npx shadcn add
+              </code>{" "}
+              installs the skill and the engine together.{" "}
+              <Link
+                href={ROUTES.DOCS_INSTALLATION}
+                transitionTypes={["nav-forward"]}
+                className="text-foreground underline decoration-1 underline-offset-4"
+              >
+                Installation
+              </Link>{" "}
+              has both commands.
+            </p>
           </div>
         </section>
       </PageTransition>

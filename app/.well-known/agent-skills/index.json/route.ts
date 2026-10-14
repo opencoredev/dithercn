@@ -2,7 +2,7 @@ import { ROUTES } from "@/constants/routes";
 import {
   SKILL_DESCRIPTION,
   SKILL_NAME,
-  skillDigest,
+  skillArchiveDigest,
 } from "@/lib/agent-discovery/dithercn-skill";
 import { requestOrigin } from "@/lib/agent-discovery/request-origin";
 
@@ -15,10 +15,10 @@ export const GET = (request: Request) => {
       skills: [
         {
           description: SKILL_DESCRIPTION,
-          digest: skillDigest(base),
+          digest: skillArchiveDigest(base),
           name: SKILL_NAME,
-          type: "skill-md",
-          url: `${base}${ROUTES.AGENT_SKILL}`,
+          type: "archive",
+          url: `${base}${ROUTES.AGENT_SKILL_ARCHIVE}`,
         },
       ],
     },

@@ -9,6 +9,7 @@ import {
   usePackageManager,
 } from "@/hooks/use-package-manager";
 import type { PackageManager } from "@/hooks/use-package-manager";
+import { useSiteOrigin } from "@/hooks/use-site-origin";
 import { cn } from "@/lib/utils";
 
 const RUNNERS = {
@@ -18,19 +19,29 @@ const RUNNERS = {
   yarn: "yarn dlx",
 } as const satisfies Record<PackageManager, string>;
 
+/** The CLIs the box can run, each with its `add` subcommand. */
+const TOOLS = {
+  shadcn: "shadcn@latest add",
+  skills: "skills add",
+} as const;
+
 /**
- * `itemUrl` comes from a server component: SITE reads server-only env vars,
- * so computing it here would differ between server and client render.
+ * An install command for the reader's package manager. `path` is relative to
+ * the site, and the URL uses the address the reader is on, so the command
+ * reaches this site wherever it runs.
  */
 export const CommandBox = ({
-  itemUrl: url,
+  tool,
+  path = "",
   className,
 }: {
-  itemUrl: string;
+  tool: keyof typeof TOOLS;
+  path?: string;
   className?: string;
 }) => {
   const [packageManager, setPackageManager] = usePackageManager();
-  const command = `${RUNNERS[packageManager]} shadcn@latest add ${url}`;
+  const url = `${useSiteOrigin()}${path}`;
+  const command = `${RUNNERS[packageManager]} ${TOOLS[tool]} ${url}`;
 
   return (
     <div
@@ -71,7 +82,7 @@ export const CommandBox = ({
             ${" "}
           </span>
           <span className="text-muted-foreground whitespace-nowrap">
-            {RUNNERS[packageManager]} shadcn@latest add
+            {RUNNERS[packageManager]} {TOOLS[tool]}
           </span>{" "}
           <span className="text-foreground block [overflow-wrap:anywhere] sm:inline">
             {url}

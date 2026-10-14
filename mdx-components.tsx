@@ -6,6 +6,7 @@ import { Callout } from "@/components/callout";
 import { CatalogIndex } from "@/components/catalog-index";
 import { CodeBlockCommand } from "@/components/code-block-command";
 import { CodeTabs } from "@/components/code-tabs";
+import { CommandBox } from "@/components/command-box";
 import { ComponentPreview } from "@/components/component-preview";
 import { ComponentSource } from "@/components/component-source";
 import { CopyButton } from "@/components/copy-button";
@@ -40,6 +41,7 @@ export const mdxComponents = {
   Callout,
   CatalogIndex,
   CodeTabs,
+  CommandBox,
   ComponentPreview,
   ComponentSource,
   Image: ({
