@@ -45,6 +45,8 @@ The globe is drawn on a 2D canvas at dither-cell resolution: every cell on the s
 
 The globe stays round and centred in its box and takes 84% of the shorter side. Make the box larger than its section and offset it to show only the top of the globe, as in the first example.
 
+Visitors can turn the globe. Dragging sideways spins it and dragging up or down tilts it, with the land staying under the pointer. Let go mid-drag and it coasts to a stop, then picks its idle spin back up. On phones, a horizontal swipe turns it and a vertical swipe still scrolls the page. When it has keyboard focus, the arrow keys turn it. Set `draggable={false}` for a globe that should only spin on its own.
+
 Land comes from the shared `world-land` mask (Natural Earth, public domain), installed with the component. Nothing is fetched at runtime.
 
 ## Examples
@@ -153,7 +155,8 @@ A square globe in a two-column section. Drag it to spin.
       name: "draggable",
       type: "boolean",
       default: "true",
-      description: "Drag sideways to spin the globe, with a little inertia.",
+      description:
+        "Drag or use the arrow keys to turn and tilt the globe. It coasts after a drag, then eases back into its idle spin.",
     },
     {
       name: "cell",
@@ -178,6 +181,6 @@ A square globe in a two-column section. Drag it to spin.
 
 ## Notes
 
-- The globe is decorative and hidden from assistive technology. Say what it shows in the copy next to it.
-- With reduced motion turned on, it draws one still frame and dragging is off.
+- A draggable globe is focusable and announced as an image labelled "Globe. Drag it or use the arrow keys to turn it." Pass your own `aria-label` to say what it shows. With `draggable={false}` it's decorative and hidden from assistive technology, so say what it shows in the copy next to it.
+- With reduced motion turned on, it draws one still frame. Dragging and the arrow keys still turn it, without the coasting.
 - It pauses when scrolled out of view or when the tab is hidden. A 600px globe at 2px cells is about 70,000 cells per frame at 30 fps, well within budget on a phone; raise `cell` for very large globes.
