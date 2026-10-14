@@ -139,6 +139,11 @@ const octal = (value: number, length: number) =>
 
 /** One ustar header: a regular file, owned by nobody, dated 1970 so the bytes never change. */
 const tarHeader = (name: string, size: number): Buffer => {
+  // ustar's name field holds 100 bytes; the skill's paths are far shorter, so
+  // fail loudly rather than write a truncated name.
+  if (Buffer.byteLength(name, "ascii") > 100) {
+    throw new Error(`Skill file path is too long for the archive: ${name}`);
+  }
   const header = Buffer.alloc(TAR_BLOCK);
   const field = (value: string, offset: number, length: number) =>
     header.write(value, offset, length, "ascii");
@@ -172,7 +177,11 @@ export const skillArchive = (origin: string): Buffer => {
     return [tarHeader(file, body.length), body, padding];
   });
   const tar = Buffer.concat([...blocks, Buffer.alloc(TAR_BLOCK * 2)]);
-  return gzipSync(tar, { level: 9 });
+  const archive = gzipSync(tar, { level: 9 });
+  // zlib writes the build's OS into the header; pin it to Unix so the bytes,
+  // and the digest, are the same wherever the site runs.
+  archive[9] = 3;
+  return archive;
 };
 
 /** `sha256:<hex>` of the skill archive, for the discovery index. */
