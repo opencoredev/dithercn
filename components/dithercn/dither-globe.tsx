@@ -479,6 +479,8 @@ const useGlobeTurn = ({
   const fling = useRef<Turn>({ spin: 0, tilt: 0 });
   const idle = useRef(1);
   const gesture = useRef<Gesture>({ kind: "none" });
+  // Pointers down on the globe; a second one means a pinch, never a drag.
+  const pointers = useRef(new Set<number>());
 
   const turnBy = (spin: number, lean: number) => {
     turn.current.spin += spin;
@@ -507,10 +509,25 @@ const useGlobeTurn = ({
     return turn.current;
   };
 
+  /** Drop the gesture without a fling. */
+  const cancel = (element: HTMLDivElement) => {
+    const { current } = gesture;
+    if (
+      current.kind === "dragging" &&
+      element.hasPointerCapture(current.pointerId)
+    ) {
+      element.releasePointerCapture(current.pointerId);
+    }
+    gesture.current = { kind: "none" };
+    fling.current = { spin: 0, tilt: 0 };
+    delete element.dataset.dragging;
+  };
+
   const end = (
     event: ReactPointerEvent<HTMLDivElement>,
     flingAway: boolean
   ) => {
+    pointers.current.delete(event.pointerId);
     const { current } = gesture;
     if (current.kind === "none" || current.pointerId !== event.pointerId) {
       return;
@@ -543,6 +560,15 @@ const useGlobeTurn = ({
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    // The first pointer of a new touch or click: nothing else is down.
+    if (event.isPrimary) {
+      pointers.current.clear();
+    }
+    pointers.current.add(event.pointerId);
+    if (pointers.current.size > 1) {
+      cancel(event.currentTarget);
+      return;
+    }
     if (gesture.current.kind !== "none" || event.button !== 0) {
       return;
     }
@@ -574,6 +600,9 @@ const useGlobeTurn = ({
       if (Math.abs(dy) >= Math.abs(dx)) {
         // A scroll: the browser takes it and cancels this pointer.
         gesture.current = { kind: "none" };
+        return;
+      }
+      if (pointers.current.size > 1) {
         return;
       }
       startDrag(event, current.x, current.y);
@@ -623,7 +652,19 @@ const useGlobeTurn = ({
     advance,
     handlers: {
       onKeyDown,
-      onLostPointerCapture: (event) => end(event, true),
+      // Capture can go without a pointerup (an alert, a removed node):
+      // stop where it is. The pointer itself may still be down. Taking
+      // capture from the canvas, where a touch lands, fires this on the
+      // canvas too; that one isn't ours to act on.
+      onLostPointerCapture: (event) => {
+        if (
+          event.target === event.currentTarget &&
+          gesture.current.kind !== "none" &&
+          gesture.current.pointerId === event.pointerId
+        ) {
+          cancel(event.currentTarget);
+        }
+      },
       onPointerCancel: (event) => end(event, false),
       onPointerDown,
       onPointerMove,
