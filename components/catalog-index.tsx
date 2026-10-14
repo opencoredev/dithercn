@@ -5,8 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
+import { CatalogLivePreview } from "@/components/catalog-live-preview";
 import { getCatalog } from "@/lib/catalog";
 import type { CatalogPiece } from "@/lib/catalog";
+import { readDocsDemo } from "@/lib/docs-demo";
 import { cn } from "@/lib/utils";
 
 /*
@@ -18,7 +20,8 @@ import { cn } from "@/lib/utils";
  *
  * The prints are screenshots in both site themes, made by
  * `pnpm catalog:capture` (scripts/capture-catalog.ts) and swapped by the
- * `dark` class, so 52 demos cost no WebGL contexts here.
+ * `dark` class. Backgrounds also play their demo live over the print once
+ * they near the viewport, within the engine's WebGL context budget.
  */
 
 const THEMES = ["dark", "light"] as const;
@@ -35,6 +38,18 @@ const hasPreview = (piece: CatalogPiece) =>
   THEMES.every((theme) =>
     existsSync(path.join(process.cwd(), "public", previewSrc(piece, theme)))
   );
+
+/** Groups whose demos move on their own, so their tiles play live. */
+const LIVE_GROUPS: ReadonlySet<string> = new Set(["backgrounds"]);
+
+const liveDemo = async (piece: CatalogPiece) => {
+  const [group, slug] = piece.url.replace(/^\/docs\//u, "").split("/");
+  if (!(group && slug && LIVE_GROUPS.has(group))) {
+    return null;
+  }
+  const docsDemo = await readDocsDemo(group, slug);
+  return docsDemo?.align === "stretch" ? docsDemo.demo : null;
+};
 
 const THEME_CLASS = {
   dark: "hidden dark:block",
@@ -82,9 +97,12 @@ const LazyPreview = ({ piece }: { piece: CatalogPiece }) =>
 const PieceTile = ({
   piece,
   isEager,
+  demo,
 }: {
   piece: CatalogPiece;
   isEager: boolean;
+  /** Set for tiles that play live over their screenshot. */
+  demo: string | null;
 }) => {
   const Preview = isEager ? EagerPreview : LazyPreview;
   return (
@@ -96,6 +114,7 @@ const PieceTile = ({
       >
         <span className="bg-card relative block aspect-[4/3] overflow-hidden rounded-[14px] sm:rounded-[18px]">
           {hasPreview(piece) ? <Preview piece={piece} /> : null}
+          {demo ? <CatalogLivePreview demo={demo} /> : null}
         </span>
         <span className="decoration-foreground/40 px-0.5 text-sm font-medium underline-offset-4 group-hover/tile:underline">
           {piece.name}
@@ -105,8 +124,15 @@ const PieceTile = ({
   );
 };
 
-export const CatalogIndex = ({ className }: { className?: string }) => {
+export const CatalogIndex = async ({ className }: { className?: string }) => {
   const catalog = getCatalog();
+  const demos = new Map(
+    await Promise.all(
+      catalog
+        .flatMap((category) => category.pieces)
+        .map(async (piece) => [piece.url, await liveDemo(piece)] as const)
+    )
+  );
 
   return (
     <div className={cn("flex flex-col gap-14", className)}>
@@ -141,6 +167,7 @@ export const CatalogIndex = ({ className }: { className?: string }) => {
                     key={piece.url}
                     piece={piece}
                     isEager={isFirstGroup && index < EAGER_TILES}
+                    demo={demos.get(piece.url) ?? null}
                   />
                 ))}
               </ul>
