@@ -25,8 +25,8 @@ export const SITE = {
     URL: "https://github.com/leoisadev1",
   },
   DESCRIPTION: {
-    LONG: "Beautiful dithers for landing pages and dashboards. dithercn is a dither engine with an agent skill: ask your coding agent for any dither and it builds it on the engine, in your shadcn theme. The backgrounds, charts and interface pieces in the docs are examples.",
-    SHORT: "Beautiful dithers for landing pages and dashboards",
+    LONG: "Add dithers to anything in your app. dithercn gives your coding agent the primitives: a dither engine and a skill that teaches it. Ask for any dither and your agent builds it on the engine, in your shadcn theme. The backgrounds, charts and interface pieces in the docs are examples.",
+    SHORT: "Add dithers to anything in your app",
   },
   KEYWORDS: [
     "dither",

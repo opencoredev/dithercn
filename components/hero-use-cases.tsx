@@ -19,7 +19,7 @@ const INTERVAL_MS = 2400;
 const STEPS = USE_CASES.length;
 
 /**
- * "Made for <use case>", rotating. Every word sits in the same grid cell, so
+ * "Ask for <use case>", rotating. Every word sits in the same grid cell, so
  * the slot is as wide as the longest one and the outgoing word fades out
  * upwards while the next rises in: the line never shifts and never goes
  * blank.
@@ -59,9 +59,9 @@ export const HeroUseCases = ({ className }: { className?: string }) => {
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
-      <span className="sr-only">Made for {USE_CASES.join(", ")}.</span>
+      <span className="sr-only">Ask for {USE_CASES.join(", ")}.</span>
       <span aria-hidden="true" className="inline-flex items-baseline gap-[1ch]">
-        Made for
+        Ask for
         <span className="inline-grid text-left">
           {USE_CASES.map((useCase, index) => (
             <span

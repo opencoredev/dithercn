@@ -65,12 +65,12 @@ export default function IndexPage() {
           {/* Always the dark plate, in both site themes. */}
           <div className="dark bg-background text-foreground relative isolate flex min-h-[640px] flex-col items-center overflow-hidden rounded-[24px] border md:min-h-[740px]">
             <DitherHero className="-z-10" />
-            <div className="flex w-full max-w-4xl flex-col items-center gap-6 px-5 pt-36 pb-52 text-center md:pt-48 md:pb-64">
+            <div className="flex w-full max-w-4xl flex-col items-center gap-6 px-5 pt-36 pb-64 text-center md:pt-48 md:pb-64">
               <h1
                 style={stagger(0)}
                 className="rise-in text-[2.6rem] leading-[1.02] font-medium tracking-[-0.045em] text-balance sm:text-6xl lg:text-[4.75rem]"
               >
-                Beautiful dithers for landing pages and dashboards.
+                Add dithers to anything in your app.
               </h1>
               <div
                 style={stagger(1)}
@@ -78,10 +78,11 @@ export default function IndexPage() {
               >
                 <p className="text-muted-foreground max-w-xl text-lg text-pretty sm:text-xl">
                   <span className="text-foreground">
-                    Any dither, built by your agent.
+                    Primitives your agent builds with.
                   </span>{" "}
-                  dithercn is a dither engine with an agent skill. Describe the
-                  dither you want and your agent builds it in your shadcn theme.
+                  dithercn gives your coding agent a dither engine and a skill
+                  that teaches it. Ask for a background, a chart or a loading
+                  state, and it builds one in your shadcn theme.
                 </p>
                 <HeroUseCases className="text-muted-foreground font-mono text-sm" />
               </div>
