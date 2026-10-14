@@ -11,6 +11,7 @@ import { CopyButton } from "@/components/copy-button";
 import { getIconForLanguageExtension } from "@/components/icons";
 import { InstallBlock } from "@/components/install-block";
 import { PropsTable } from "@/components/props-table";
+import { QuickStartPrompt } from "@/components/quick-start-prompt";
 import {
   Accordion,
   AccordionContent,
@@ -74,6 +75,7 @@ export const mdxComponents = {
     />
   ),
   PropsTable,
+  QuickStartPrompt,
   Step: ({ className, children, ...props }: React.ComponentProps<"h3">) => (
     <h3
       className={cn(
