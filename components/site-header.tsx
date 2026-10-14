@@ -41,9 +41,7 @@ export const SiteHeader = () => (
       </BrandContextMenu>
       <MainNav items={navItems} className="hidden lg:flex" />
       <div className="ml-auto flex items-center gap-1.5">
-        <div className="hidden md:flex">
-          <CommandMenu tree={source.pageTree} />
-        </div>
+        <CommandMenu tree={source.pageTree} />
         <ModeSwitcher />
       </div>
     </div>
