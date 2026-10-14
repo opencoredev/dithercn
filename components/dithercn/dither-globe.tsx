@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   ComponentProps,
+  KeyboardEvent as ReactKeyboardEvent,
   PointerEvent as ReactPointerEvent,
   RefObject,
 } from "react";
@@ -113,32 +114,33 @@ const buildDisc = (columns: number, rows: number): Disc => {
   };
 };
 
+/** The globe's orientation, as sines and cosines worked out once a frame. */
 interface View {
-  /** Rotation about the axis, radians. */
-  spin: number;
-  /** Tilt towards the viewer, radians. */
-  tilt: number;
+  cosS: number;
+  sinS: number;
+  cosT: number;
+  sinT: number;
 }
 
+/** `spin` turns about the axis, `tilt` leans it towards the viewer; radians. */
+const makeView = (spin: number, tilt: number): View => ({
+  cosS: Math.cos(spin),
+  cosT: Math.cos(tilt),
+  sinS: Math.sin(spin),
+  sinT: Math.sin(tilt),
+});
+
 /** View space to the globe's own frame: undo the tilt, then the spin. */
-const toWorld = ({ spin, tilt }: View, [x, y, z]: Vec3): Vec3 => {
-  const cosT = Math.cos(tilt);
-  const sinT = Math.sin(tilt);
+const toWorld = ({ cosS, sinS, cosT, sinT }: View, [x, y, z]: Vec3): Vec3 => {
   const y1 = y * cosT - z * sinT;
   const z1 = y * sinT + z * cosT;
-  const cosS = Math.cos(spin);
-  const sinS = Math.sin(spin);
   return [x * cosS + z1 * sinS, y1, -x * sinS + z1 * cosS];
 };
 
 /** The globe's frame to view space. */
-const toView = ({ spin, tilt }: View, [x, y, z]: Vec3): Vec3 => {
-  const cosS = Math.cos(spin);
-  const sinS = Math.sin(spin);
+const toView = ({ cosS, sinS, cosT, sinT }: View, [x, y, z]: Vec3): Vec3 => {
   const x1 = x * cosS - z * sinS;
   const z1 = x * sinS + z * cosS;
-  const cosT = Math.cos(tilt);
-  const sinT = Math.sin(tilt);
   return [x1, y * cosT + z1 * sinT, -y * sinT + z1 * cosT];
 };
 
@@ -385,57 +387,247 @@ const useCanvasSize = (
   return size;
 };
 
-interface DragSpin {
-  /** Extra spin in degrees from dragging, carried on with inertia after release. */
-  advance: (delta: number) => number;
+/** Steepest the globe can be tilted by hand, in degrees either way. */
+const TILT_LIMIT = 60;
+/** Touch travel in px before a gesture counts as a drag or a scroll. */
+const TOUCH_SLOP = 8;
+/** How quickly a fling slows, per second. */
+const FRICTION = 3.5;
+/** Fastest fling, in degrees per second. */
+const MAX_FLING = 600;
+/** How quickly the idle spin comes back after a drag, per second. */
+const IDLE_RETURN = 1.2;
+/** Degrees one arrow key press turns the globe. */
+const KEY_SPIN = 20;
+const KEY_TILT = 10;
+/** Arrow keys turn the globe the way a drag in that direction would. */
+const KEY_STEPS: ReadonlyMap<string, Turn> = new Map([
+  ["ArrowDown", { spin: 0, tilt: KEY_TILT }],
+  ["ArrowLeft", { spin: KEY_SPIN, tilt: 0 }],
+  ["ArrowRight", { spin: -KEY_SPIN, tilt: 0 }],
+  ["ArrowUp", { spin: 0, tilt: -KEY_TILT }],
+]);
+/** A pointer that rested this long before release doesn't fling. */
+const FLING_WINDOW = 80;
+
+type Gesture =
+  | { kind: "none" }
+  /** A touch that hasn't moved far enough to say if it's a drag or a scroll. */
+  | { kind: "pending"; pointerId: number; x: number; y: number }
+  | {
+      kind: "dragging";
+      pointerId: number;
+      x: number;
+      y: number;
+      /** `event.timeStamp` of the last move, for the fling. */
+      time: number;
+    };
+
+/** How far the globe has been turned, in degrees, on top of `start` and `tilt`. */
+interface Turn {
+  spin: number;
+  tilt: number;
+}
+
+interface GlobeTurnOptions {
+  /** Base tilt from props, so the total stays inside the limit. */
+  tilt: number;
+  /** Fling and ease back into the idle spin, or follow the pointer only. */
+  moving: boolean;
+  /** Degrees per CSS pixel that keep the surface under the pointer. */
+  degreesPerPixel: () => number;
+  /** Paint now, for still globes and between frames while dragging. */
+  redraw: () => void;
+}
+
+interface GlobeTurn {
+  /** Move the idle spin and any fling on by `delta` seconds. */
+  advance: (delta: number, speed: number) => Turn;
   handlers: Pick<
     ComponentProps<"div">,
-    "onPointerDown" | "onPointerMove" | "onPointerUp" | "onPointerCancel"
+    | "onKeyDown"
+    | "onLostPointerCapture"
+    | "onPointerCancel"
+    | "onPointerDown"
+    | "onPointerMove"
+    | "onPointerUp"
   >;
 }
 
-const useDragSpin = (onDrag: () => void): DragSpin => {
-  const offset = useRef(0);
-  const velocity = useRef(0);
-  const last = useRef<number | null>(null);
-  const onPointerDown = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      event.currentTarget.setPointerCapture(event.pointerId);
-      last.current = event.clientX;
-      velocity.current = 0;
-    },
-    []
-  );
-  const onPointerMove = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (last.current === null) {
+const clampTilt = (base: number, extra: number) => {
+  const low = Math.min(-TILT_LIMIT, base);
+  const high = Math.max(TILT_LIMIT, base);
+  return Math.min(high, Math.max(low, base + extra)) - base;
+};
+
+const clampFling = (velocity: number) =>
+  Math.max(-MAX_FLING, Math.min(MAX_FLING, velocity));
+
+/**
+ * Drag, fling and arrow keys for the globe. Dragging sideways turns it about
+ * its axis and up or down tilts it, with the surface kept under the pointer.
+ * On touch, a gesture that starts mostly vertical is left to the page so it
+ * scrolls. The idle spin stops while dragging and eases back afterwards.
+ */
+const useGlobeTurn = ({
+  tilt,
+  moving,
+  degreesPerPixel,
+  redraw,
+}: GlobeTurnOptions): GlobeTurn => {
+  const turn = useRef<Turn>({ spin: 0, tilt: 0 });
+  const fling = useRef<Turn>({ spin: 0, tilt: 0 });
+  const idle = useRef(1);
+  const gesture = useRef<Gesture>({ kind: "none" });
+
+  const turnBy = (spin: number, lean: number) => {
+    turn.current.spin += spin;
+    turn.current.tilt = clampTilt(tilt, turn.current.tilt + lean);
+  };
+
+  const advance = (delta: number, speed: number): Turn => {
+    if (gesture.current.kind === "dragging") {
+      idle.current = 0;
+      return turn.current;
+    }
+    const decay = Math.exp(-delta * FRICTION);
+    const before = turn.current.tilt;
+    turnBy(
+      (fling.current.spin * (1 - decay)) / FRICTION,
+      (fling.current.tilt * (1 - decay)) / FRICTION
+    );
+    // A fling that ran into the tilt limit stops there.
+    if (turn.current.tilt === before) {
+      fling.current.tilt = 0;
+    }
+    fling.current.spin *= decay;
+    fling.current.tilt *= decay;
+    idle.current += (1 - idle.current) * (1 - Math.exp(-delta * IDLE_RETURN));
+    turn.current.spin += speed * idle.current * delta;
+    return turn.current;
+  };
+
+  const end = (
+    event: ReactPointerEvent<HTMLDivElement>,
+    flingAway: boolean
+  ) => {
+    const { current } = gesture;
+    if (current.kind === "none" || current.pointerId !== event.pointerId) {
+      return;
+    }
+    const resting =
+      current.kind !== "dragging" ||
+      event.timeStamp - current.time > FLING_WINDOW;
+    if (!(flingAway && moving) || resting) {
+      fling.current = { spin: 0, tilt: 0 };
+    }
+    gesture.current = { kind: "none" };
+    delete event.currentTarget.dataset.dragging;
+  };
+
+  const startDrag = (
+    event: ReactPointerEvent<HTMLDivElement>,
+    x: number,
+    y: number
+  ) => {
+    gesture.current = {
+      kind: "dragging",
+      pointerId: event.pointerId,
+      time: event.timeStamp,
+      x,
+      y,
+    };
+    fling.current = { spin: 0, tilt: 0 };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.currentTarget.dataset.dragging = "";
+  };
+
+  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (gesture.current.kind !== "none" || event.button !== 0) {
+      return;
+    }
+    if (event.pointerType === "touch") {
+      gesture.current = {
+        kind: "pending",
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+      };
+      return;
+    }
+    // Keep a mouse drag from selecting text around the globe.
+    event.preventDefault();
+    startDrag(event, event.clientX, event.clientY);
+  };
+
+  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const { current } = gesture;
+    if (current.kind === "none" || current.pointerId !== event.pointerId) {
+      return;
+    }
+    if (current.kind === "pending") {
+      const dx = event.clientX - current.x;
+      const dy = event.clientY - current.y;
+      if (Math.hypot(dx, dy) < TOUCH_SLOP) {
         return;
       }
-      const delta = (event.clientX - last.current) * 0.4;
-      last.current = event.clientX;
-      offset.current += delta;
-      velocity.current = delta;
-      onDrag();
-    },
-    [onDrag]
-  );
-  const onPointerUp = useCallback(() => {
-    last.current = null;
-  }, []);
-  const advance = useCallback((delta: number) => {
-    if (last.current === null && Math.abs(velocity.current) > 0.01) {
-      offset.current += velocity.current * delta * 30;
-      velocity.current *= Math.exp(-delta * 3);
+      if (Math.abs(dy) >= Math.abs(dx)) {
+        // A scroll: the browser takes it and cancels this pointer.
+        gesture.current = { kind: "none" };
+        return;
+      }
+      startDrag(event, current.x, current.y);
     }
-    return offset.current;
-  }, []);
+    const dragging = gesture.current;
+    if (dragging.kind !== "dragging") {
+      return;
+    }
+    const scale = degreesPerPixel();
+    const spin = -(event.clientX - dragging.x) * scale;
+    const lean = (event.clientY - dragging.y) * scale;
+    const seconds = Math.max((event.timeStamp - dragging.time) / 1000, 1 / 240);
+    // Smoothed so one uneven event doesn't decide the fling.
+    fling.current = {
+      spin: clampFling(fling.current.spin * 0.3 + (spin / seconds) * 0.7),
+      tilt: clampFling(fling.current.tilt * 0.3 + (lean / seconds) * 0.7),
+    };
+    turnBy(spin, lean);
+    gesture.current = {
+      ...dragging,
+      time: event.timeStamp,
+      x: event.clientX,
+      y: event.clientY,
+    };
+    redraw();
+  };
+
+  const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const step = KEY_STEPS.get(event.key);
+    if (!step || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    event.preventDefault();
+    if (moving) {
+      // A fling that covers exactly one step, so held keys glide.
+      fling.current = {
+        spin: step.spin ? step.spin * FRICTION : fling.current.spin,
+        tilt: step.tilt ? step.tilt * FRICTION : fling.current.tilt,
+      };
+    } else {
+      turnBy(step.spin, step.tilt);
+      redraw();
+    }
+  };
+
   return {
     advance,
     handlers: {
-      onPointerCancel: onPointerUp,
+      onKeyDown,
+      onLostPointerCapture: (event) => end(event, true),
+      onPointerCancel: (event) => end(event, false),
       onPointerDown,
       onPointerMove,
-      onPointerUp,
+      onPointerUp: (event) => end(event, true),
     },
   };
 };
@@ -488,9 +680,25 @@ export const DitherGlobe = ({
   const drawRef = useRef<(time: number, delta: number) => void>(() => {
     // Replaced on the first render.
   });
-  const drag = useDragSpin(
-    useCallback(() => drawRef.current(clock.current, 0), [])
-  );
+  // One paint per frame while dragging, however fast pointer events arrive.
+  const pendingDraw = useRef(0);
+  const redraw = useCallback(() => {
+    if (pendingDraw.current) {
+      return;
+    }
+    pendingDraw.current = requestAnimationFrame(() => {
+      pendingDraw.current = 0;
+      drawRef.current(clock.current, 0);
+    });
+  }, []);
+  useEffect(() => () => cancelAnimationFrame(pendingDraw.current), []);
+  const turn = useGlobeTurn({
+    degreesPerPixel: () =>
+      disc.current ? 1 / (disc.current.radius * cellSize * RADIANS) : 0,
+    moving: animate && !reducedMotion,
+    redraw,
+    tilt,
+  });
 
   const extra = new Map(
     colors
@@ -505,14 +713,17 @@ export const DitherGlobe = ({
       return;
     }
     clock.current = time;
-    const spin = start + time * speed + drag.advance(delta);
+    const turned = turn.advance(delta, speed);
     const scene: Scene = {
       disc: current,
       light: lightVector(light),
       matrix,
       ocean,
       paint: { accent: colors[1], extra, land: colors[0] },
-      view: { spin: spin * RADIANS, tilt: -tilt * RADIANS },
+      view: makeView(
+        (start + turned.spin) * RADIANS,
+        -(tilt + turned.tilt) * RADIANS
+      ),
     };
     let image = frame.current;
     if (image?.width !== current.columns || image.height !== current.rows) {
@@ -553,17 +764,23 @@ export const DitherGlobe = ({
     target: wrapper,
   });
 
-  const canDrag = draggable && !reducedMotion;
   return (
     <div
       ref={wrapper}
-      aria-hidden
       className={cn(
         "relative overflow-hidden select-none",
-        canDrag && "cursor-grab touch-pan-y active:cursor-grabbing",
+        draggable &&
+          "focus-visible:outline-ring cursor-grab outline-none [touch-action:pan-y_pinch-zoom] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid data-dragging:cursor-grabbing",
         className
       )}
-      {...(canDrag ? drag.handlers : {})}
+      {...(draggable
+        ? {
+            "aria-label": "Globe. Drag it or use the arrow keys to turn it.",
+            role: "img",
+            tabIndex: 0,
+            ...turn.handlers,
+          }
+        : { "aria-hidden": true })}
       {...props}
     >
       <canvas
