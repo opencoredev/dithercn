@@ -31,6 +31,8 @@ palette={["--dither-paper", "purple", "blue", "--dither-ink"]}
 
 Order the colours by how strongly they stand out against the paper, from weakest to strongest, or the ramp jumps back and forth. Three to five colours is plenty; more blur into noise.
 
+The field's tone snaps to `levels` steps before it is dithered, so a tone meant to be exactly one of the colours can land just beside it and pick up stray dots of its neighbour. Set `levels` so every stop is a step: `levels - 1` a multiple of `colours - 1`. Three colours: `levels={17}` (the bayer4 default already works). Four colours: `levels={13}` or `levels={19}`. Five colours: `levels={17}`.
+
 ## Light and dark
 
 The tokens switch on a `.dark` class (shadcn's convention). Theme switches that change the class or style on `<html>` (next-themes and most others) make every shader re-read its colours and redraw. SVG and CSS fills use `var()` and follow instantly.

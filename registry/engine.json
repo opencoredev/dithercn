@@ -30,6 +30,11 @@
         "target": ".agents/skills/dithercn/references/fields.md"
       },
       {
+        "path": ".generated/skills/dithercn/references/landing-pages.md",
+        "type": "registry:file",
+        "target": ".agents/skills/dithercn/references/landing-pages.md"
+      },
+      {
         "path": ".generated/skills/dithercn/references/placement.md",
         "type": "registry:file",
         "target": ".agents/skills/dithercn/references/placement.md"
@@ -68,6 +73,11 @@
         "path": ".generated/skills/dithercn/references/fields.md",
         "type": "registry:file",
         "target": ".claude/skills/dithercn/references/fields.md"
+      },
+      {
+        "path": ".generated/skills/dithercn/references/landing-pages.md",
+        "type": "registry:file",
+        "target": ".claude/skills/dithercn/references/landing-pages.md"
       },
       {
         "path": ".generated/skills/dithercn/references/placement.md",

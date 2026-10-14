@@ -20,6 +20,7 @@ The return value is clamped to [0, 1]. With a palette of more than two colours, 
 - No arrays in uniforms. Pass up to four numbers per uniform (`vec4`) and use several uniforms.
 - Write helpers above `field` in the same string. Give them a prefix from your component (`topoHeight`, `meterArc`) so they never collide with another field's names.
 - Reserved: uniforms starting with `u_`, helpers starting with `dither_`, and the names `field`, `main`, `hash21`, `snoise`, `fbm`.
+- GLSL keeps more words than it uses. These fail to compile as names: `half`, `fixed`, `long`, `short`, `double`, `unsigned`, `input`, `output`, `filter`, `inline`, `class`, `union`, `enum`, `typedef`, `template`, `this`, `packed`, `static`, `public`, `default`, `switch`, `namespace`, `using`, `interface`, `external`, `cast`, `sizeof`. Built-in function names (`dot`, `step`, `mix`, `length`, `distance`, `smoothstep`, `noise`) can't be reused for variables either. Prefixed names (`topoHalf`, `waveStep`) avoid all of them.
 - A broken field logs `[dither-core] shader failed to compile` with the line and the error, and the component stays on its fallback. Read that log, fix the GLSL, reload.
 
 ## Built-in helpers

@@ -83,6 +83,116 @@ Use it:
 </section>
 ```
 
+## A hero that clears its headline
+
+A full-bleed field behind a headline, with a rounded box cleared around the text block. The page measures the text and passes its box to the field, so the clearing fits the copy at every width, and a phone gets the same margin as a desktop. Swap the contour lines for any field: the clearing is the `d`, `dist` and `clear` lines of `field`.
+
+```tsx
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+import { DitherShader } from "@/lib/dither";
+
+const FIELD = `
+float heroHeight(vec2 p) {
+  return 0.5 + 0.35 * snoise(p * 0.9) + 0.15 * snoise(p * 2.1);
+}
+
+float heroContour(float h, float hx, float hy, float count, float width) {
+  float offset = abs(fract(h * count + 0.5) - 0.5);
+  float perCell = max(length(vec2(hx - h, hy - h)) * count, 1e-4);
+  float line = 1.0 - smoothstep(width * 0.5 - 0.5, width * 0.5 + 0.5, offset / perCell);
+  return line * (1.0 - smoothstep(0.06, 0.1, offset));
+}
+
+float field(vec2 uv, vec2 res, float t) {
+  vec2 p = vec2(uv.x * res.x / res.y, uv.y) * heroScale + vec2(t * 0.012, t * 0.005);
+  float step1 = heroScale / res.y;
+  float h = heroHeight(p);
+  float lines = heroContour(h, heroHeight(p + vec2(step1, 0.0)), heroHeight(p + vec2(0.0, step1)), 9.0, 1.5);
+
+  // Distance in cells from the rounded box around the text: 0 inside, ink
+  // returns over heroFeather cells outside it.
+  vec2 d = abs((uv - heroBox.xy) * res) - heroBox.zw * res + heroRadius;
+  float dist = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - heroRadius;
+  float clear = smoothstep(0.0, heroFeather, dist);
+  // Thin out towards the bottom edge so the next section starts clean.
+  return 0.85 * lines * clear * smoothstep(0.0, 0.3, uv.y);
+}
+`;
+
+type Box = readonly [number, number, number, number];
+
+/**
+ * The text block's box inside the section, as the field reads it: centre
+ * in uv (0 to 1, y up) and half width and height as a fraction of the
+ * section, padded by `pad` CSS pixels.
+ */
+const useClearBox = (
+  section: React.RefObject<HTMLElement | null>,
+  text: React.RefObject<HTMLElement | null>,
+  pad = 24
+): Box => {
+  const [box, setBox] = useState<Box>([0.5, 0.5, 0, 0]);
+  useEffect(() => {
+    const host = section.current;
+    const block = text.current;
+    if (!(host && block)) {
+      return;
+    }
+    const measure = () => {
+      const s = host.getBoundingClientRect();
+      const r = block.getBoundingClientRect();
+      if (s.width === 0 || s.height === 0) {
+        return;
+      }
+      setBox([
+        (r.left - s.left + r.width / 2) / s.width,
+        1 - (r.top - s.top + r.height / 2) / s.height,
+        (r.width / 2 + pad) / s.width,
+        (r.height / 2 + pad) / s.height,
+      ]);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(host);
+    observer.observe(block);
+    return () => observer.disconnect();
+  }, [section, text, pad]);
+  return box;
+};
+
+export const ContourHero = ({ children }: { children: React.ReactNode }) => {
+  const section = useRef<HTMLElement>(null);
+  const text = useRef<HTMLDivElement>(null);
+  const box = useClearBox(section, text);
+  return (
+    <section
+      ref={section}
+      className="relative isolate flex min-h-[640px] items-center overflow-hidden"
+    >
+      <DitherShader
+        className="absolute inset-0 -z-10"
+        field={FIELD}
+        palette={["--dither-paper", "--dither-ink"]}
+        stillTime={8}
+        uniforms={{ heroBox: box, heroFeather: 10, heroRadius: 8, heroScale: 1.5 }}
+        fallback={<div className="absolute inset-0 bg-dither-paper" />}
+      />
+      <div ref={text} className="mx-auto w-fit max-w-2xl px-6 text-center">
+        {children}
+      </div>
+    </section>
+  );
+};
+```
+
+- Measure the element that holds the text, sized to it (`w-fit`), not a full-width wrapper, or the box clears the whole row.
+- `pad` is CSS pixels of quiet ground around the text; `heroFeather` is how many cells the ink takes to return. 24px and 10 cells read as a deliberate margin, not a hole.
+- Every value is relative to the section, so cell size and device pixel ratio don't matter.
+- More than one block to clear (a headline and a screenshot): pass a second box uniform and multiply the two `smoothstep`s.
+
 ## An SVG chart fill
 
 Static, server-renderable, sharp. The track uses a sparse fill and the data a dense ramp.
