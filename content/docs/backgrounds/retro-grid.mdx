@@ -1,0 +1,134 @@
+---
+title: "Retro grid"
+description: "A perspective grid floor scrolling towards a horizon under a striped, glowing sun, drawn as a dither."
+---
+
+import RetroGridDemo from "@/examples/retro-grid-demo";
+import { controls as retroGridControls } from "@/examples/retro-grid-controls";
+import RetroGridSunset from "@/examples/retro-grid-sunset";
+import RetroGridHeadline from "@/examples/retro-grid-headline";
+
+<ComponentPreview
+  src="examples/retro-grid-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={retroGridControls}
+>
+  <RetroGridDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="retro-grid" />
+
+## Usage
+
+```tsx
+import { RetroGrid } from "@/components/dithercn/retro-grid";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <RetroGrid className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+The floor is a grid seen from a low camera, scrolling slowly towards you. Lines stay about one cell wide at every depth and fade out where they would crowd closer than a few cells, so the horizon doesn't break into moiré. The sun sits half sunk behind the horizon, with slits through its lower half that thicken towards the ground and drift down. Grid squares keep their size against the box height, so a phone shows fewer columns, not thinner ones.
+
+## Examples
+
+### Sunset
+
+Four warm colours, from a deep violet paper through magenta to a pale gold sun. A bigger `sun` and `cell={4}` give it the chunky look of an old game.
+
+<ComponentPreview
+  src="examples/retro-grid-sunset.tsx"
+  size="full"
+  align="stretch"
+>
+  <RetroGridSunset />
+</ComponentPreview>
+
+### Without the sun
+
+`sun={0}` leaves only the glow along the horizon, which clears the sky for a headline.
+
+<ComponentPreview
+  src="examples/retro-grid-headline.tsx"
+  size="lg"
+  align="stretch"
+>
+  <RetroGridHeadline />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "horizon",
+      type: "number",
+      default: "0.42",
+      description: "Height of the horizon, from 0 (bottom) to 1 (top).",
+    },
+    {
+      name: "sun",
+      type: "number",
+      default: "0.4",
+      description: "Size of the sun as a share of the box height. 0 hides it.",
+    },
+    {
+      name: "columns",
+      type: "number",
+      default: "12",
+      description:
+        "How many squares across the front of the floor in a 16:10 box. Narrower boxes show fewer.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: "Paper, two tints of --dither-ink, then --dither-ink",
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the floor scrolls and the sun's slits drift.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The scene fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a horizon line, a soft sun and a fade in CSS.

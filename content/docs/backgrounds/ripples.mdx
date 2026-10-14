@@ -1,0 +1,134 @@
+---
+title: "Ripples"
+description: "Concentric rings spreading from one to four points and crossing like drops on still water, drawn as a dither."
+---
+
+import RipplesDemo from "@/examples/ripples-demo";
+import { controls as ripplesControls } from "@/examples/ripples-controls";
+import RipplesDrop from "@/examples/ripples-drop";
+import RipplesRain from "@/examples/ripples-rain";
+
+<ComponentPreview
+  src="examples/ripples-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={ripplesControls}
+>
+  <RipplesDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="ripples" />
+
+## Usage
+
+```tsx
+import { Ripples } from "@/components/dithercn/ripples";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Ripples className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+Each point in `sources` sends out rings that fade with distance. A lone ring stops at the middle colour; where rings from two points cross, they add up to full ink, so the interference pattern shows up as bright knots. A slow swell bends the rings slightly so they don't look drawn with a compass.
+
+## Examples
+
+### One drop
+
+A single source just below the frame sends rings up the box. They fade out before they reach the text at the top, and a little less `intensity` keeps the nearest ones soft.
+
+<ComponentPreview src="examples/ripples-drop.tsx" size="lg" align="stretch">
+  <RipplesDrop />
+</ComponentPreview>
+
+### Rain
+
+Four sources, tighter rings and a faster `decay` through the chart colours. The 8×8 matrix gives the fading rings a finer grain.
+
+<ComponentPreview src="examples/ripples-rain.tsx" size="full" align="stretch">
+  <RipplesRain />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "sources",
+      type: "[x: number, y: number][]",
+      default: "[[0.28, 0.38], [0.74, 0.66]]",
+      description:
+        "Where the rings start, as fractions of the box from the top left. One to four points; values outside 0 to 1 put a point out of frame.",
+    },
+    {
+      name: "rings",
+      type: "number",
+      default: "12",
+      description: "How many rings fit in the height of the box.",
+    },
+    {
+      name: "decay",
+      type: "number",
+      default: "1",
+      description:
+        "How quickly the rings fade away from their source. 0 keeps them strong across the box.",
+    },
+    {
+      name: "intensity",
+      type: "number",
+      default: "1",
+      description:
+        "The brightest tone, from 0 to 1. Lower it to put text on top.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: "Paper, a tint of --dither-ink, then --dither-ink",
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the rings travel outwards.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The rings fill this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows rings drawn with CSS gradients.
