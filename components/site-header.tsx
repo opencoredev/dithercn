@@ -10,10 +10,8 @@ import { ROUTES } from "@/constants/routes";
 import { getSearchGroups } from "@/lib/search-index";
 import { source } from "@/lib/source";
 
-const navItems = [
-  { href: ROUTES.DOCS, label: "Docs" },
-  { href: ROUTES.DOCS_EXAMPLES, label: "Examples" },
-];
+// One link: the docs sidebar and the catalog already lead to the examples.
+const navItems = [{ href: ROUTES.DOCS, label: "Docs" }];
 
 /**
  * A floating pill rather than a full-width bar: the header strip itself is
@@ -41,7 +39,7 @@ export const SiteHeader = () => (
         </Link>
       </BrandContextMenu>
       <MainNav items={navItems} className="hidden lg:flex" />
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="ml-auto flex items-center gap-0.5">
         <CommandMenu groups={getSearchGroups()} />
         <ModeSwitcher />
       </div>

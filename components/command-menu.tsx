@@ -258,14 +258,11 @@ export const CommandMenu = ({
       <DialogTrigger asChild>
         <button
           type="button"
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex h-9 items-center gap-2 rounded-full px-2.5 text-sm outline-none focus-visible:ring-[3px] md:pr-2 md:pl-3"
+          aria-label="Search"
+          aria-keyshortcuts={isMac ? "Meta+K" : "Control+K"}
+          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 extend-touch-target flex size-8 items-center justify-center rounded-full outline-none focus-visible:ring-[3px]"
         >
-          <Icon icon={Search01Icon} className="size-4" />
-          {/* Phones get the icon alone, with the same accessible name. */}
-          <span className="max-md:sr-only">Search</span>
-          <kbd className={cn(KEY_CLS, "max-md:hidden")}>
-            {isMac ? "⌘K" : "Ctrl K"}
-          </kbd>
+          <Icon icon={Search01Icon} className="size-4.5" />
         </button>
       </DialogTrigger>
       <DialogContent
