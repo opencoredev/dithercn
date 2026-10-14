@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Site illustration, not a registry piece: a slow aurora over a planet's
- * horizon, ordered-dithered with the same 4x4 Bayer matrix as <BayerRamp />.
+ * horizon, ordered-dithered with the 4x4 Bayer matrix.
  *
  * Drawn by <DitherShader /> from dither-core. The static CSS rings below
  * are its fallback: they paint first and stay for anyone without WebGL.
