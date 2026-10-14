@@ -4,6 +4,8 @@ A working dither on a generic page still reads as generated. The dither has to b
 
 ## 1. Know the product
 
+The page is for the product in this repo, not for dithercn. dithercn is the tool you build with: don't name it on the page, and don't make the page about dithering.
+
 Read the README, `package.json`, the existing pages and any copy in the repo. Write yourself a short brief:
 
 - What the product is and who it is for, in one sentence, in the product's own words.
@@ -72,7 +74,7 @@ These make a page read as generated, whatever the dither looks like:
 
 ## 6. Look at it as a visitor
 
-Screenshot the whole page at 1440px and 390px, in light and dark mode. Then answer honestly:
+Screenshot the whole page at 1440px and 390px, in light and dark mode. Go through every item in section 5 against the screenshots and the code, one by one, and fix each one you find; search the code for `—` and `uppercase`. Then answer honestly:
 
 - In five seconds, can you tell what the product is and what to do next?
 - Is the dither the first thing you notice, and does it belong to this product?
