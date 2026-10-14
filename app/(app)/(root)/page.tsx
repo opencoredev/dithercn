@@ -10,6 +10,7 @@ import { HeroUseCases } from "@/components/hero-use-cases";
 import { Icon } from "@/components/icon";
 import { PageTransition } from "@/components/page-transition";
 import { SiteFooter } from "@/components/site-footer";
+import { HERO_ID } from "@/components/site-header-frame";
 import { SmoothScroll } from "@/components/smooth-scroll";
 import { ROUTES } from "@/constants/routes";
 import { SITE } from "@/constants/site";
@@ -55,11 +56,15 @@ export default function IndexPage() {
       <BreadcrumbJsonLd items={[{ name: "Home", path: ROUTES.HOME }]} />
       <SmoothScroll />
       <PageTransition>
-        <section className="container-wrapper pt-2">
+        {/* Pulled up under the sticky header, which sits inside the plate. */}
+        <section className="container-wrapper -mt-(--header-height) pt-2">
           {/* Always the dark plate, in both site themes. */}
-          <div className="dark bg-background text-foreground relative isolate flex min-h-[580px] flex-col items-center overflow-hidden rounded-[24px] border md:min-h-[680px]">
+          <div
+            id={HERO_ID}
+            className="dark bg-background text-foreground relative isolate flex min-h-[640px] flex-col items-center overflow-hidden rounded-[24px] border md:min-h-[740px]"
+          >
             <DitherHero className="-z-10" />
-            <div className="flex w-full max-w-4xl flex-col items-center gap-6 px-5 pt-24 pb-52 text-center md:pt-36 md:pb-64">
+            <div className="flex w-full max-w-4xl flex-col items-center gap-6 px-5 pt-36 pb-52 text-center md:pt-48 md:pb-64">
               <h1
                 style={stagger(0)}
                 className="rise-in text-[2.6rem] leading-[1.02] font-medium tracking-[-0.045em] text-balance sm:text-6xl lg:text-[4.75rem]"
