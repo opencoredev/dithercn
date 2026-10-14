@@ -10,8 +10,9 @@ import {
 } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
+import { useSiteOrigin } from "@/hooks/use-site-origin";
 import { trackEvent } from "@/lib/events";
-import { QUICK_START_PROMPT } from "@/lib/quick-start-prompt";
+import { quickStartPrompt } from "@/lib/quick-start-prompt";
 import { cn } from "@/lib/utils";
 
 // The agents the prompt works in, as small overlapping app tiles.
@@ -45,9 +46,11 @@ const AgentTiles = () => (
  */
 export const HeroActions = () => {
   const { copyToClipboard, isCopied } = useCopyToClipboard();
+  const origin = useSiteOrigin();
+  const label = isCopied ? "Copied, now paste it" : "Copy quick start prompt";
 
   const copyPrompt = async () => {
-    if (await copyToClipboard(QUICK_START_PROMPT)) {
+    if (await copyToClipboard(quickStartPrompt(origin))) {
       trackEvent({ name: "copy_quick_start_prompt" });
     }
   };
@@ -57,18 +60,18 @@ export const HeroActions = () => {
       <button
         type="button"
         onClick={copyPrompt}
+        aria-label={label}
         className="bg-card/80 hover:bg-card focus-visible:ring-ring/60 flex h-14 items-center gap-3 rounded-2xl border pr-5 pl-3 text-base font-medium backdrop-blur-sm transition-colors duration-150 outline-none focus-visible:ring-[3px] active:scale-[0.98] motion-reduce:active:scale-100"
       >
         <AgentTiles />
         {/* Both labels share one grid cell, so the button keeps its width. */}
-        <span className="grid text-left">
+        <span aria-hidden="true" className="grid text-left">
           <span
             className={cn("col-start-1 row-start-1", isCopied && "invisible")}
           >
             Copy quick start prompt
           </span>
           <span
-            aria-hidden="true"
             className={cn("col-start-1 row-start-1", !isCopied && "invisible")}
           >
             Copied, now paste it
