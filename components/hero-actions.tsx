@@ -20,8 +20,8 @@ import { ROUTES } from "@/constants/routes";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { useSiteOrigin } from "@/hooks/use-site-origin";
 import { quickStartPrompt } from "@/lib/agent-prompts";
+import { ditherMaskStyle } from "@/lib/dither";
 import { trackEvent } from "@/lib/events";
-import { cn } from "@/lib/utils";
 
 // The agents the prompt works in, named under the buttons in one quiet line.
 const AGENTS = [
@@ -31,6 +31,8 @@ const AGENTS = [
   { Icon: GeminiIcon, name: "Gemini" },
   { Icon: GrokIcon, name: "Grok" },
 ] as const;
+
+const COPIED_WASH = ditherMaskStyle(0.25, { cell: 2 });
 
 /**
  * The landing hero's actions: read the docs, or copy a prompt that sets
@@ -53,7 +55,7 @@ export const HeroActions = () => {
         <Button
           asChild
           size="lg"
-          className="h-11 rounded-full px-6 text-[0.95rem]"
+          className="h-11 rounded-full px-6 text-[0.95rem] motion-safe:active:scale-100"
         >
           <Link href={ROUTES.DOCS} transitionTypes={["nav-forward"]}>
             Read the docs
@@ -66,31 +68,41 @@ export const HeroActions = () => {
           size="lg"
           onClick={copyPrompt}
           aria-label={label}
-          className="bg-foreground/[0.04] hover:bg-foreground/[0.08] border-foreground/15 h-11 rounded-full px-5 text-[0.95rem]"
+          data-copied={isCopied}
+          className="group/copy bg-foreground/[0.04] hover:bg-foreground/[0.08] border-foreground/15 relative isolate h-11 overflow-hidden rounded-full px-5 text-[0.95rem] motion-safe:active:scale-100"
         >
+          {/* Stays while it says Copied: the site's ink, as a fine dither. */}
           <span
             aria-hidden="true"
-            className="grid size-4 *:col-start-1 *:row-start-1"
+            className="bg-dither-ink absolute inset-0 -z-10 opacity-0 transition-opacity duration-150 ease-out group-data-[copied=true]/copy:opacity-30"
+            style={COPIED_WASH}
+          />
+          <span
+            aria-hidden="true"
+            className="grid size-4 *:col-start-1 *:row-start-1 *:transition-[opacity,filter,scale] *:duration-250 *:ease-in-out motion-reduce:*:scale-100! motion-reduce:*:blur-none! motion-reduce:*:transition-opacity"
           >
             <Icon
               icon={Copy01Icon}
-              className={cn("text-muted-foreground", isCopied && "invisible")}
+              className="text-muted-foreground group-data-[copied=true]/copy:scale-25 group-data-[copied=true]/copy:opacity-0 group-data-[copied=true]/copy:blur-[2px]"
             />
             <Icon
               icon={Tick02Icon}
               strokeWidth={2.5}
-              className={cn("text-dither-ink", !isCopied && "invisible")}
+              className="text-dither-ink scale-25 opacity-0 blur-[2px] group-data-[copied=true]/copy:scale-100 group-data-[copied=true]/copy:opacity-100 group-data-[copied=true]/copy:blur-none"
             />
           </span>
-          {/* Both labels share one grid cell, so the button keeps its width. */}
+          {/*
+           * Both labels share one grid cell, so the button keeps its width.
+           * The old one lifts out with a blur while the new one rises in.
+           */}
           <span
             aria-hidden="true"
-            className="grid text-left *:col-start-1 *:row-start-1"
+            className="grid text-left *:col-start-1 *:row-start-1 *:transition-[opacity,filter,translate] *:duration-150 *:ease-in-out motion-reduce:*:translate-y-0! motion-reduce:*:blur-none! motion-reduce:*:transition-opacity"
           >
-            <span className={cn(isCopied && "invisible")}>
+            <span className="group-data-[copied=true]/copy:-translate-y-1 group-data-[copied=true]/copy:opacity-0 group-data-[copied=true]/copy:blur-[2px]">
               Copy agent prompt
             </span>
-            <span className={cn(!isCopied && "invisible")}>
+            <span className="translate-y-1 opacity-0 blur-[2px] group-data-[copied=true]/copy:translate-y-0 group-data-[copied=true]/copy:opacity-100 group-data-[copied=true]/copy:blur-none">
               Copied, now paste it
             </span>
           </span>

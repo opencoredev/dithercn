@@ -5,7 +5,7 @@
 <h1 align="center">dithercn</h1>
 
 <p align="center">
-  Beautiful dithers for landing pages and dashboards. A dither engine with an agent skill: describe the dither you want and your coding agent builds it in your shadcn theme.
+  Add dithers to anything in your app. dithercn gives your coding agent the primitives, a dither engine and a skill that teaches it: describe the dither you want and your agent builds it in your shadcn theme.
 </p>
 
 ## What it is
