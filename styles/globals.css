@@ -556,27 +556,6 @@
   }
 }
 
-/* Landing calibration strip: one left-to-right reveal on first paint. */
-@keyframes bayer-ramp-in {
-  from {
-    clip-path: inset(100% 0 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-.bayer-ramp-step {
-  /* Per-step animation-delay is set inline by <BayerRamp />. */
-  animation: bayer-ramp-in 520ms var(--ease-out) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bayer-ramp-step {
-    animation: none;
-  }
-}
-
 /* Lenis drives scrolling on the landing page; native smooth scrolling
  * would fight it. */
 html.lenis {

@@ -1,30 +1,60 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ComponentType } from "react";
 
-import AuroraBorealis from "@/examples/aurora-borealis";
-import AvatarDemo from "@/examples/avatar-demo";
-import BarChartDemo from "@/examples/bar-chart-demo";
-import DitherButtonDemo from "@/examples/dither-button-demo";
-import DitherGlobeDemo from "@/examples/dither-globe-demo";
-import DitherImageDemo from "@/examples/dither-image-demo";
-import DitherTextDemo from "@/examples/dither-text-demo";
-import DonutChartDemo from "@/examples/donut-chart-demo";
-import GaugeDemo from "@/examples/gauge-demo";
-import HeatmapDemo from "@/examples/heatmap-demo";
-import ProgressBarDemo from "@/examples/progress-bar-demo";
-import StatCardDemo from "@/examples/stat-card-demo";
-import WavesDemo from "@/examples/waves-demo";
 import { useNearViewport } from "@/hooks/use-near-viewport";
 import type { CatalogCategory } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 
+// Each demo is its own chunk, fetched when its tile nears the viewport.
+const AuroraBorealis = dynamic(() => import("@/examples/aurora-borealis"), {
+  ssr: false,
+});
+const AvatarDemo = dynamic(() => import("@/examples/avatar-demo"), {
+  ssr: false,
+});
+const BarChartDemo = dynamic(() => import("@/examples/bar-chart-demo"), {
+  ssr: false,
+});
+const DitherButtonDemo = dynamic(
+  () => import("@/examples/dither-button-demo"),
+  { ssr: false }
+);
+const DitherGlobeDemo = dynamic(() => import("@/examples/dither-globe-demo"), {
+  ssr: false,
+});
+const DitherImageDemo = dynamic(() => import("@/examples/dither-image-demo"), {
+  ssr: false,
+});
+const DitherTextDemo = dynamic(() => import("@/examples/dither-text-demo"), {
+  ssr: false,
+});
+const DonutChartDemo = dynamic(() => import("@/examples/donut-chart-demo"), {
+  ssr: false,
+});
+const GaugeDemo = dynamic(() => import("@/examples/gauge-demo"), {
+  ssr: false,
+});
+const HeatmapDemo = dynamic(() => import("@/examples/heatmap-demo"), {
+  ssr: false,
+});
+const ProgressBarDemo = dynamic(() => import("@/examples/progress-bar-demo"), {
+  ssr: false,
+});
+const StatCardDemo = dynamic(() => import("@/examples/stat-card-demo"), {
+  ssr: false,
+});
+const WavesDemo = dynamic(() => import("@/examples/waves-demo"), {
+  ssr: false,
+});
+
 /**
  * The landing's example wall: the same demos the docs pages open with,
  * live and at their default settings, so what you see is what installs.
- * Each demo mounts only as it nears the viewport, and WebGL ones share the
- * engine's context budget.
+ * Each demo loads and mounts only as its tile nears the viewport, and WebGL
+ * ones share the engine's context budget.
  */
 
 interface Example {
