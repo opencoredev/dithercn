@@ -50,7 +50,7 @@ export const CatalogIndex = ({
           <div className="flex flex-col gap-1">
             <h3
               id={`catalog-${category.id}`}
-              className="text-base font-semibold tracking-tight"
+              className="scroll-m-28 text-base font-semibold tracking-tight"
             >
               {category.name}
             </h3>
