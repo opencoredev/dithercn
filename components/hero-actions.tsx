@@ -1,24 +1,93 @@
 "use client";
 
-import { GridViewIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 
-import { Icon } from "@/components/icon";
-import { Button } from "@/components/ui/button";
+import {
+  ChatGptIcon,
+  ClaudeIcon,
+  CursorIcon,
+  GeminiIcon,
+} from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
+import { useSiteOrigin } from "@/hooks/use-site-origin";
+import { quickStartPrompt } from "@/lib/agent-prompts";
+import { trackEvent } from "@/lib/events";
+import { cn } from "@/lib/utils";
+
+// The agents the prompt works in, as small overlapping app tiles.
+const AGENTS = [
+  { Icon: ClaudeIcon, tile: "bg-[#d97757] text-white" },
+  { Icon: ChatGptIcon, tile: "bg-white text-black" },
+  { Icon: CursorIcon, tile: "bg-black text-white" },
+  { Icon: GeminiIcon, tile: "bg-neutral-800 text-white" },
+] as const;
+
+const AgentTiles = () => (
+  <span aria-hidden="true" className="flex">
+    {AGENTS.map(({ Icon, tile }, index) => (
+      <span
+        key={tile}
+        className={cn(
+          "ring-background flex size-7 items-center justify-center rounded-lg ring-2",
+          index > 0 && "-ml-2",
+          tile
+        )}
+      >
+        <Icon className="size-4" />
+      </span>
+    ))}
+  </span>
+);
 
 /**
- * The landing hero's call to action. A client component because the icon
- * must render on the same side as Button's Slot, or hydration drops the
- * button.
+ * The landing hero's actions: copy a prompt that sets dithercn up through
+ * your coding agent, or read the docs first.
  */
-export const HeroActions = () => (
-  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-    <Button asChild size="lg" variant="inverse">
-      <Link href={ROUTES.DOCS_EXAMPLES} transitionTypes={["nav-forward"]}>
-        <Icon icon={GridViewIcon} />
-        See the examples
+export const HeroActions = () => {
+  const { copyToClipboard, isCopied } = useCopyToClipboard();
+  const origin = useSiteOrigin();
+  const label = isCopied ? "Copied, now paste it" : "Copy quick start prompt";
+
+  const copyPrompt = async () => {
+    if (await copyToClipboard(quickStartPrompt(origin))) {
+      trackEvent({ name: "copy_quick_start_prompt" });
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 pt-2">
+      <button
+        type="button"
+        onClick={copyPrompt}
+        aria-label={label}
+        className="bg-card/80 hover:bg-card focus-visible:ring-ring/60 flex h-14 items-center gap-3 rounded-2xl border pr-5 pl-3 text-base font-medium backdrop-blur-sm transition-colors duration-150 outline-none focus-visible:ring-[3px] active:scale-[0.98] motion-reduce:active:scale-100"
+      >
+        <AgentTiles />
+        {/* Both labels share one grid cell, so the button keeps its width. */}
+        <span aria-hidden="true" className="grid text-left">
+          <span
+            className={cn("col-start-1 row-start-1", isCopied && "invisible")}
+          >
+            Copy quick start prompt
+          </span>
+          <span
+            className={cn("col-start-1 row-start-1", !isCopied && "invisible")}
+          >
+            Copied, now paste it
+          </span>
+        </span>
+      </button>
+      <Link
+        href={ROUTES.DOCS}
+        transitionTypes={["nav-forward"]}
+        className="decoration-foreground/40 hover:decoration-foreground focus-visible:ring-ring/60 rounded-sm text-base font-medium underline decoration-1 underline-offset-[6px] transition-colors duration-150 outline-none focus-visible:ring-[3px]"
+      >
+        Read the docs
       </Link>
-    </Button>
-  </div>
-);
+      <span aria-live="polite" className="sr-only">
+        {isCopied ? "Quick start prompt copied" : ""}
+      </span>
+    </div>
+  );
+};

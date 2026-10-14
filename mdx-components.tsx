@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { AgentPrompt } from "@/components/agent-prompt";
 import { Callout } from "@/components/callout";
 import { CatalogIndex } from "@/components/catalog-index";
 import { CodeBlockCommand } from "@/components/code-block-command";
@@ -30,6 +31,7 @@ export const mdxComponents = {
   AccordionTrigger: (
     props: React.ComponentProps<typeof AccordionTriggerBase>
   ) => <AccordionTriggerBase {...props} />,
+  AgentPrompt,
   Alert,
   AlertDescription,
   AlertTitle,
