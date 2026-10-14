@@ -2,10 +2,9 @@ import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 
 import { AgentShowcase } from "@/components/agent-showcase";
-import { BayerRamp } from "@/components/bayer-ramp";
-import { CatalogTiles } from "@/components/catalog-tiles";
 import { CommandBox } from "@/components/command-box";
 import { DitherHero } from "@/components/dither-hero";
+import { ExampleGallery } from "@/components/example-gallery";
 import { HeroActions } from "@/components/hero-actions";
 import { HeroUseCases } from "@/components/hero-use-cases";
 import { Icon } from "@/components/icon";
@@ -45,17 +44,6 @@ const INSTALLS = [
   [".agents/skills/dithercn/", "The skill, for Codex, Cursor and others."],
   [".claude/skills/dithercn/", "The same skill, for Claude Code."],
   ["globals.css", "--dither-ink, --dither-paper and friends, from your theme."],
-] as const;
-
-/** The engine's techniques, as the skill chooses between them. */
-const TECHNIQUES = [
-  [
-    "WebGL fields",
-    "Anything that moves or varies per pixel: backgrounds, glows, meters.",
-  ],
-  ["SVG patterns", "Chart and meter fills that stay crisp at any size."],
-  ["CSS masks", "Blocks, bars and skeletons, with no script at all."],
-  ["Image dithering", "Photos and logos in your theme's colours, or as files."],
 ] as const;
 
 export default function IndexPage() {
@@ -98,62 +86,11 @@ export default function IndexPage() {
           </div>
         </section>
 
-        <section className="container-wrapper" aria-labelledby="ask-heading">
-          <div className="container flex flex-col gap-10 pt-24 pb-20 md:pt-36 md:pb-28">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-12">
-              <h2 id="ask-heading" className={H2_CLS}>
-                Ask for any dither.
-              </h2>
-              <p className={LEAD_CLS}>
-                The skill teaches your agent the engine, so one sentence is
-                enough: what it is, where it goes, how it should feel.
-              </p>
-            </div>
-            <AgentShowcase />
-          </div>
-        </section>
-
-        <section className="container-wrapper" aria-labelledby="engine-heading">
-          <div className="container flex flex-col gap-10 py-20 md:py-28">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-12">
-              <h2 id="engine-heading" className={H2_CLS}>
-                Every dither is a tone and a threshold.
-              </h2>
-              <div className="flex flex-col gap-4">
-                <p className={LEAD_CLS}>
-                  Your agent builds on one engine. A field gives each cell a
-                  tone, a threshold matrix decides which cells take ink, and
-                  your theme picks the colours.
-                </p>
-                <Link
-                  href={ROUTES.DOCS_WRITE_YOUR_OWN}
-                  transitionTypes={["nav-forward"]}
-                  className={LINK_CLS}
-                >
-                  Write your own dither
-                  <LinkArrow />
-                </Link>
-              </div>
-            </div>
-            <BayerRamp />
-            <dl className="grid gap-x-8 gap-y-6 pt-4 sm:grid-cols-2 lg:grid-cols-4">
-              {TECHNIQUES.map(([name, use]) => (
-                <div key={name} className="flex flex-col gap-1.5 border-t pt-4">
-                  <dt className="font-medium">{name}</dt>
-                  <dd className="text-muted-foreground text-sm text-pretty">
-                    {use}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </section>
-
         <section
           className="container-wrapper"
           aria-labelledby="catalog-heading"
         >
-          <div className="container flex flex-col gap-10 py-20 md:py-28">
+          <div className="container flex flex-col gap-10 pt-24 pb-20 md:pt-36 md:pb-28">
             <div className="grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-12">
               <h2 id="catalog-heading" className={H2_CLS}>
                 Start from an example.
@@ -168,12 +105,27 @@ export default function IndexPage() {
                   transitionTypes={["nav-forward"]}
                   className={LINK_CLS}
                 >
-                  See every example
+                  See all {pieceCount} in the catalog
                   <LinkArrow />
                 </Link>
               </div>
             </div>
-            <CatalogTiles catalog={catalog} />
+            <ExampleGallery catalog={catalog} />
+          </div>
+        </section>
+
+        <section className="container-wrapper" aria-labelledby="ask-heading">
+          <div className="container flex flex-col gap-10 py-20 md:py-28">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-12">
+              <h2 id="ask-heading" className={H2_CLS}>
+                Ask for any dither.
+              </h2>
+              <p className={LEAD_CLS}>
+                The skill teaches your agent the engine, so one sentence is
+                enough: what it is, where it goes, how it should feel.
+              </p>
+            </div>
+            <AgentShowcase />
           </div>
         </section>
 

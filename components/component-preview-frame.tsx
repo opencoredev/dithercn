@@ -7,7 +7,7 @@ import {
   SlidersHorizontalIcon,
 } from "@hugeicons/core-free-icons";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { ReactNode, UIEvent } from "react";
 
 import { CopyButton } from "@/components/copy-button";
@@ -18,6 +18,7 @@ import {
 } from "@/components/preview-controls";
 import type { PreviewControlsLayout } from "@/components/preview-controls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNearViewport } from "@/hooks/use-near-viewport";
 import type { PreviewControlSet, PreviewValue } from "@/lib/preview-controls";
 import { cn } from "@/lib/utils";
 
@@ -63,31 +64,6 @@ const pinScroll = (event: UIEvent<HTMLDivElement>) => {
   if (el.scrollLeft !== 0 || el.scrollTop !== 0) {
     el.scrollTo(0, 0);
   }
-};
-
-/** Mounts `children` once the stage comes within 200px of the viewport. */
-const useNearViewport = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isNear, setIsNear] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || isNear) {
-      return;
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setIsNear(true);
-        }
-      },
-      { rootMargin: "200px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [isNear]);
-
-  return { isNear, ref };
 };
 
 const TRIGGER_CLASS =
