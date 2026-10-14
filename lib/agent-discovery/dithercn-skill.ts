@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { gzipSync } from "node:zlib";
 
 /**
  * The dithercn agent skill: `skills/dithercn/` in this repo, rendered for one
@@ -130,8 +131,59 @@ export const renderSkillFile = (
   return render(readFileSync(path.join(SKILL_DIR, file), "utf-8"), origin);
 };
 
-/** `sha256:<hex>` of the rendered SKILL.md, for the discovery index. */
-export const skillDigest = (origin: string): string => {
-  const skill = renderSkillFile("SKILL.md", origin) ?? "";
-  return `sha256:${createHash("sha256").update(skill, "utf-8").digest("hex")}`;
+const TAR_BLOCK = 512;
+
+/** `value` as a NUL-terminated octal field `length` bytes long. */
+const octal = (value: number, length: number) =>
+  `${value.toString(8).padStart(length - 1, "0")}\0`;
+
+/** One ustar header: a regular file, owned by nobody, dated 1970 so the bytes never change. */
+const tarHeader = (name: string, size: number): Buffer => {
+  // ustar's name field holds 100 bytes; the skill's paths are far shorter, so
+  // fail loudly rather than write a truncated name.
+  if (Buffer.byteLength(name, "ascii") > 100) {
+    throw new Error(`Skill file path is too long for the archive: ${name}`);
+  }
+  const header = Buffer.alloc(TAR_BLOCK);
+  const field = (value: string, offset: number, length: number) =>
+    header.write(value, offset, length, "ascii");
+  field(name, 0, 100);
+  field(octal(0o644, 8), 100, 8);
+  field(octal(0, 8), 108, 8);
+  field(octal(0, 8), 116, 8);
+  field(octal(size, 12), 124, 12);
+  field(octal(0, 12), 136, 12);
+  // The checksum is summed with its own field read as spaces.
+  field("        ", 148, 8);
+  field("0", 156, 1);
+  field("ustar\0", 257, 6);
+  field("00", 263, 2);
+  const sum = header.reduce((total, byte) => total + byte, 0);
+  field(`${sum.toString(8).padStart(6, "0")}\0 `, 148, 8);
+  return header;
 };
+
+/**
+ * The whole skill as a `.tar.gz`, `SKILL.md` at its root, rendered for
+ * `origin`. `npx skills add <site>` installs it through the discovery
+ * index, references and all. Deterministic, so its digest is stable.
+ */
+export const skillArchive = (origin: string): Buffer => {
+  const blocks = skillFiles().flatMap((file) => {
+    const body = Buffer.from(renderSkillFile(file, origin) ?? "", "utf-8");
+    const padding = Buffer.alloc(
+      (TAR_BLOCK - (body.length % TAR_BLOCK)) % TAR_BLOCK
+    );
+    return [tarHeader(file, body.length), body, padding];
+  });
+  const tar = Buffer.concat([...blocks, Buffer.alloc(TAR_BLOCK * 2)]);
+  const archive = gzipSync(tar, { level: 9 });
+  // zlib writes the build's OS into the header; pin it to Unix so the bytes,
+  // and the digest, are the same wherever the site runs.
+  archive[9] = 3;
+  return archive;
+};
+
+/** `sha256:<hex>` of the skill archive, for the discovery index. */
+export const skillArchiveDigest = (origin: string): string =>
+  `sha256:${createHash("sha256").update(skillArchive(origin)).digest("hex")}`;

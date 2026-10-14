@@ -1,6 +1,7 @@
 export const ROUTES = {
   AGENT_SKILL: "/.well-known/agent-skills/dithercn/SKILL.md",
   AGENT_SKILLS_INDEX: "/.well-known/agent-skills/index.json",
+  AGENT_SKILL_ARCHIVE: "/.well-known/agent-skills/dithercn.tar.gz",
   API_CATALOG: "/.well-known/api-catalog",
   API_STATUS: "/api/status",
   DOCS: "/docs",

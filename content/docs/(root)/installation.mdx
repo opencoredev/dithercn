@@ -24,7 +24,15 @@ You need a project that already uses shadcn/ui, with a `components.json` file, T
   your own project.
 </Callout>
 
-## Add the engine and the skill
+## Add the skill with the skills CLI
+
+The [skills CLI](https://skills.sh) installs the skill into Claude Code, Codex, Cursor, Gemini CLI and other agents that read skills. Run it in your project:
+
+<CommandBox tool="skills" className="mt-6" />
+
+It asks which agents to install for, then writes the skill and its references into each agent's skills folder, such as `.claude/skills/dithercn/` and `.agents/skills/dithercn/`. Add `-g` to install it for every project on your machine. The skill adds the engine to your project the first time your agent builds a dither.
+
+## Or add the engine and the skill with shadcn
 
 <Steps>
 
@@ -90,7 +98,7 @@ The skill matches the engine it installs with and points your agent at the files
 
 ## Install the skill for every project
 
-`shadcn add` writes the skill into the current project only. To make it available in every project on your machine, download it into your user skills folder:
+`shadcn add` writes the skill into the current project only. To make it available in every project on your machine, run the skills CLI with `-g`. Without the CLI, download the files into your user skills folder:
 
 ```bash
 SKILL=http://localhost:3000/.well-known/agent-skills/dithercn
