@@ -335,13 +335,15 @@ const createRenderer = (
 /**
  * Browsers cap live WebGL contexts (Chrome drops the oldest past 16), so
  * every DitherShader on the page shares a budget. A shader holds a context
- * only while it is near the viewport; past the budget, the one seen least
- * recently gives its context up and shows its fallback.
+ * only while it is near the viewport. Past the budget, one gives its
+ * context up and shows its fallback: first any that moved away, then any
+ * just outside the viewport, then the one on screen seen least recently.
  */
 export const MAX_LIVE_CONTEXTS = 8;
 
 interface ContextSlot {
   near: boolean;
+  onScreen: boolean;
   lastSeen: number;
   active: boolean;
   readonly setActive: (active: boolean) => void;
@@ -370,11 +372,21 @@ const requestContext = (slot: ContextSlot) => {
   }
   const live = [...slots].filter((other) => other.active);
   if (live.length >= MAX_LIVE_CONTEXTS) {
-    const offscreen = live.filter((other) => !other.near);
-    const victim = leastRecent(offscreen.length > 0 ? offscreen : live);
-    if (victim) {
-      activate(victim, false);
+    const away = live.filter((other) => !other.near);
+    const offscreen = live.filter((other) => !other.onScreen);
+    let victim: ContextSlot | null = null;
+    if (away.length > 0) {
+      victim = leastRecent(away);
+    } else if (offscreen.length > 0) {
+      victim = leastRecent(offscreen);
+    } else if (slot.onScreen) {
+      victim = leastRecent(live);
     }
+    if (!victim) {
+      // Everything live is on screen and this one isn't: wait.
+      return;
+    }
+    activate(victim, false);
   }
   activate(slot, true);
 };
@@ -384,9 +396,10 @@ const releaseContext = (slot: ContextSlot) => {
     return;
   }
   activate(slot, false);
-  // A freed context goes to the nearby shader that waited longest.
+  // A freed context goes to the shader that waited longest, on screen first.
   const waiting = [...slots].filter((other) => other.near && !other.active);
-  const next = leastRecent(waiting);
+  const onScreen = waiting.filter((other) => other.onScreen);
+  const next = leastRecent(onScreen.length > 0 ? onScreen : waiting);
   if (next) {
     activate(next, true);
   }
@@ -405,10 +418,11 @@ const useContextSlot = (ref: RefObject<Element | null>): boolean => {
       active: false,
       lastSeen: 0,
       near: false,
+      onScreen: false,
       setActive,
     };
     slots.add(slot);
-    const observer = new IntersectionObserver(
+    const nearObserver = new IntersectionObserver(
       ([entry]) => {
         slot.near = entry?.isIntersecting ?? false;
         if (slot.near) {
@@ -420,9 +434,19 @@ const useContextSlot = (ref: RefObject<Element | null>): boolean => {
       },
       { rootMargin: "200px" }
     );
-    observer.observe(el);
+    // Coming on screen can take a context from one that is only nearby.
+    const screenObserver = new IntersectionObserver(([entry]) => {
+      slot.onScreen = entry?.isIntersecting ?? false;
+      if (slot.onScreen && slot.near) {
+        slot.lastSeen = performance.now();
+        requestContext(slot);
+      }
+    });
+    nearObserver.observe(el);
+    screenObserver.observe(el);
     return () => {
-      observer.disconnect();
+      nearObserver.disconnect();
+      screenObserver.disconnect();
       releaseContext(slot);
       slots.delete(slot);
     };
@@ -612,7 +636,9 @@ export const DitherShader = ({
       // Whole device pixels per cell, so every cell is the same size.
       const deviceCell = Math.max(1, Math.round(cssCell * dpr));
       const snapped = deviceCell / dpr;
-      const { width, height } = root.getBoundingClientRect();
+      // Layout size, not the painted box, so a scaled parent (a zoom-in
+      // animation, a thumbnail) doesn't shrink the grid.
+      const { offsetWidth: width, offsetHeight: height } = root;
       const columns = Math.max(1, Math.ceil(width / snapped));
       const rows = Math.max(1, Math.ceil(height / snapped));
       sizeRef.current = { columns, rows };
@@ -693,7 +719,10 @@ export const DitherShader = ({
       )}
       {...props}
     >
-      <div className="absolute inset-0 opacity-0 transition-opacity delay-700 duration-0 group-data-[state=fallback]/dither:opacity-100 group-data-[state=fallback]/dither:delay-0">
+      <div
+        data-dither-fallback
+        className="absolute inset-0 opacity-0 transition-opacity delay-700 duration-0 group-data-[state=fallback]/dither:opacity-100 group-data-[state=fallback]/dither:delay-0"
+      >
         {fallback ?? (
           <div
             className="absolute inset-0"
