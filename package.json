@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "registry:build": "jiti scripts/build-registry.ts && shadcn build registry.json --output ./public/r",
     "postinstall": "fumadocs-mdx",
+    "catalog:capture": "jiti scripts/capture-catalog.ts",
     "check": "ultracite check",
     "fix": "ultracite fix",
     "prepare": "lefthook install"
