@@ -405,6 +405,9 @@ const releaseContext = (slot: ContextSlot) => {
   }
 };
 
+const hasOnScreenWaiter = () =>
+  [...slots].some((other) => other.onScreen && other.near && !other.active);
+
 /** Holds a slot in the shared context budget while `ref` is near the viewport. */
 const useContextSlot = (ref: RefObject<Element | null>): boolean => {
   const [active, setActive] = useState(false);
@@ -434,12 +437,15 @@ const useContextSlot = (ref: RefObject<Element | null>): boolean => {
       },
       { rootMargin: "200px" }
     );
-    // Coming on screen can take a context from one that is only nearby.
+    // Coming on screen can take a context from one that is only nearby, and
+    // leaving the screen hands it to an on-screen shader that is waiting.
     const screenObserver = new IntersectionObserver(([entry]) => {
       slot.onScreen = entry?.isIntersecting ?? false;
       if (slot.onScreen && slot.near) {
         slot.lastSeen = performance.now();
         requestContext(slot);
+      } else if (!slot.onScreen && slot.active && hasOnScreenWaiter()) {
+        releaseContext(slot);
       }
     });
     nearObserver.observe(el);
