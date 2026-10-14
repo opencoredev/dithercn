@@ -20,10 +20,13 @@ import {
 const ROOT = process.cwd();
 const REGISTRY_DIR = path.join(ROOT, "registry");
 const PLACEHOLDER = "{{REGISTRY_URL}}";
-const SITE_URL = (process.env.SITE_URL ?? "http://localhost:3000").replace(
-  /\/$/,
-  ""
-);
+// Same order as constants/site.ts, so a Vercel deploy without SITE_URL
+// still ships registry URLs that point at itself.
+const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+const SITE_URL = (
+  process.env.SITE_URL ||
+  (vercelUrl ? `https://${vercelUrl}` : "http://localhost:3000")
+).replace(/\/$/, "");
 const REGISTRY_URL = `${SITE_URL}/r`;
 
 // The agent skill, rendered for SITE_URL, is what the dithercn-skill item ships.
