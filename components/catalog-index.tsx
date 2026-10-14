@@ -49,11 +49,13 @@ const EAGER_TILES = 6;
  * `display: none` is never fetched, but an eager one always is, so the
  * above-the-fold tiles draw their preview as a CSS background instead: the
  * browser fetches a background only when its rule applies, and the rule
- * follows the `dark` class, which a <picture> media query can't.
+ * follows the `dark` class, which a <picture> media query can't. Forced
+ * colors mode drops background images, so this one opts out to keep the
+ * preview, as an <img> would.
  */
 const EagerPreview = ({ piece }: { piece: CatalogPiece }) => (
   <span
-    className="absolute inset-0 bg-(image:--preview-light) bg-cover bg-center dark:bg-(image:--preview-dark)"
+    className="absolute inset-0 bg-(image:--preview-light) bg-cover bg-center forced-color-adjust-none dark:bg-(image:--preview-dark)"
     style={
       {
         "--preview-dark": `url("${previewSrc(piece, "dark")}")`,
