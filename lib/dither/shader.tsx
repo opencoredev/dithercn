@@ -335,9 +335,11 @@ const createRenderer = (
 /**
  * Browsers cap live WebGL contexts (Chrome drops the oldest past 16), so
  * every DitherShader on the page shares a budget. A shader holds a context
- * only while it is near the viewport. Past the budget, one gives its
- * context up and shows its fallback: first any that moved away, then any
- * just outside the viewport, then the one on screen seen least recently.
+ * only while it is near the viewport. Past the budget, a shader coming on
+ * screen takes the context of one just outside the viewport, seen least
+ * recently first. It never takes one from a shader still on screen, so
+ * scrolling doesn't flip visible shaders between canvas and fallback;
+ * it waits instead, and gets the next context freed.
  */
 export const MAX_LIVE_CONTEXTS = 8;
 
@@ -372,18 +374,9 @@ const requestContext = (slot: ContextSlot) => {
   }
   const live = [...slots].filter((other) => other.active);
   if (live.length >= MAX_LIVE_CONTEXTS) {
-    const away = live.filter((other) => !other.near);
     const offscreen = live.filter((other) => !other.onScreen);
-    let victim: ContextSlot | null = null;
-    if (away.length > 0) {
-      victim = leastRecent(away);
-    } else if (offscreen.length > 0) {
-      victim = leastRecent(offscreen);
-    } else if (slot.onScreen) {
-      victim = leastRecent(live);
-    }
+    const victim = slot.onScreen ? leastRecent(offscreen) : null;
     if (!victim) {
-      // Everything live is on screen and this one isn't: wait.
       return;
     }
     activate(victim, false);
@@ -453,8 +446,9 @@ const useContextSlot = (ref: RefObject<Element | null>): boolean => {
     return () => {
       nearObserver.disconnect();
       screenObserver.disconnect();
-      releaseContext(slot);
+      // Leave the set first, so the freed context goes to someone else.
       slots.delete(slot);
+      releaseContext(slot);
     };
   }, [ref]);
 

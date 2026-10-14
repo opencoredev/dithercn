@@ -46,7 +46,7 @@ A client component that draws a GLSL field as a dither on a WebGL canvas at one 
 - The root is `relative overflow-hidden pointer-events-none`, `aria-hidden` by default. It renders no children: put content in a sibling.
 - It sizes to its box. A box with no height draws nothing.
 - `fallback` shows before the first frame, without WebGL, and while the shader is far offscreen. Default: flat `palette[0]`. Make it resemble the dither (a CSS gradient in the ink colour).
-- Free behaviour: resize observer, whole-device-pixel cells, theme changes re-read the palette, pauses offscreen and in hidden tabs, a still frame under reduced motion, context loss recovery. At most 8 shaders hold a WebGL context at once (`MAX_LIVE_CONTEXTS`); past that, shaders just off screen give theirs up before ones on screen, least recently seen first, and show `fallback`.
+- Free behaviour: resize observer, whole-device-pixel cells, theme changes re-read the palette, pauses offscreen and in hidden tabs, a still frame under reduced motion, context loss recovery. At most 8 shaders hold a WebGL context at once (`MAX_LIVE_CONTEXTS`); past that, a shader coming on screen takes one from a shader just off screen, never from one still on screen, and waits otherwise, showing `fallback`.
 - `data-state` on the root: `running`, `paused` (offscreen or hidden tab), `static` (reduced motion or `animate={false}`), `fallback` (no frame drawn).
 - Changing `uniforms`, `palette`, `matrix`, `levels` or `speed` is cheap. Changing the `field` string recompiles, so keep it a module constant and drive variation through uniforms.
 - `DitherShaderProps` is exported. A wrapper component usually takes `Omit<DitherShaderProps, "field" | "uniforms" | "fallback">` plus its own props, and spreads the rest.
