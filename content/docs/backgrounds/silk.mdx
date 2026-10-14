@@ -1,0 +1,134 @@
+---
+title: "Silk"
+description: "Folds of silk catching the light: smooth sheets that ripple and shift, with a bright highlight along each crest."
+---
+
+import SilkDemo from "@/examples/silk-demo";
+import { controls as silkControls } from "@/examples/silk-controls";
+import SilkHeadline from "@/examples/silk-headline";
+import SilkChampagne from "@/examples/silk-champagne";
+
+<ComponentPreview
+  src="examples/silk-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={silkControls}
+>
+  <SilkDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="silk" />
+
+## Usage
+
+```tsx
+import { Silk } from "@/components/dithercn/silk";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Silk className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+The cloth is a height field of folds bent by slow waves. It is lit from the top left: faces turned to the light are bright, the far sides of each fold fall smoothly into shadow, and a narrow highlight runs along every crest. The folds slide and change width over time. It defaults to the 8×8 matrix, which suits its long soft gradients.
+
+## Examples
+
+### Behind a headline
+
+Fewer `folds`, a sharper `sheen` and an `intensity` of 0.45 keep the brightest crest below full ink.
+
+<ComponentPreview src="examples/silk-headline.tsx" size="lg" align="stretch">
+  <SilkHeadline />
+</ComponentPreview>
+
+### Champagne
+
+Eight folds on a diagonal through four warm golds, from near-black to a pale cream highlight.
+
+<ComponentPreview src="examples/silk-champagne.tsx" size="full" align="stretch">
+  <SilkChampagne />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "folds",
+      type: "number",
+      default: "6",
+      description: "How many folds cross the box.",
+    },
+    {
+      name: "angle",
+      type: "number",
+      default: "110",
+      description:
+        "Direction the folds run, in degrees as in CSS: 90 runs them left to right.",
+    },
+    {
+      name: "sheen",
+      type: "number",
+      default: "0.6",
+      description:
+        "How narrow and bright the highlight on each fold is, from 0 to 1.",
+    },
+    {
+      name: "intensity",
+      type: "number",
+      default: "1",
+      description:
+        "The brightest tone, from 0 to 1. Lower it to put text on top.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: "Paper, two tints of --dither-ink, then --dither-ink",
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer8"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the folds move.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The cloth fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows soft diagonal stripes in CSS.

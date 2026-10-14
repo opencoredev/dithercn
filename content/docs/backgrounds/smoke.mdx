@@ -1,0 +1,132 @@
+---
+title: "Smoke"
+description: "Soft smoke that billows upward and thins out, lit from above, drawn as a dither."
+---
+
+import SmokeDemo from "@/examples/smoke-demo";
+import { controls as smokeControls } from "@/examples/smoke-controls";
+import SmokeHeadline from "@/examples/smoke-headline";
+import SmokeEmbers from "@/examples/smoke-embers";
+
+<ComponentPreview
+  src="examples/smoke-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={smokeControls}
+>
+  <SmokeDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="smoke" />
+
+## Usage
+
+```tsx
+import { Smoke } from "@/components/dithercn/smoke";
+
+export function Footer() {
+  return (
+    <footer className="relative isolate min-h-[360px]">
+      <Smoke className="absolute inset-0 -z-10" />
+    </footer>
+  );
+}
+```
+
+The smoke is thickest at the bottom and thins out as it climbs. Light from the upper left catches one side of each plume and leaves the other in shadow. The thickest parts stop short of solid ink, so the dither always shows.
+
+## Examples
+
+### Behind a headline
+
+A lower `height` keeps the smoke in the bottom half, and a lower `density` makes it lighter. Negative `wind` blows it to the left.
+
+<ComponentPreview src="examples/smoke-headline.tsx" size="lg" align="stretch">
+  <SmokeHeadline />
+</ComponentPreview>
+
+### Embers
+
+Four warm colours turn the smoke into the glow above a fire. Blue noise gives an even grain instead of the Bayer grid.
+
+<ComponentPreview src="examples/smoke-embers.tsx" size="lg" align="stretch">
+  <SmokeEmbers />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "scale",
+      type: "number",
+      default: "1",
+      description: "Size of the plumes. Higher values make more, smaller ones.",
+    },
+    {
+      name: "height",
+      type: "number",
+      default: "0.8",
+      description:
+        "How high the smoke climbs before it thins out, from 0 to 1.",
+    },
+    {
+      name: "wind",
+      type: "number",
+      default: "0.2",
+      description: "Sideways drift. Negative blows left, positive right.",
+    },
+    {
+      name: "density",
+      type: "number",
+      default: "1",
+      description: "How thick the smoke is, from 0 to 1.5.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast it moves.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The background fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a soft CSS haze in the same colours.
+- It costs one small draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/engine/performance).

@@ -1,0 +1,133 @@
+---
+title: "Ridgelines"
+description: "Stacked ridge lines like a pulsar plot, each hiding the ones behind it, drawn as a dither."
+---
+
+import RidgelinesDemo from "@/examples/ridgelines-demo";
+import { controls as ridgelinesControls } from "@/examples/ridgelines-controls";
+import RidgelinesSignal from "@/examples/ridgelines-signal";
+import RidgelinesRange from "@/examples/ridgelines-range";
+
+<ComponentPreview
+  src="examples/ridgelines-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={ridgelinesControls}
+>
+  <RidgelinesDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="ridgelines" />
+
+## Usage
+
+```tsx
+import { Ridgelines } from "@/components/dithercn/ridgelines";
+
+export function Section() {
+  return (
+    <section className="relative isolate min-h-[420px]">
+      <Ridgelines className="absolute inset-0 -z-10" />
+    </section>
+  );
+}
+```
+
+Each line is flat at the ends and peaked in the middle, and each one hides the lines behind it. The peaks shift slowly. A faint shade under the tallest peaks makes them read as solid ridges. Lines stay one cell wide and at least four cells apart, so a short box draws fewer of them.
+
+## Examples
+
+### In a card
+
+Fewer `lines`, a narrower `spread` and small cells fit a pulsar plot in a card.
+
+<ComponentPreview src="examples/ridgelines-signal.tsx">
+  <RidgelinesSignal />
+</ComponentPreview>
+
+### Mountain range
+
+`spread={1}` raises peaks across the whole width. A lower `amplitude` keeps them low, and a three-colour palette shades the slopes.
+
+<ComponentPreview src="examples/ridgelines-range.tsx" size="lg" align="stretch">
+  <RidgelinesRange />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "lines",
+      type: "number",
+      default: "32",
+      description: "How many lines, from 6 to 64. A short box draws fewer.",
+    },
+    {
+      name: "amplitude",
+      type: "number",
+      default: "1",
+      description: "Height of the peaks. 2 is twice as tall.",
+    },
+    {
+      name: "spread",
+      type: "number",
+      default: "0.5",
+      description:
+        "Width of the peaked band, as a share of the box, from 0.1 to 1.",
+    },
+    {
+      name: "shade",
+      type: "number",
+      default: "0.25",
+      description:
+        "Faint tone under the raised peaks, from 0 to 0.5. 0 keeps only the lines.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast it moves.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The background fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows thin CSS lines in the same colours.
+- It costs one small draw per frame at 30 fps, at one pixel per dither cell. See [Performance](/docs/engine/performance).
