@@ -1,0 +1,142 @@
+---
+title: "Contours"
+description: "A topographic map drawn as a dither: contour lines over slowly drifting hills, with heavier index lines and a light hillshade."
+---
+
+import ContoursDemo from "@/examples/contours-demo";
+import { controls as contoursControls } from "@/examples/contours-controls";
+import ContoursSurvey from "@/examples/contours-survey";
+import ContoursHeadline from "@/examples/contours-headline";
+
+<ComponentPreview
+  src="examples/contours-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={contoursControls}
+>
+  <ContoursDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="contours" />
+
+## Usage
+
+```tsx
+import { Contours } from "@/components/dithercn/contours";
+
+export function Section() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Contours className="absolute inset-0 -z-10" />
+      <h2>Your heading</h2>
+    </section>
+  );
+}
+```
+
+Contour lines trace even steps of height across a field of low hills. Every fifth line is drawn heavier, as on a survey map, and slopes facing away from a light in the top left pick up a light stipple. The hills drift and slowly change shape. They keep their size in pixels, so a narrow box shows a smaller piece of the same map rather than a squashed one.
+
+## Examples
+
+### Survey map
+
+More `lines`, a smaller `scale` and a little more `relief` in green and brown give an old ordnance survey sheet. `cell={2}` keeps the lines fine.
+
+<ComponentPreview
+  src="examples/contours-survey.tsx"
+  size="full"
+  align="stretch"
+>
+  <ContoursSurvey />
+</ComponentPreview>
+
+### Behind a headline
+
+Set `index` and `relief` to 0 for plain lines, and pass two soft tints of the ink so the lines never reach full contrast.
+
+<ComponentPreview
+  src="examples/contours-headline.tsx"
+  size="lg"
+  align="stretch"
+>
+  <ContoursHeadline />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "lines",
+      type: "number",
+      default: "14",
+      description:
+        "How many contour lines from the lowest ground to the highest, from 4 to 32.",
+    },
+    {
+      name: "scale",
+      type: "number",
+      default: "1",
+      description: "Size of the hills. Higher values pack more of them in.",
+    },
+    {
+      name: "index",
+      type: "number",
+      default: "5",
+      description:
+        "Every how many lines one is drawn heavier. 0 draws them all the same.",
+    },
+    {
+      name: "relief",
+      type: "number",
+      default: "0.5",
+      description:
+        "How strongly slopes facing away from the light are shaded, from 0 to 1.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: "Paper, a tint of --dither-ink, then --dither-ink",
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the hills drift.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description: "false draws one still frame.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The map fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows faint CSS rings.

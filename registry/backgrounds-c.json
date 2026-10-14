@@ -1,0 +1,58 @@
+[
+  {
+    "name": "contours",
+    "type": "registry:component",
+    "title": "Contours",
+    "description": "A topographic map: contour lines over slowly drifting hills, with heavier index lines and a light hillshade.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/contours.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/contours.tsx"
+      }
+    ]
+  },
+  {
+    "name": "ripples",
+    "type": "registry:component",
+    "title": "Ripples",
+    "description": "Concentric rings spreading from one to four points and crossing like drops on still water.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/ripples.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/ripples.tsx"
+      }
+    ]
+  },
+  {
+    "name": "retro-grid",
+    "type": "registry:component",
+    "title": "Retro grid",
+    "description": "A perspective grid floor scrolling towards a horizon under a striped, glowing sun.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/retro-grid.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/retro-grid.tsx"
+      }
+    ]
+  },
+  {
+    "name": "silk",
+    "type": "registry:component",
+    "title": "Silk",
+    "description": "Folds of silk catching the light, with a bright highlight along each crest.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/silk.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/silk.tsx"
+      }
+    ]
+  }
+]
