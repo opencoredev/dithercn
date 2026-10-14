@@ -77,6 +77,15 @@ const browser = (...args: string[]) =>
     encoding: "utf-8",
   });
 
+// Runs even when a capture failed, so it must not throw over that error.
+const closeBrowser = () => {
+  try {
+    browser("close");
+  } catch (error) {
+    console.warn(`Could not close agent-browser session ${SESSION}:`, error);
+  }
+};
+
 // Keeps lossless when the dither's few flat colours make it smaller, and
 // prints the colour count so blank captures can be caught.
 const ENCODE = `
@@ -131,22 +140,26 @@ const main = async () => {
   const targets = args.length > 0 ? args.map(parseTarget) : await readTargets();
   const scratch = mkdtempSync(path.join(tmpdir(), "catalog-capture-"));
 
-  browser(
-    "set",
-    "viewport",
-    String(VIEWPORT.width),
-    String(VIEWPORT.height),
-    String(VIEWPORT.scale)
-  );
-  for (const theme of THEMES) {
-    // next-themes reads the stored choice before the first paint.
-    browser("open", `${BASE_URL}/robots.txt`);
-    browser("eval", `localStorage.setItem("theme", "${theme}")`);
-    for (const target of targets) {
-      // One at a time: each page holds the only WebGL context.
-      // oxlint-disable-next-line no-await-in-loop
-      await capture(target, theme, scratch);
+  try {
+    browser(
+      "set",
+      "viewport",
+      String(VIEWPORT.width),
+      String(VIEWPORT.height),
+      String(VIEWPORT.scale)
+    );
+    for (const theme of THEMES) {
+      // next-themes reads the stored choice before the first paint.
+      browser("open", `${BASE_URL}/robots.txt`);
+      browser("eval", `localStorage.setItem("theme", "${theme}")`);
+      for (const target of targets) {
+        // One at a time: each page holds the only WebGL context.
+        // oxlint-disable-next-line no-await-in-loop
+        await capture(target, theme, scratch);
+      }
     }
+  } finally {
+    closeBrowser();
   }
   console.log(
     `Captured ${targets.length} components in ${THEMES.length} themes.`

@@ -3,6 +3,7 @@ import path from "node:path";
 
 import Image from "next/image";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { getCatalog } from "@/lib/catalog";
 import type { CatalogPiece } from "@/lib/catalog";
@@ -43,41 +44,64 @@ const THEME_CLASS = {
 /** Tiles in the first two rows sit above the fold on a laptop. */
 const EAGER_TILES = 6;
 
+/*
+ * Only the active theme's image may download. A lazy <img> hidden by
+ * `display: none` is never fetched, but an eager one always is, so the
+ * above-the-fold tiles draw their preview as a CSS background instead: the
+ * browser fetches a background only when its rule applies, and the rule
+ * follows the `dark` class, which a <picture> media query can't.
+ */
+const EagerPreview = ({ piece }: { piece: CatalogPiece }) => (
+  <span
+    className="absolute inset-0 bg-(image:--preview-light) bg-cover bg-center dark:bg-(image:--preview-dark)"
+    style={
+      {
+        "--preview-dark": `url("${previewSrc(piece, "dark")}")`,
+        "--preview-light": `url("${previewSrc(piece, "light")}")`,
+      } as CSSProperties
+    }
+  />
+);
+
+const LazyPreview = ({ piece }: { piece: CatalogPiece }) =>
+  THEMES.map((theme) => (
+    <Image
+      key={theme}
+      src={previewSrc(piece, theme)}
+      alt=""
+      width={PREVIEW_WIDTH}
+      height={PREVIEW_HEIGHT}
+      unoptimized
+      loading="lazy"
+      className={cn("size-full object-cover", THEME_CLASS[theme])}
+    />
+  ));
+
 const PieceTile = ({
   piece,
   isEager,
 }: {
   piece: CatalogPiece;
   isEager: boolean;
-}) => (
-  <li>
-    <Link
-      href={piece.url}
-      transitionTypes={["nav-forward"]}
-      className="group/tile focus-visible:ring-ring/50 flex flex-col gap-2.5 rounded-[18px] outline-none focus-visible:ring-[3px] focus-visible:ring-offset-4 focus-visible:ring-offset-background"
-    >
-      <span className="bg-card relative block aspect-[4/3] overflow-hidden rounded-[14px] sm:rounded-[18px]">
-        {hasPreview(piece)
-          ? THEMES.map((theme) => (
-              <Image
-                key={theme}
-                src={previewSrc(piece, theme)}
-                alt=""
-                width={PREVIEW_WIDTH}
-                height={PREVIEW_HEIGHT}
-                unoptimized
-                loading={isEager ? "eager" : "lazy"}
-                className={cn("size-full object-cover", THEME_CLASS[theme])}
-              />
-            ))
-          : null}
-      </span>
-      <span className="decoration-foreground/40 px-0.5 text-sm font-medium underline-offset-4 group-hover/tile:underline">
-        {piece.name}
-      </span>
-    </Link>
-  </li>
-);
+}) => {
+  const Preview = isEager ? EagerPreview : LazyPreview;
+  return (
+    <li>
+      <Link
+        href={piece.url}
+        transitionTypes={["nav-forward"]}
+        className="group/tile focus-visible:ring-ring/50 flex flex-col gap-2.5 rounded-[18px] outline-none focus-visible:ring-[3px] focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+      >
+        <span className="bg-card relative block aspect-[4/3] overflow-hidden rounded-[14px] sm:rounded-[18px]">
+          {hasPreview(piece) ? <Preview piece={piece} /> : null}
+        </span>
+        <span className="decoration-foreground/40 px-0.5 text-sm font-medium underline-offset-4 group-hover/tile:underline">
+          {piece.name}
+        </span>
+      </Link>
+    </li>
+  );
+};
 
 export const CatalogIndex = ({ className }: { className?: string }) => {
   const catalog = getCatalog();
