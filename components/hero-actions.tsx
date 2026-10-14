@@ -79,7 +79,7 @@ export const HeroActions = () => {
           />
           <span
             aria-hidden="true"
-            className="grid size-4 *:col-start-1 *:row-start-1 *:transition-[opacity,filter,scale] *:duration-250 *:ease-in-out motion-reduce:*:transition-opacity"
+            className="grid size-4 *:col-start-1 *:row-start-1 *:transition-[opacity,filter,scale] *:duration-250 *:ease-in-out motion-reduce:*:scale-100! motion-reduce:*:blur-none! motion-reduce:*:transition-opacity"
           >
             <Icon
               icon={Copy01Icon}
@@ -97,7 +97,7 @@ export const HeroActions = () => {
            */}
           <span
             aria-hidden="true"
-            className="grid text-left *:col-start-1 *:row-start-1 *:transition-[opacity,filter,translate] *:duration-150 *:ease-in-out motion-reduce:*:transition-opacity"
+            className="grid text-left *:col-start-1 *:row-start-1 *:transition-[opacity,filter,translate] *:duration-150 *:ease-in-out motion-reduce:*:translate-y-0! motion-reduce:*:blur-none! motion-reduce:*:transition-opacity"
           >
             <span className="group-data-[copied=true]/copy:-translate-y-1 group-data-[copied=true]/copy:opacity-0 group-data-[copied=true]/copy:blur-[2px]">
               Copy agent prompt
