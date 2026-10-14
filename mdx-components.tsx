@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { AgentPrompt } from "@/components/agent-prompt";
 import { Callout } from "@/components/callout";
 import { CatalogIndex } from "@/components/catalog-index";
 import { CodeBlockCommand } from "@/components/code-block-command";
@@ -11,7 +12,6 @@ import { CopyButton } from "@/components/copy-button";
 import { getIconForLanguageExtension } from "@/components/icons";
 import { InstallBlock } from "@/components/install-block";
 import { PropsTable } from "@/components/props-table";
-import { QuickStartPrompt } from "@/components/quick-start-prompt";
 import {
   Accordion,
   AccordionContent,
@@ -31,6 +31,7 @@ export const mdxComponents = {
   AccordionTrigger: (
     props: React.ComponentProps<typeof AccordionTriggerBase>
   ) => <AccordionTriggerBase {...props} />,
+  AgentPrompt,
   Alert,
   AlertDescription,
   AlertTitle,
@@ -75,7 +76,6 @@ export const mdxComponents = {
     />
   ),
   PropsTable,
-  QuickStartPrompt,
   Step: ({ className, children, ...props }: React.ComponentProps<"h3">) => (
     <h3
       className={cn(

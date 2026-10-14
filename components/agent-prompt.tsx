@@ -2,11 +2,15 @@
 
 import { CopyButton } from "@/components/copy-button";
 import { useSiteOrigin } from "@/hooks/use-site-origin";
-import { quickStartPrompt } from "@/lib/quick-start-prompt";
+import { AGENT_PROMPTS } from "@/lib/agent-prompts";
+import type { AgentPromptName } from "@/lib/agent-prompts";
 
-/** The hero's quick start prompt, shown in full in the docs with a copy button. */
-export const QuickStartPrompt = () => {
-  const prompt = quickStartPrompt(useSiteOrigin());
+/**
+ * A prompt for a coding agent, shown in full in the docs with a copy button.
+ * Its URLs use the address the reader is on, so the agent reaches this site.
+ */
+export const AgentPrompt = ({ name }: { name: AgentPromptName }) => {
+  const prompt = AGENT_PROMPTS[name](useSiteOrigin());
 
   return (
     <div className="bg-code text-code-foreground relative mt-6 rounded-xl border">

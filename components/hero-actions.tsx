@@ -11,8 +11,8 @@ import {
 import { ROUTES } from "@/constants/routes";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { useSiteOrigin } from "@/hooks/use-site-origin";
+import { quickStartPrompt } from "@/lib/agent-prompts";
 import { trackEvent } from "@/lib/events";
-import { quickStartPrompt } from "@/lib/quick-start-prompt";
 import { cn } from "@/lib/utils";
 
 // The agents the prompt works in, as small overlapping app tiles.

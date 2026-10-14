@@ -21,3 +21,22 @@ export const quickStartPrompt = (
 3. If I haven't said which dither I want and where it goes, ask me in one question, and suggest two or three that would suit this project.
 4. Build it on the engine, coloured from my theme. Start from an example component if one is close.
 5. Check it in a browser in light and dark mode, at desktop and phone widths and with reduced motion, and fix what doesn't read. Then tell me what you made and where.`;
+
+/** The prompt Write your own dither offers, for an agent to follow that page. */
+export const writeYourOwnPrompt = (
+  origin: string = SITE.URL
+) => `Write a dithered background for <where it goes>
+that looks like <what you want>.
+
+Follow ${origin}${ROUTES.DOCS_WRITE_YOUR_OWN}.md
+and the dithercn skill's references/fields.md.
+Build it on DitherShader from lib/dither and colour it
+from the theme. Check it in a browser in light and dark
+mode and with reduced motion.`;
+
+export const AGENT_PROMPTS = {
+  "quick-start": quickStartPrompt,
+  "write-your-own": writeYourOwnPrompt,
+} as const satisfies Record<string, (origin?: string) => string>;
+
+export type AgentPromptName = keyof typeof AGENT_PROMPTS;
