@@ -21,6 +21,7 @@ const eventSchema = z.object({
     "click_registry_add_button",
     "copy_registry_command",
     "copy_quick_start_prompt",
+    "copy_write_your_own_prompt",
     "keyboard_shortcut_navigate",
   ]),
   properties: z

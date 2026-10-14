@@ -4,6 +4,12 @@ import { CopyButton } from "@/components/copy-button";
 import { useSiteOrigin } from "@/hooks/use-site-origin";
 import { AGENT_PROMPTS } from "@/lib/agent-prompts";
 import type { AgentPromptName } from "@/lib/agent-prompts";
+import type { Event } from "@/lib/events";
+
+const COPY_EVENT = {
+  "quick-start": "copy_quick_start_prompt",
+  "write-your-own": "copy_write_your_own_prompt",
+} as const satisfies Record<AgentPromptName, Event["name"]>;
 
 /**
  * A prompt for a coding agent, shown in full in the docs with a copy button.
@@ -19,7 +25,7 @@ export const AgentPrompt = ({ name }: { name: AgentPromptName }) => {
       </pre>
       <CopyButton
         value={prompt}
-        event="copy_quick_start_prompt"
+        event={COPY_EVENT[name]}
         className="absolute top-3 right-3"
       />
     </div>
