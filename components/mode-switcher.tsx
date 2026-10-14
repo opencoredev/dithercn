@@ -27,6 +27,7 @@ export const ModeSwitcher = () => {
           variant="ghost"
           size="icon"
           className="text-muted-foreground hover:text-foreground extend-touch-target size-8 rounded-full hover:bg-transparent dark:hover:bg-transparent"
+          aria-keyshortcuts="D"
           onClick={toggleTheme}
         >
           <Icon icon={Moon02Icon} className="size-4 dark:hidden" />
