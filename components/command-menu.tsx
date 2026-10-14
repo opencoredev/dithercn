@@ -259,7 +259,7 @@ export const CommandMenu = ({
         <button
           type="button"
           aria-label="Search"
-          aria-keyshortcuts={isMac ? "Meta+K" : "Control+K"}
+          aria-keyshortcuts={isMac ? "Meta+K /" : "Control+K /"}
           className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 extend-touch-target flex size-8 items-center justify-center rounded-full outline-none focus-visible:ring-[3px]"
         >
           <Icon icon={Search01Icon} className="size-4.5" />

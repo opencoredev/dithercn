@@ -39,7 +39,7 @@ export const SiteHeader = () => (
         </Link>
       </BrandContextMenu>
       <MainNav items={navItems} className="hidden lg:flex" />
-      <div className="ml-auto flex items-center gap-0.5">
+      <div className="ml-auto flex items-center gap-4">
         <CommandMenu groups={getSearchGroups()} />
         <ModeSwitcher />
       </div>
