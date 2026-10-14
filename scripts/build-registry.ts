@@ -20,12 +20,18 @@ import {
 const ROOT = process.cwd();
 const REGISTRY_DIR = path.join(ROOT, "registry");
 const PLACEHOLDER = "{{REGISTRY_URL}}";
-// Same order as constants/site.ts, so a Vercel deploy without SITE_URL
-// still ships registry URLs that point at itself.
-const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+// Without SITE_URL, a Vercel build points the registry at itself: the
+// production domain for production, the deployment for a preview. Builds
+// anywhere else use localhost, even with Vercel variables pulled locally.
+const vercelHost = () => {
+  if (process.env.VERCEL_ENV === "production") {
+    return process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  }
+  return process.env.VERCEL_ENV ? process.env.VERCEL_URL : undefined;
+};
+const host = vercelHost();
 const SITE_URL = (
-  process.env.SITE_URL ||
-  (vercelUrl ? `https://${vercelUrl}` : "http://localhost:3000")
+  process.env.SITE_URL || (host ? `https://${host}` : "http://localhost:3000")
 ).replace(/\/$/, "");
 const REGISTRY_URL = `${SITE_URL}/r`;
 
