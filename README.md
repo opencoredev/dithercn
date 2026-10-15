@@ -1,22 +1,65 @@
 <p align="center">
-  <img src="public/favicon.svg" width="56" height="56" alt="" />
+  <img alt="dithercn: dither primitives your agent builds with. A dither engine and an agent skill for shadcn/ui, shown with a dithered globe, bar chart, gauge, aurora, ridgelines, text and orb." src=".github/assets/readme-banner.png" width="100%" />
 </p>
-
-<h1 align="center">dithercn</h1>
 
 <p align="center">
-  Add dithers to anything in your app. dithercn gives your coding agent the primitives, a dither engine and a skill that teaches it: describe the dither you want and your agent builds it in your shadcn theme.
+  <a href="https://github.com/opencoredev/dithercn/stargazers"><img alt="GitHub stars" src="https://shieldcn.dev/github/opencoredev/dithercn/stars.svg?variant=branded&mode=dark" /></a>
+  <a href="https://x.com/leodev"><img alt="Follow @leodev on X" src="https://shieldcn.dev/x/follow/leodev.svg?variant=branded&mode=dark" /></a>
 </p>
 
-## What it is
+dithercn gives your coding agent the primitives to add dithers to anything in your app: a dither engine and a skill that teaches it. Ask for a background, a chart, a loading state or a dithered photo, and your agent builds it in your shadcn theme.
 
-- **The engine.** `dither-core` (`lib/dither/`) turns a tone into ordered dither dots: a WebGL shader for anything that moves or varies per pixel, SVG patterns and CSS masks for static fills, image dithering, and PNG/SVG/CSS export.
-- **The agent skill.** `skills/dithercn/` teaches Claude Code, Codex, Cursor and other agents to build any dither on the engine. It ships as the `dithercn-skill` registry item and at `/.well-known/agent-skills/dithercn/SKILL.md`.
-- **The examples.** Backgrounds, charts, interface pieces, text and images, each installable with `npx shadcn add` and each a starting point for your own.
+It installs with the shadcn CLI as plain source you own, and works with Claude Code, Codex, Cursor and any agent that reads skills.
 
-## Status
+[Read the installation guide](<content/docs/(root)/installation.mdx>) · [Write your own dither](content/docs/engine/write-your-own.mdx)
 
-Early preview, not deployed yet. The docs live in `content/docs/`: Get started, Engine (how `dither-core` works and how to write your own dither), and the example groups Backgrounds, Charts, Interface, Text and Images.
+- A dither engine (`lib/dither`): a WebGL shader for anything that moves, SVG and CSS fills for static shapes, image dithering, and PNG, SVG and CSS export
+- An agent skill that teaches your agent to write fields, place a dither on a landing page or dashboard, and check it in light, dark and reduced motion
+- 52 example components across backgrounds, charts, interface, text and images, each a starting point to install and edit
+- Colours from your theme: the dither ink and paper map to your `--primary` and `--background`, and switch with light and dark mode
+- Motion, resizing, offscreen pausing and reduced motion handled by the engine
+
+## Install
+
+From a project that uses shadcn/ui, Tailwind CSS v4 and React 19:
+
+```bash
+npx shadcn@latest add <site>/r/dithercn-skill.json
+```
+
+This adds the engine in `lib/dither/`, the skill in `.agents/skills/dithercn/` and `.claude/skills/dithercn/`, and the `--dither-*` CSS variables. Until the site is public, run it locally (see [Develop](#develop)) and use `http://localhost:3000` as `<site>`. Any example installs the same way, for example `<site>/r/dither-gradient.json`.
+
+## Usage
+
+Ask your agent for the dither you want, in plain words:
+
+```text
+Add a slow dithered aurora behind the hero headline, in our brand colour,
+and keep the headline readable.
+```
+
+The skill sends the agent to the engine, the closest example and the checks it runs before it's done. To write one by hand, a dither is a GLSL field that returns a tone from 0 (paper) to 1 (ink):
+
+```tsx
+"use client";
+
+import { DitherShader } from "@/lib/dither";
+
+const FIELD = `
+float field(vec2 uv, vec2 res, float t) {
+  vec2 p = vec2(uv.x * res.x / res.y, uv.y);
+  return fbm(p * 2.5 + vec2(t * 0.03, 0.0)) * smoothstep(0.0, 0.6, uv.y);
+}
+`;
+
+export const Clouds = () => (
+  <DitherShader className="absolute inset-0" field={FIELD} stillTime={4} />
+);
+```
+
+## For agents
+
+The skill is the main surface: `/.well-known/agent-skills/index.json` lists it and `/.well-known/agent-skills/dithercn/SKILL.md` serves it. The site also serves `/llms.txt`, `/llms-full.txt`, a Markdown version of every docs page (append `.md`), an API catalog at `/.well-known/api-catalog` and an OpenAPI description at `/openapi.json`.
 
 ## Develop
 
@@ -32,21 +75,7 @@ Then open http://localhost:3000. Other scripts:
 - `pnpm check` runs formatting and lint checks (ultracite)
 - `pnpm typecheck` runs TypeScript
 
-Set `SITE_URL` to the public origin when deploying. Without it, canonical URLs and install commands use `http://localhost:3000`.
-
-## Install
-
-With the dev server running, from a project that uses shadcn/ui:
-
-```bash
-npx shadcn@latest add http://localhost:3000/r/dithercn-skill.json
-```
-
-This adds the engine in `lib/dither/`, the skill in `.agents/skills/dithercn/` and `.claude/skills/dithercn/`, and the `--dither-*` CSS variables mapped to your `--primary` and `--background` tokens. Then ask your agent for a dither. To install the skill for every project instead, see the Installation page. Any example installs the same way, for example `http://localhost:3000/r/dither-gradient.json`.
-
-## For agents
-
-The skill is the main surface: `/.well-known/agent-skills/index.json` lists it and `/.well-known/agent-skills/dithercn/SKILL.md` serves it. The site also serves `/llms.txt`, `/llms-full.txt`, a Markdown version of every docs page (append `.md`), an API catalog at `/.well-known/api-catalog` and an OpenAPI description at `/openapi.json`.
+Set `SITE_URL` to the public origin when deploying. Without it, a Vercel production build uses the project's production URL, a Vercel preview uses its deployment URL, and anywhere else falls back to `http://localhost:3000`.
 
 ## Project structure
 
