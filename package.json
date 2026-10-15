@@ -12,7 +12,7 @@
     "catalog:capture": "jiti scripts/capture-catalog.ts",
     "check": "ultracite check",
     "fix": "ultracite fix",
-    "prepare": "lefthook install"
+    "prepare": "node scripts/prepare.mjs"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.5",
