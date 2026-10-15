@@ -653,8 +653,12 @@ export const DitherShader = ({
       const deviceCell = Math.max(1, Math.round(cssCell * dpr));
       const snapped = deviceCell / dpr;
       // Layout size, not the painted box, so a scaled parent (a zoom-in
-      // animation, a thumbnail) doesn't shrink the grid.
-      const { offsetWidth: width, offsetHeight: height } = root;
+      // animation, a thumbnail) doesn't shrink the grid. The computed size
+      // keeps fractions that offsetWidth rounds away, so the last column
+      // still reaches the edge of a 300.4px box.
+      const style = getComputedStyle(root);
+      const width = Number.parseFloat(style.width) || root.offsetWidth;
+      const height = Number.parseFloat(style.height) || root.offsetHeight;
       const columns = Math.max(1, Math.ceil(width / snapped));
       const rows = Math.max(1, Math.ceil(height / snapped));
       sizeRef.current = { columns, rows };
