@@ -13,4 +13,6 @@ pre-commit:
         - "**/*.json"
         - "**/*.jsonc"
         - "**/*.css"
+        - "**/*.md"
+        - "**/*.mdx"
       stage_fixed: true
