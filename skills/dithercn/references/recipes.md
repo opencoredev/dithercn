@@ -177,7 +177,12 @@ export const ContourHero = ({ children }: { children: React.ReactNode }) => {
         field={FIELD}
         palette={["--dither-paper", "--dither-ink"]}
         stillTime={8}
-        uniforms={{ heroBox: box, heroFeather: 10, heroRadius: 8, heroScale: 1.5 }}
+        uniforms={{
+          heroBox: box,
+          heroFeather: 10,
+          heroRadius: 8,
+          heroScale: 1.5,
+        }}
         fallback={<div className="absolute inset-0 bg-dither-paper" />}
       />
       <div ref={text} className="mx-auto w-fit max-w-2xl px-6 text-center">

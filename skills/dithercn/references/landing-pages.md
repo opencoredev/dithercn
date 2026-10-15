@@ -18,17 +18,17 @@ If there is no product to read about, ask the user what the page is for. If nobo
 
 The hero dither should be something only this product would show. Take it from the product's own world and render that as a field, an image or a chart:
 
-| The product is about              | A dither drawn from it                                                         |
-| --------------------------------- | ------------------------------------------------------------------------------ |
-| Maps, outdoors, travel            | Contour lines of real-looking terrain, a route over them                       |
-| Audio, music, voice               | A waveform or spectrum, ridgelines stacked like a spectrogram                  |
-| Money, trading, analytics         | A price line or volume ridges, a dense band where activity is                  |
-| Infrastructure, uptime, networks  | Packets along paths, a grid of hosts, a pulse at the incident                  |
-| Weather, climate, energy          | Isobars, a radar sweep, heat rising off a surface                              |
-| Sleep, health, calm               | A slow breathing ring, a tide line, a night sky                                |
-| Food, drink, physical goods       | The product photo itself through `ditherImage`, steam, grain, light on a table |
-| Space, science, research          | An eclipse, a starfield, orbits, a particle trace                              |
-| A developer tool or API           | The product's real output: its chart, its diagram, its data, dithered          |
+| The product is about             | A dither drawn from it                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------ |
+| Maps, outdoors, travel           | Contour lines of real-looking terrain, a route over them                       |
+| Audio, music, voice              | A waveform or spectrum, ridgelines stacked like a spectrogram                  |
+| Money, trading, analytics        | A price line or volume ridges, a dense band where activity is                  |
+| Infrastructure, uptime, networks | Packets along paths, a grid of hosts, a pulse at the incident                  |
+| Weather, climate, energy         | Isobars, a radar sweep, heat rising off a surface                              |
+| Sleep, health, calm              | A slow breathing ring, a tide line, a night sky                                |
+| Food, drink, physical goods      | The product photo itself through `ditherImage`, steam, grain, light on a table |
+| Space, science, research         | An eclipse, a starfield, orbits, a particle trace                              |
+| A developer tool or API          | The product's real output: its chart, its diagram, its data, dithered          |
 
 A soft glow or noise field fits almost any product, which is why it says nothing about this one. Use one only as a supporting layer.
 
