@@ -33,9 +33,9 @@ A client component that draws a GLSL field as a dither on a WebGL canvas at one 
   cell={3} // cell size in CSS px. Default: --dither-cell, or 3
   palette={["--dither-paper", "--dither-ink"]} // default
   speed={1} // time multiplier, default 1. Changing it never jumps the motion
-  animate // default true. false draws one still frame at stillTime
+  animate // default true. false stops motion: holds the current frame, or draws stillTime if it never moved
   fps={30} // frame cap, default 30
-  stillTime={0} // seconds of field time shown when motion is off or reduced
+  stillTime={0} // seconds of field time shown under reduced motion, or when animate starts false
   fallback={
     <div className="absolute inset-0 bg-linear-to-t from-dither-ink/30 to-transparent" />
   }
@@ -46,7 +46,7 @@ A client component that draws a GLSL field as a dither on a WebGL canvas at one 
 - The root is `relative overflow-hidden pointer-events-none`, `aria-hidden` by default. It renders no children: put content in a sibling.
 - It sizes to its box. A box with no height draws nothing.
 - `fallback` shows before the first frame, without WebGL, and while the shader is far offscreen. Default: flat `palette[0]`. Make it resemble the dither (a CSS gradient in the ink colour).
-- Free behaviour: resize observer, whole-device-pixel cells, theme changes re-read the palette, pauses offscreen and in hidden tabs, a still frame under reduced motion, context loss recovery. At most 8 shaders hold a WebGL context at once (`MAX_LIVE_CONTEXTS`); the one seen least recently falls back to `fallback`.
+- Free behaviour: resize observer, whole-device-pixel cells, theme changes re-read the palette, pauses offscreen and in hidden tabs, a still frame under reduced motion, context loss recovery. At most 8 shaders hold a WebGL context at once (`MAX_LIVE_CONTEXTS`); past that, a shader coming on screen takes one from a shader just off screen, never from one still on screen, and waits otherwise, showing `fallback`.
 - `data-state` on the root: `running`, `paused` (offscreen or hidden tab), `static` (reduced motion or `animate={false}`), `fallback` (no frame drawn).
 - Changing `uniforms`, `palette`, `matrix`, `levels` or `speed` is cheap. Changing the `field` string recompiles, so keep it a module constant and drive variation through uniforms.
 - `DitherShaderProps` is exported. A wrapper component usually takes `Omit<DitherShaderProps, "field" | "uniforms" | "fallback">` plus its own props, and spreads the rest.

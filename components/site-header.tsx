@@ -7,11 +7,28 @@ import { MainNav } from "@/components/main-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { ROUTES } from "@/constants/routes";
+import { getSearchGroups } from "@/lib/search-index";
 import { source } from "@/lib/source";
 
+// `match` lists the docs folders each link stays current for.
 const navItems = [
-  { href: ROUTES.DOCS, label: "Docs" },
-  { href: ROUTES.DOCS_EXAMPLES, label: "Examples" },
+  {
+    href: ROUTES.DOCS,
+    label: "Docs",
+    match: ["/docs/installation", "/docs/theming"],
+  },
+  {
+    href: ROUTES.DOCS_EXAMPLES,
+    label: "Examples",
+    match: [
+      "/docs/backgrounds",
+      "/docs/charts",
+      "/docs/interface",
+      "/docs/text",
+      "/docs/images",
+    ],
+  },
+  { href: ROUTES.DOCS_ENGINE, label: "Engine", match: ["/docs/engine"] },
 ];
 
 /**
@@ -24,7 +41,7 @@ export const SiteHeader = () => (
     className="pointer-events-none sticky top-0 z-50 flex h-(--header-height) w-full items-end px-3 pb-2"
     style={{ viewTransitionName: "site-header" }}
   >
-    <div className="bg-background/95 supports-[backdrop-filter]:bg-background/90 pointer-events-auto mx-auto flex h-12 w-full max-w-[46rem] items-center gap-2 rounded-full border pr-1.5 pl-4 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.25)] backdrop-blur-md">
+    <div className="bg-background/95 supports-[backdrop-filter]:bg-background/90 pointer-events-auto mx-auto flex h-12 w-full max-w-[46rem] items-center gap-2 rounded-full border px-1.5 lg:pl-4 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.25)] backdrop-blur-md">
       <MobileNav
         items={navItems}
         tree={source.pageTree}
@@ -40,10 +57,8 @@ export const SiteHeader = () => (
         </Link>
       </BrandContextMenu>
       <MainNav items={navItems} className="hidden lg:flex" />
-      <div className="ml-auto flex items-center gap-1.5">
-        <div className="hidden md:flex">
-          <CommandMenu navItems={navItems} tree={source.pageTree} />
-        </div>
+      <div className="ml-auto flex items-center gap-2 max-md:gap-4">
+        <CommandMenu groups={getSearchGroups()} />
         <ModeSwitcher />
       </div>
     </div>

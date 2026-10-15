@@ -10,7 +10,7 @@ import {
 } from "@/lib/dither/color";
 import { getThresholdMap } from "@/lib/dither/matrices";
 import type { DitherMatrix, ThresholdMap } from "@/lib/dither/matrices";
-import { useFrameLoop } from "@/lib/dither/motion";
+import { useFrameLoop, usePrefersReducedMotion } from "@/lib/dither/motion";
 import { cssColor, DEFAULT_PALETTE } from "@/lib/dither/tokens";
 import type { DitherPalette, Rgba } from "@/lib/dither/tokens";
 import { cn } from "@/lib/utils";
@@ -335,13 +335,17 @@ const createRenderer = (
 /**
  * Browsers cap live WebGL contexts (Chrome drops the oldest past 16), so
  * every DitherShader on the page shares a budget. A shader holds a context
- * only while it is near the viewport; past the budget, the one seen least
- * recently gives its context up and shows its fallback.
+ * only while it is near the viewport. Past the budget, a shader coming on
+ * screen takes the context of one just outside the viewport, seen least
+ * recently first. It never takes one from a shader still on screen, so
+ * scrolling doesn't flip visible shaders between canvas and fallback;
+ * it waits instead, and gets the next context freed.
  */
 export const MAX_LIVE_CONTEXTS = 8;
 
 interface ContextSlot {
   near: boolean;
+  onScreen: boolean;
   lastSeen: number;
   active: boolean;
   readonly setActive: (active: boolean) => void;
@@ -370,11 +374,12 @@ const requestContext = (slot: ContextSlot) => {
   }
   const live = [...slots].filter((other) => other.active);
   if (live.length >= MAX_LIVE_CONTEXTS) {
-    const offscreen = live.filter((other) => !other.near);
-    const victim = leastRecent(offscreen.length > 0 ? offscreen : live);
-    if (victim) {
-      activate(victim, false);
+    const offscreen = live.filter((other) => !other.onScreen);
+    const victim = slot.onScreen ? leastRecent(offscreen) : null;
+    if (!victim) {
+      return;
     }
+    activate(victim, false);
   }
   activate(slot, true);
 };
@@ -384,13 +389,17 @@ const releaseContext = (slot: ContextSlot) => {
     return;
   }
   activate(slot, false);
-  // A freed context goes to the nearby shader that waited longest.
+  // A freed context goes to the shader that waited longest, on screen first.
   const waiting = [...slots].filter((other) => other.near && !other.active);
-  const next = leastRecent(waiting);
+  const onScreen = waiting.filter((other) => other.onScreen);
+  const next = leastRecent(onScreen.length > 0 ? onScreen : waiting);
   if (next) {
     activate(next, true);
   }
 };
+
+const hasOnScreenWaiter = () =>
+  [...slots].some((other) => other.onScreen && other.near && !other.active);
 
 /** Holds a slot in the shared context budget while `ref` is near the viewport. */
 const useContextSlot = (ref: RefObject<Element | null>): boolean => {
@@ -405,10 +414,11 @@ const useContextSlot = (ref: RefObject<Element | null>): boolean => {
       active: false,
       lastSeen: 0,
       near: false,
+      onScreen: false,
       setActive,
     };
     slots.add(slot);
-    const observer = new IntersectionObserver(
+    const nearObserver = new IntersectionObserver(
       ([entry]) => {
         slot.near = entry?.isIntersecting ?? false;
         if (slot.near) {
@@ -420,11 +430,25 @@ const useContextSlot = (ref: RefObject<Element | null>): boolean => {
       },
       { rootMargin: "200px" }
     );
-    observer.observe(el);
+    // Coming on screen can take a context from one that is only nearby, and
+    // leaving the screen hands it to an on-screen shader that is waiting.
+    const screenObserver = new IntersectionObserver(([entry]) => {
+      slot.onScreen = entry?.isIntersecting ?? false;
+      if (slot.onScreen && slot.near) {
+        slot.lastSeen = performance.now();
+        requestContext(slot);
+      } else if (!slot.onScreen && slot.active && hasOnScreenWaiter()) {
+        releaseContext(slot);
+      }
+    });
+    nearObserver.observe(el);
+    screenObserver.observe(el);
     return () => {
-      observer.disconnect();
-      releaseContext(slot);
+      nearObserver.disconnect();
+      screenObserver.disconnect();
+      // Leave the set first, so the freed context goes to someone else.
       slots.delete(slot);
+      releaseContext(slot);
     };
   }, [ref]);
 
@@ -457,7 +481,10 @@ export interface DitherShaderProps extends Omit<
   palette?: DitherPalette;
   /** Time multiplier. Default 1. */
   speed?: number;
-  /** `false` draws one still frame at `stillTime`. Default `true`. */
+  /**
+   * `false` stops the motion. A shader that never moved draws `stillTime`;
+   * one that was moving holds its current frame. Default `true`.
+   */
   animate?: boolean;
   /** Frame rate cap. Default 30. */
   fps?: number;
@@ -561,11 +588,24 @@ export const DitherShader = ({
     };
   });
 
+  // Once motion has run, turning `animate` off holds the frame on screen
+  // instead of jumping to `stillTime`. A new `stillTime` still applies, and
+  // reduced motion always shows it.
+  const reducedMotion = usePrefersReducedMotion();
+  const hasRunRef = useRef(false);
+  useEffect(() => {
+    hasRunRef.current = false;
+  }, [stillTime]);
+
   const loopState = useFrameLoop(
     (time, delta) => {
-      // Accumulate so a change of `speed` never jumps the motion.
-      timeRef.current =
-        delta === 0 ? time : timeRef.current + delta * live.current.speed;
+      if (delta > 0) {
+        // Accumulate so a change of `speed` never jumps the motion.
+        timeRef.current += delta * live.current.speed;
+        hasRunRef.current = true;
+      } else if (reducedMotion || !hasRunRef.current) {
+        timeRef.current = time;
+      }
       drawRef.current?.();
     },
     { enabled: animate, fps, stillTime, target: rootRef }
@@ -612,7 +652,13 @@ export const DitherShader = ({
       // Whole device pixels per cell, so every cell is the same size.
       const deviceCell = Math.max(1, Math.round(cssCell * dpr));
       const snapped = deviceCell / dpr;
-      const { width, height } = root.getBoundingClientRect();
+      // Layout size, not the painted box, so a scaled parent (a zoom-in
+      // animation, a thumbnail) doesn't shrink the grid. The computed size
+      // keeps fractions that offsetWidth rounds away, so the last column
+      // still reaches the edge of a 300.4px box.
+      const style = getComputedStyle(root);
+      const width = Number.parseFloat(style.width) || root.offsetWidth;
+      const height = Number.parseFloat(style.height) || root.offsetHeight;
       const columns = Math.max(1, Math.ceil(width / snapped));
       const rows = Math.max(1, Math.ceil(height / snapped));
       sizeRef.current = { columns, rows };
@@ -693,7 +739,10 @@ export const DitherShader = ({
       )}
       {...props}
     >
-      <div className="absolute inset-0 opacity-0 transition-opacity delay-700 duration-0 group-data-[state=fallback]/dither:opacity-100 group-data-[state=fallback]/dither:delay-0">
+      <div
+        data-dither-fallback
+        className="absolute inset-0 opacity-0 transition-opacity delay-700 duration-0 group-data-[state=fallback]/dither:opacity-100 group-data-[state=fallback]/dither:delay-0"
+      >
         {fallback ?? (
           <div
             className="absolute inset-0"

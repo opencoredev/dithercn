@@ -24,7 +24,7 @@ A shader stops drawing when it scrolls out of view or the tab is hidden, and hol
 Browsers cap how many WebGL contexts a page can hold. Chrome drops the oldest past 16, and phones can run out of GPU memory sooner. `dither-core` shares a budget between every `DitherShader` on the page:
 
 - A shader holds a context only while it is within 200px of the viewport. Further away, it releases the context and shows its `fallback`.
-- At most 8 contexts are live at once (`MAX_LIVE_CONTEXTS`). When a ninth shader comes into view, the one seen least recently gives its context up.
+- At most 8 contexts are live at once (`MAX_LIVE_CONTEXTS`). When a ninth shader comes on screen, it takes the context of one just outside the viewport. It never takes one from a shader that is still on screen, so scrolling doesn't make visible dithers flicker; it waits for the next free context instead.
 - When a shader scrolls back, it gets a fresh context and fades its canvas in over the fallback.
 
 So a long docs page with a dozen backgrounds keeps at most 8 contexts, and normally only the two or three on screen. Give each shader a `fallback` that resembles it, such as the CSS gradient `DitherGradient` uses, and a released one is hard to spot.

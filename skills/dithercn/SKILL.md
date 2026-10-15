@@ -35,6 +35,8 @@ Done when every visual in the request has a technique.
 
 ## 3. Build it
 
+If the dither is for a landing page, or a section of one, read [landing-pages.md](references/landing-pages.md) before anything else. A good dither on a generic page still looks generated: the page has to be about the product, and the dither has to come from it.
+
 1. Read the reference named for your technique, and [recipes.md](references/recipes.md) for complete, working components to adapt.
 2. Write the component in its own file. `"use client"` when it uses `DitherShader`, hooks or a canvas; `FillPattern`, `DitherPattern`, `fillStyle` and `ditherMaskStyle` render on the server.
 3. Give it typed props for what the user would tweak (colour, intensity, speed, scale, value), with defaults that already look good.

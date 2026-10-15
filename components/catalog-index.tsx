@@ -1,12 +1,20 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
-
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
+import { CatalogLivePreview } from "@/components/catalog-live-preview";
 import { getCatalog } from "@/lib/catalog";
 import type { CatalogPiece } from "@/lib/catalog";
+import {
+  hasPreview,
+  PREVIEW_HEIGHT,
+  PREVIEW_THEMES,
+  PREVIEW_WIDTH,
+  previewSrc,
+} from "@/lib/catalog-preview";
+import type { PreviewTheme } from "@/lib/catalog-preview";
+import { readDocsDemo } from "@/lib/docs-demo";
+import { readOptionalFromRoot } from "@/lib/registry";
 import { cn } from "@/lib/utils";
 
 /*
@@ -18,28 +26,33 @@ import { cn } from "@/lib/utils";
  *
  * The prints are screenshots in both site themes, made by
  * `pnpm catalog:capture` (scripts/capture-catalog.ts) and swapped by the
- * `dark` class, so 52 demos cost no WebGL contexts here.
+ * `dark` class. Backgrounds also play their demo live over the print once
+ * they near the viewport, within the engine's WebGL context budget.
  */
 
-const THEMES = ["dark", "light"] as const;
-type Theme = (typeof THEMES)[number];
+/** Groups whose demos move on their own, so their tiles play live. */
+const LIVE_GROUPS: ReadonlySet<string> = new Set(["backgrounds"]);
 
-/** Matches the capture size in scripts/capture-catalog.ts. */
-const PREVIEW_WIDTH = 660;
-const PREVIEW_HEIGHT = 496;
-
-const previewSrc = (piece: CatalogPiece, theme: Theme) =>
-  `/catalog${piece.url.replace(/^\/docs/u, "")}-${theme}.webp`;
-
-const hasPreview = (piece: CatalogPiece) =>
-  THEMES.every((theme) =>
-    existsSync(path.join(process.cwd(), "public", previewSrc(piece, theme)))
-  );
+const liveDemo = async (piece: CatalogPiece) => {
+  const [group, slug] = piece.url.replace(/^\/docs\//u, "").split("/");
+  if (!(group && slug && LIVE_GROUPS.has(group))) {
+    return null;
+  }
+  const docsDemo = await readDocsDemo(group, slug);
+  if (docsDemo?.align !== "stretch") {
+    return null;
+  }
+  // The print stays under the live layer, so only a shader, which paints
+  // every cell, may cover it. SVG and canvas demos such as the dot map and
+  // the globe would draw on top of their own screenshot.
+  const source = await readOptionalFromRoot(`components/dithercn/${slug}.tsx`);
+  return source?.includes("<DitherShader") ? docsDemo.demo : null;
+};
 
 const THEME_CLASS = {
   dark: "hidden dark:block",
   light: "dark:hidden",
-} as const satisfies Record<Theme, string>;
+} as const satisfies Record<PreviewTheme, string>;
 
 /** Tiles in the first two rows sit above the fold on a laptop. */
 const EAGER_TILES = 6;
@@ -58,18 +71,18 @@ const EagerPreview = ({ piece }: { piece: CatalogPiece }) => (
     className="absolute inset-0 bg-(image:--preview-light) bg-cover bg-center forced-color-adjust-none dark:bg-(image:--preview-dark)"
     style={
       {
-        "--preview-dark": `url("${previewSrc(piece, "dark")}")`,
-        "--preview-light": `url("${previewSrc(piece, "light")}")`,
+        "--preview-dark": `url("${previewSrc(piece.url, "dark")}")`,
+        "--preview-light": `url("${previewSrc(piece.url, "light")}")`,
       } as CSSProperties
     }
   />
 );
 
 const LazyPreview = ({ piece }: { piece: CatalogPiece }) =>
-  THEMES.map((theme) => (
+  PREVIEW_THEMES.map((theme) => (
     <Image
       key={theme}
-      src={previewSrc(piece, theme)}
+      src={previewSrc(piece.url, theme)}
       alt=""
       width={PREVIEW_WIDTH}
       height={PREVIEW_HEIGHT}
@@ -82,9 +95,12 @@ const LazyPreview = ({ piece }: { piece: CatalogPiece }) =>
 const PieceTile = ({
   piece,
   isEager,
+  demo,
 }: {
   piece: CatalogPiece;
   isEager: boolean;
+  /** Set for tiles that play live over their screenshot. */
+  demo: string | null;
 }) => {
   const Preview = isEager ? EagerPreview : LazyPreview;
   return (
@@ -95,7 +111,8 @@ const PieceTile = ({
         className="group/tile focus-visible:ring-ring/50 flex flex-col gap-2.5 rounded-[18px] outline-none focus-visible:ring-[3px] focus-visible:ring-offset-4 focus-visible:ring-offset-background"
       >
         <span className="bg-card relative block aspect-[4/3] overflow-hidden rounded-[14px] sm:rounded-[18px]">
-          {hasPreview(piece) ? <Preview piece={piece} /> : null}
+          {hasPreview(piece.url) ? <Preview piece={piece} /> : null}
+          {demo ? <CatalogLivePreview demo={demo} /> : null}
         </span>
         <span className="decoration-foreground/40 px-0.5 text-sm font-medium underline-offset-4 group-hover/tile:underline">
           {piece.name}
@@ -105,8 +122,15 @@ const PieceTile = ({
   );
 };
 
-export const CatalogIndex = ({ className }: { className?: string }) => {
+export const CatalogIndex = async ({ className }: { className?: string }) => {
   const catalog = getCatalog();
+  const demos = new Map(
+    await Promise.all(
+      catalog
+        .flatMap((category) => category.pieces)
+        .map(async (piece) => [piece.url, await liveDemo(piece)] as const)
+    )
+  );
 
   return (
     <div className={cn("flex flex-col gap-14", className)}>
@@ -141,6 +165,7 @@ export const CatalogIndex = ({ className }: { className?: string }) => {
                     key={piece.url}
                     piece={piece}
                     isEager={isFirstGroup && index < EAGER_TILES}
+                    demo={demos.get(piece.url) ?? null}
                   />
                 ))}
               </ul>

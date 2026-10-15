@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   lint-and-format:
-    runs-on: ubuntu-latest
+    runs-on: tenki-standard-medium-4c-8g
     steps:
       - uses: actions/checkout@v5
 
@@ -28,7 +28,7 @@ jobs:
         run: pnpm check
 
   typecheck:
-    runs-on: ubuntu-latest
+    runs-on: tenki-standard-medium-4c-8g
     steps:
       - uses: actions/checkout@v5
 

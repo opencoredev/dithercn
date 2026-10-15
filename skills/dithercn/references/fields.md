@@ -6,7 +6,7 @@ A field is the one GLSL function you write for `DitherShader`. It returns a tone
 float field(vec2 uv, vec2 res, float t) {
   // uv:  the cell centre, 0 to 1 on both axes, (0, 0) bottom left, y up
   // res: the canvas size in cells (columns, rows)
-  // t:   seconds of motion, already multiplied by `speed`; frozen at stillTime when motion is off
+  // t:   seconds of motion, already multiplied by `speed`; stillTime under reduced motion or when motion starts off; held where it was when animate turns false
   return uv.y; // 0 = paper (palette[0]), 1 = ink (palette[last])
 }
 ```
@@ -20,6 +20,7 @@ The return value is clamped to [0, 1]. With a palette of more than two colours, 
 - No arrays in uniforms. Pass up to four numbers per uniform (`vec4`) and use several uniforms.
 - Write helpers above `field` in the same string. Give them a prefix from your component (`topoHeight`, `meterArc`) so they never collide with another field's names.
 - Reserved: uniforms starting with `u_`, helpers starting with `dither_`, and the names `field`, `main`, `hash21`, `snoise`, `fbm`.
+- GLSL ES 1.00 keeps more words than it uses, and none of them compile as names: `asm`, `cast`, `class`, `default`, `double`, `enum`, `extern`, `external`, `fixed`, `flat`, `goto`, `half`, `inline`, `input`, `interface`, `long`, `namespace`, `noinline`, `output`, `packed`, `public`, `short`, `sizeof`, `static`, `superp`, `switch`, `template`, `this`, `typedef`, `union`, `unsigned`, `using`, `volatile`, the vector types `hvec2` to `hvec4`, `dvec2` to `dvec4` and `fvec2` to `fvec4`, and the sampler types `sampler1D`, `sampler3D`, `sampler1DShadow`, `sampler2DShadow`, `sampler2DRect`, `sampler3DRect` and `sampler2DRectShadow`. Names starting with `gl_`, `webgl_` or `_webgl_`, or containing `__`, are reserved too. Built-in function names (`dot`, `step`, `mix`, `length`, `distance`, `smoothstep`, `noise`) can't be reused for variables either. Prefixed names (`topoHalf`, `waveStep`) avoid all of them.
 - A broken field logs `[dither-core] shader failed to compile` with the line and the error, and the component stays on its fallback. Read that log, fix the GLSL, reload.
 
 ## Built-in helpers

@@ -89,7 +89,7 @@ export const MobileNav = ({
         <Button
           variant="ghost"
           className={cn(
-            "extend-touch-target h-8 touch-manipulation items-center justify-start gap-2.5 !p-0 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 active:bg-transparent dark:hover:bg-transparent",
+            "extend-touch-target size-8 touch-manipulation items-center justify-center !p-0 hover:bg-transparent focus-visible:bg-transparent active:bg-transparent dark:hover:bg-transparent rounded-full",
             className
           )}
         >
@@ -110,9 +110,6 @@ export const MobileNav = ({
             </div>
             <span className="sr-only">Toggle Menu</span>
           </div>
-          <span className="flex h-8 items-center text-lg leading-none font-medium">
-            Menu
-          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent

@@ -1,6 +1,10 @@
 "use client";
 
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import {
+  ArrowRight01Icon,
+  Copy01Icon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons";
 import Link from "next/link";
 
 import { Icon } from "@/components/icon";
@@ -18,19 +22,17 @@ import { useSiteOrigin } from "@/hooks/use-site-origin";
 import { quickStartPrompt } from "@/lib/agent-prompts";
 import { ditherMaskStyle } from "@/lib/dither";
 import { trackEvent } from "@/lib/events";
-import { cn } from "@/lib/utils";
 
-// The agents the prompt works in, drawn in one colour like the rest of the hero.
-const AGENT_ICONS = [
-  { Icon: ClaudeIcon, name: "Claude" },
-  { Icon: ChatGptIcon, name: "ChatGPT" },
+// The agents the prompt works in, named under the buttons in one quiet line.
+const AGENTS = [
+  { Icon: ClaudeIcon, name: "Claude Code" },
+  { Icon: ChatGptIcon, name: "Codex" },
   { Icon: CursorIcon, name: "Cursor" },
   { Icon: GeminiIcon, name: "Gemini" },
   { Icon: GrokIcon, name: "Grok" },
 ] as const;
 
-// A faint even dither across the copy button, so it reads as part of the plate.
-const BUTTON_GRAIN = ditherMaskStyle(0.125, { cell: 2 });
+const COPIED_WASH = ditherMaskStyle(0.25, { cell: 2 });
 
 /**
  * The landing hero's actions: read the docs, or copy a prompt that sets
@@ -48,50 +50,73 @@ export const HeroActions = () => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row">
-      <Button
-        asChild
-        size="lg"
-        className="h-11 rounded-full px-6 text-[0.95rem]"
-      >
-        <Link href={ROUTES.DOCS} transitionTypes={["nav-forward"]}>
-          Read the docs
-          <Icon icon={ArrowRight01Icon} />
-        </Link>
-      </Button>
-      <button
-        type="button"
-        onClick={copyPrompt}
-        aria-label={label}
-        className="border-foreground/15 hover:border-foreground/30 focus-visible:ring-ring/60 relative isolate flex h-11 items-center gap-3 overflow-hidden rounded-full border pr-5 pl-4 text-[0.95rem] font-medium outline-none focus-visible:ring-[3px]"
-      >
-        <span
-          aria-hidden="true"
-          className="bg-dither-ink absolute inset-0 -z-10 opacity-35"
-          style={BUTTON_GRAIN}
-        />
-        <span
-          aria-hidden="true"
-          className="text-muted-foreground flex items-center gap-1.5"
+    <div className="flex flex-col items-center gap-5 pt-2">
+      <div className="flex flex-col items-center gap-3 sm:flex-row">
+        <Button
+          asChild
+          size="lg"
+          className="h-11 rounded-full px-6 text-[0.95rem] motion-safe:active:scale-100"
         >
-          {AGENT_ICONS.map(({ Icon: AgentIcon, name }) => (
-            <AgentIcon key={name} className="size-3.5" />
-          ))}
-        </span>
-        {/* Both labels share one grid cell, so the button keeps its width. */}
-        <span aria-hidden="true" className="grid text-left whitespace-nowrap">
+          <Link href={ROUTES.DOCS} transitionTypes={["nav-forward"]}>
+            Read the docs
+            <Icon icon={ArrowRight01Icon} />
+          </Link>
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={copyPrompt}
+          aria-label={label}
+          data-copied={isCopied}
+          className="group/copy bg-foreground/[0.04] hover:bg-foreground/[0.08] border-foreground/15 relative isolate h-11 overflow-hidden rounded-full px-5 text-[0.95rem] motion-safe:active:scale-100"
+        >
+          {/* Stays while it says Copied: the site's ink, as a fine dither. */}
           <span
-            className={cn("col-start-1 row-start-1", isCopied && "invisible")}
-          >
-            Copy agent prompt
-          </span>
+            aria-hidden="true"
+            className="bg-dither-ink absolute inset-0 -z-10 opacity-0 transition-opacity duration-150 ease-out group-data-[copied=true]/copy:opacity-30"
+            style={COPIED_WASH}
+          />
           <span
-            className={cn("col-start-1 row-start-1", !isCopied && "invisible")}
+            aria-hidden="true"
+            className="grid size-4 *:col-start-1 *:row-start-1 *:transition-[opacity,filter,scale] *:duration-250 *:ease-in-out motion-reduce:*:scale-100! motion-reduce:*:blur-none! motion-reduce:*:transition-opacity"
           >
-            Copied, now paste it
+            <Icon
+              icon={Copy01Icon}
+              className="text-muted-foreground group-data-[copied=true]/copy:scale-25 group-data-[copied=true]/copy:opacity-0 group-data-[copied=true]/copy:blur-[2px]"
+            />
+            <Icon
+              icon={Tick02Icon}
+              strokeWidth={2.5}
+              className="text-dither-ink scale-25 opacity-0 blur-[2px] group-data-[copied=true]/copy:scale-100 group-data-[copied=true]/copy:opacity-100 group-data-[copied=true]/copy:blur-none"
+            />
           </span>
-        </span>
-      </button>
+          {/*
+           * Both labels share one grid cell, so the button keeps its width.
+           * The old one lifts out with a blur while the new one rises in.
+           */}
+          <span
+            aria-hidden="true"
+            className="grid text-left *:col-start-1 *:row-start-1 *:transition-[opacity,filter,translate] *:duration-150 *:ease-in-out motion-reduce:*:translate-y-0! motion-reduce:*:blur-none! motion-reduce:*:transition-opacity"
+          >
+            <span className="group-data-[copied=true]/copy:-translate-y-1 group-data-[copied=true]/copy:opacity-0 group-data-[copied=true]/copy:blur-[2px]">
+              Copy agent prompt
+            </span>
+            <span className="translate-y-1 opacity-0 blur-[2px] group-data-[copied=true]/copy:translate-y-0 group-data-[copied=true]/copy:opacity-100 group-data-[copied=true]/copy:blur-none">
+              Copied, now paste it
+            </span>
+          </span>
+        </Button>
+      </div>
+      <p className="text-muted-foreground flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 font-mono text-xs">
+        <span>Paste it into</span>
+        {AGENTS.map(({ Icon: AgentIcon, name }) => (
+          <span key={name} className="inline-flex items-center gap-1.5">
+            <AgentIcon aria-hidden="true" className="size-3.5" />
+            {name}
+          </span>
+        ))}
+      </p>
       <span aria-live="polite" className="sr-only">
         {isCopied ? "Quick start prompt copied" : ""}
       </span>
