@@ -41,7 +41,7 @@ export const SiteHeader = () => (
     className="pointer-events-none sticky top-0 z-50 flex h-(--header-height) w-full items-end px-3 pb-2"
     style={{ viewTransitionName: "site-header" }}
   >
-    <div className="bg-background/95 supports-[backdrop-filter]:bg-background/90 pointer-events-auto mx-auto flex h-12 w-full max-w-[46rem] items-center gap-2 rounded-full border pr-1.5 pl-4 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.25)] backdrop-blur-md">
+    <div className="bg-background/95 supports-[backdrop-filter]:bg-background/90 pointer-events-auto mx-auto flex h-12 w-full max-w-[46rem] items-center gap-2 rounded-full border px-1.5 lg:pl-4 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.25)] backdrop-blur-md">
       <MobileNav
         items={navItems}
         tree={source.pageTree}
@@ -57,7 +57,7 @@ export const SiteHeader = () => (
         </Link>
       </BrandContextMenu>
       <MainNav items={navItems} className="hidden lg:flex" />
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2 max-md:gap-4">
         <CommandMenu groups={getSearchGroups()} />
         <ModeSwitcher />
       </div>
