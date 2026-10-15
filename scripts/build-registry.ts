@@ -4,7 +4,8 @@
  * then checks the result before `shadcn build` turns it into public/r.
  *
  * registry.json is generated and gitignored: edit the fragments instead.
- * `{{REGISTRY_URL}}` becomes `${SITE_URL ?? "http://localhost:3000"}/r`.
+ * `{{REGISTRY_URL}}` becomes `<origin>/r`, with the origin from
+ * `getRegistryOrigin` in constants/site.ts.
  *
  * Run with `pnpm registry:build`.
  */
@@ -12,6 +13,7 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { getRegistryOrigin } from "../constants/site";
 import {
   renderSkillFile,
   skillFiles,
@@ -20,19 +22,9 @@ import {
 const ROOT = process.cwd();
 const REGISTRY_DIR = path.join(ROOT, "registry");
 const PLACEHOLDER = "{{REGISTRY_URL}}";
-// Without SITE_URL, a Vercel build points the registry at itself: the
-// production domain for production, the deployment for a preview. Builds
-// anywhere else use localhost, even with Vercel variables pulled locally.
-const vercelHost = () => {
-  if (process.env.VERCEL_ENV === "production") {
-    return process.env.VERCEL_PROJECT_PRODUCTION_URL;
-  }
-  return process.env.VERCEL_ENV ? process.env.VERCEL_URL : undefined;
-};
-const host = vercelHost();
-const SITE_URL = (
-  process.env.SITE_URL || (host ? `https://${host}` : "http://localhost:3000")
-).replace(/\/$/, "");
+// Same rule as the docs' install commands: SITE_URL, else on Vercel the
+// production domain or the preview's own deployment, else localhost.
+const SITE_URL = getRegistryOrigin();
 const REGISTRY_URL = `${SITE_URL}/r`;
 
 // The agent skill, rendered for SITE_URL, is what the dithercn-skill item ships.

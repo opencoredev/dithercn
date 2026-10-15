@@ -14,8 +14,10 @@ const nextConfig = {
   // browser falls back to localhost and hydration fails on a real domain.
   env: {
     SITE_URL: process.env.SITE_URL ?? "",
+    VERCEL_ENV: process.env.VERCEL_ENV ?? "",
     VERCEL_PROJECT_PRODUCTION_URL:
       process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "",
+    VERCEL_URL: process.env.VERCEL_URL ?? "",
   },
   experimental: {
     viewTransition: true,
