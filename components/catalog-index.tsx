@@ -14,6 +14,7 @@ import {
 } from "@/lib/catalog-preview";
 import type { PreviewTheme } from "@/lib/catalog-preview";
 import { readDocsDemo } from "@/lib/docs-demo";
+import { readOptionalFromRoot } from "@/lib/registry";
 import { cn } from "@/lib/utils";
 
 /*
@@ -38,7 +39,14 @@ const liveDemo = async (piece: CatalogPiece) => {
     return null;
   }
   const docsDemo = await readDocsDemo(group, slug);
-  return docsDemo?.align === "stretch" ? docsDemo.demo : null;
+  if (docsDemo?.align !== "stretch") {
+    return null;
+  }
+  // The print stays under the live layer, so only a shader, which paints
+  // every cell, may cover it. SVG and canvas demos such as the dot map and
+  // the globe would draw on top of their own screenshot.
+  const source = await readOptionalFromRoot(`components/dithercn/${slug}.tsx`);
+  return source?.includes("<DitherShader") ? docsDemo.demo : null;
 };
 
 const THEME_CLASS = {
