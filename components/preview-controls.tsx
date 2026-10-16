@@ -1,7 +1,8 @@
 "use client";
 
+import { Slider as SliderPrimitive } from "radix-ui";
 import { createContext, useContext, useId } from "react";
-import type { KeyboardEvent, ReactNode } from "react";
+import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 
 import {
   NativeSelect,
@@ -96,39 +97,54 @@ const Segmented = ({
   value: string;
   onChange: (value: string) => void;
   labelId: string;
-}) => (
-  <div
-    role="radiogroup"
-    aria-labelledby={labelId}
-    className="bg-muted/70 flex rounded-lg p-0.5"
-  >
-    {control.options.map((option) => {
-      const checked = option === value;
-      return (
-        <button
-          key={option}
-          type="button"
-          role="radio"
-          aria-checked={checked}
-          data-value={option}
-          tabIndex={checked ? 0 : -1}
-          onClick={() => onChange(option)}
-          onKeyDown={(event) =>
-            onRadioKeys(event, control.options, value, onChange)
-          }
-          className={cn(
-            "focus-visible:ring-ring/60 h-7 min-w-0 flex-1 truncate rounded-md px-1.5 font-mono text-[11px] transition-[color,background-color] duration-150 ease-out outline-none focus-visible:ring-2",
-            checked
-              ? "bg-background text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.2)]"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          {option}
-        </button>
-      );
-    })}
-  </div>
-);
+}) => {
+  const count = control.options.length;
+  const index = Math.max(control.options.indexOf(value), 0);
+  return (
+    <div
+      role="radiogroup"
+      aria-labelledby={labelId}
+      className="bg-muted/70 relative flex rounded-full p-0.5"
+    >
+      {/* One chip slides under the options; segments are equal widths. */}
+      <span
+        aria-hidden
+        className="bg-background absolute inset-y-0.5 start-0.5 w-(--chip) translate-x-[calc(var(--index)*100%)] rounded-full shadow-[0_1px_2px_rgb(0_0_0/0.08)] transition-transform duration-200 ease-(--ease-out) motion-reduce:transition-none rtl:-translate-x-[calc(var(--index)*100%)] dark:bg-white/[0.11] dark:shadow-none"
+        style={
+          {
+            "--chip": `calc((100% - 0.25rem) / ${count})`,
+            "--index": index,
+          } as CSSProperties
+        }
+      />
+      {control.options.map((option) => {
+        const checked = option === value;
+        return (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={checked}
+            data-value={option}
+            tabIndex={checked ? 0 : -1}
+            onClick={() => onChange(option)}
+            onKeyDown={(event) =>
+              onRadioKeys(event, control.options, value, onChange)
+            }
+            className={cn(
+              "focus-visible:ring-ring/50 relative h-7 min-w-0 flex-1 truncate rounded-full px-2 font-mono text-[11px] transition-colors duration-150 ease-out outline-none focus-visible:ring-[3px]",
+              checked
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {option}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
 
 const Swatches = ({
   control,
@@ -144,7 +160,7 @@ const Swatches = ({
   <div
     role="radiogroup"
     aria-labelledby={labelId}
-    className="flex flex-wrap gap-1.5"
+    className="-mx-1 flex flex-wrap gap-0.5"
   >
     {control.options.map((option) => {
       const checked = option === value;
@@ -162,15 +178,23 @@ const Swatches = ({
           onKeyDown={(event) =>
             onRadioKeys(event, control.options, value, onChange)
           }
-          className={cn(
-            "focus-visible:ring-ring/60 grid size-7 place-items-center rounded-full outline-none transition-[box-shadow] duration-150 ease-out focus-visible:ring-2",
-            checked
-              ? "ring-foreground/80 ring-1 ring-offset-0"
-              : "hover:ring-border hover:ring-1"
-          )}
+          className="group/swatch focus-visible:ring-ring/50 relative size-7 rounded-full outline-none focus-visible:ring-[3px]"
         >
+          {/* Ring and dot share one box, so they stay concentric. The ring
+              takes the swatch's own colour. */}
           <span
-            className="size-4 rounded-full"
+            aria-hidden
+            className={cn(
+              "absolute inset-px rounded-full border-[1.5px] transition-colors duration-150 ease-out",
+              checked
+                ? "border-current"
+                : "group-hover/swatch:border-current/35 border-transparent"
+            )}
+            style={{ color: cssColor(option) }}
+          />
+          <span
+            aria-hidden
+            className="absolute inset-[5px] rounded-full transition-[scale] duration-150 ease-out group-active/swatch:scale-[0.96] motion-reduce:transition-none"
             style={{ background: cssColor(option) }}
           />
         </button>
@@ -178,6 +202,59 @@ const Swatches = ({
     })}
   </div>
 );
+
+/**
+ * A slider whose fill and thumb glide between values instead of jumping,
+ * so stepped knobs (curtains 3 to 4) move as smoothly as fine ones.
+ */
+const Knob = ({
+  control,
+  value,
+  onChange,
+  labelId,
+}: {
+  control: SliderControl;
+  value: number;
+  onChange: (value: number) => void;
+  labelId: string;
+}) => {
+  const collapsed = control.max <= control.min;
+  return (
+    <SliderPrimitive.Root
+      min={control.min}
+      // A collapsed range (min === max) would position the thumb at NaN.
+      max={collapsed ? control.min + 1 : control.max}
+      disabled={collapsed}
+      step={control.step}
+      value={[value]}
+      onValueChange={([next]) => {
+        if (next !== undefined) {
+          onChange(next);
+        }
+      }}
+      // Radix focuses the thumb from script on drag, which Chrome treats as
+      // keyboard focus. Hide the ring after a pointer and restore it on a key.
+      onPointerDown={(event) => {
+        event.currentTarget.dataset.pointer = "";
+      }}
+      onKeyDown={(event) => {
+        delete event.currentTarget.dataset.pointer;
+      }}
+      onBlur={(event) => {
+        delete event.currentTarget.dataset.pointer;
+      }}
+      className="group/knob knob-glide relative flex h-4 w-full cursor-pointer touch-none items-center select-none data-disabled:cursor-default data-disabled:opacity-50"
+    >
+      <SliderPrimitive.Track className="bg-foreground/12 relative h-1 grow overflow-hidden rounded-full">
+        <SliderPrimitive.Range className="bg-dither-ink absolute h-full rounded-full transition-[left,right] duration-150 ease-(--ease-out) motion-reduce:transition-none" />
+      </SliderPrimitive.Track>
+      <SliderPrimitive.Thumb
+        aria-labelledby={labelId}
+        className="focus-visible:ring-ring/50 block size-3.5 rounded-full bg-white shadow-[0_0_0_0.5px_rgb(0_0_0/0.12),0_1px_3px_rgb(0_0_0/0.3)] transition-[scale,box-shadow] duration-150 ease-out outline-none group-hover/knob:scale-115 focus-visible:ring-[3px] active:scale-115 motion-reduce:transition-none group-data-pointer/knob:ring-0!"
+      />
+    </SliderPrimitive.Root>
+  );
+};
 
 const Switch = ({
   checked,
@@ -195,14 +272,14 @@ const Switch = ({
     aria-labelledby={labelId}
     onClick={() => onChange(!checked)}
     className={cn(
-      "focus-visible:ring-ring/60 relative h-5 w-9 shrink-0 rounded-full outline-none transition-colors duration-150 ease-out focus-visible:ring-2",
-      checked ? "bg-dither-ink" : "bg-muted"
+      "focus-visible:ring-ring/50 relative h-5 w-9 shrink-0 rounded-full outline-none transition-colors duration-150 ease-out focus-visible:ring-[3px]",
+      checked ? "bg-dither-ink" : "bg-foreground/15"
     )}
   >
     <span
       className={cn(
-        "bg-foreground absolute top-0.5 left-0.5 size-4 rounded-full transition-transform duration-200 ease-(--ease-out) motion-reduce:transition-none",
-        checked && "bg-background translate-x-4"
+        "absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.25)] transition-transform duration-200 ease-(--ease-out) motion-reduce:transition-none",
+        checked && "translate-x-4"
       )}
     />
   </button>
@@ -251,15 +328,11 @@ const ControlRow = ({
               {control.unit ?? ""}
             </span>
           </div>
-          <input
-            type="range"
-            aria-labelledby={labelId}
-            min={control.min}
-            max={control.max}
-            step={control.step}
+          <Knob
+            control={control}
             value={number}
-            onChange={(event) => set(event.currentTarget.valueAsNumber)}
-            className="accent-dither-ink h-4 w-full cursor-pointer"
+            onChange={set}
+            labelId={labelId}
           />
         </div>
       );

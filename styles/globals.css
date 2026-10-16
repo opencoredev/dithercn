@@ -373,6 +373,19 @@
     font-family: var(--font-mono);
     font-size: 0.8rem;
   }
+
+  /*
+   * Radix positions the slider thumb through an unstyled wrapper. Glide it
+   * with the same timing as the range so the two stay together.
+   */
+  .knob-glide > span[style*="--radix-slider-thumb-transform"] {
+    transition: left 150ms var(--ease-out);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .knob-glide > span[style*="--radix-slider-thumb-transform"] {
+      transition: none;
+    }
+  }
 }
 
 :root {
