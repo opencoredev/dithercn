@@ -24,10 +24,10 @@ It installs with the shadcn CLI as plain source you own, and works with Claude C
 From a project that uses shadcn/ui, Tailwind CSS v4 and React 19:
 
 ```bash
-npx shadcn@latest add <site>/r/dithercn-skill.json
+npx shadcn@latest add https://dithercn.dev/r/dithercn-skill.json
 ```
 
-This adds the engine in `lib/dither/`, the skill in `.agents/skills/dithercn/` and `.claude/skills/dithercn/`, and the `--dither-*` CSS variables. Until the site is public, run it locally (see [Develop](#develop)) and use `http://localhost:3000` as `<site>`. Any example installs the same way, for example `<site>/r/dither-gradient.json`.
+This adds the engine in `lib/dither/`, the skill in `.agents/skills/dithercn/` and `.claude/skills/dithercn/`, and the `--dither-*` CSS variables. Any example installs the same way, for example `https://dithercn.dev/r/dither-gradient.json`.
 
 ## Usage
 

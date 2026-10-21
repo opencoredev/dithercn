@@ -17,13 +17,6 @@ The rest of this page does the same steps by hand.
 
 You need a project that already uses shadcn/ui, with a `components.json` file, Tailwind CSS v4 and React 19. If you don't have one yet, follow the [shadcn installation guide](https://ui.shadcn.com/docs/installation) first.
 
-<Callout title="No public URL yet">
-  dithercn isn't deployed yet, so the commands below install from a local copy
-  of this site at `http://localhost:3000`. Clone the repository, run `pnpm
-  install`, `pnpm registry:build` and `pnpm dev`, then run the commands from
-  your own project.
-</Callout>
-
 ## Add the skill with the skills CLI
 
 The [skills CLI](https://skills.sh) installs the skill into Claude Code, Codex, Cursor, Gemini CLI and other agents that read skills. Run it in your project:
@@ -39,7 +32,7 @@ It asks which agents to install for, then writes the skill and its references in
 ### Run the add command
 
 ```bash
-npx shadcn@latest add http://localhost:3000/r/dithercn-skill.json
+npx shadcn@latest add https://dithercn.dev/r/dithercn-skill.json
 ```
 
 This writes:
@@ -102,11 +95,11 @@ The skill matches the engine it installs with and points your agent at the files
 `shadcn add` writes the skill into the current project only. To make it available in every project on your machine, run the skills CLI with `-g`. Without the CLI, download the files into your user skills folder:
 
 ```bash
-SKILL=http://localhost:3000/.well-known/agent-skills/dithercn
+SKILL=https://dithercn.dev/.well-known/agent-skills/dithercn
 for dir in ~/.claude/skills/dithercn ~/.agents/skills/dithercn; do
   mkdir -p "$dir/references"
   curl -fsSL "$SKILL/SKILL.md" -o "$dir/SKILL.md"
-  for ref in engine-api examples fields placement quality recipes theme; do
+  for ref in engine-api examples fields landing-pages placement quality recipes theme; do
     curl -fsSL "$SKILL/references/$ref.md" -o "$dir/references/$ref.md"
   done
 done
@@ -119,13 +112,13 @@ The skill tells the agent to install the engine into a project the first time it
 Without the skill, install the engine on its own:
 
 ```bash
-npx shadcn@latest add http://localhost:3000/r/dither-core.json
+npx shadcn@latest add https://dithercn.dev/r/dither-core.json
 ```
 
 Or install any example. Each one brings the engine with it on its first install:
 
 ```bash
-npx shadcn@latest add http://localhost:3000/r/dither-gradient.json
+npx shadcn@latest add https://dithercn.dev/r/dither-gradient.json
 ```
 
 ## Use a namespace
@@ -135,7 +128,7 @@ To install by name instead of by URL, add dithercn to the `registries` field of 
 ```json title="components.json"
 {
   "registries": {
-    "@dithercn": "http://localhost:3000/r/{name}.json"
+    "@dithercn": "https://dithercn.dev/r/{name}.json"
   }
 }
 ```

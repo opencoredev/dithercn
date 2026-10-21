@@ -1,4 +1,4 @@
-// No domain yet. Set SITE_URL (or deploy on Vercel) to get real canonical URLs.
+// Set SITE_URL (or deploy on Vercel) to get real canonical URLs.
 export const FALLBACK_SITE_ORIGIN = "http://localhost:3000" as const;
 
 const getBaseUrl = () => {
