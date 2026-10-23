@@ -53,6 +53,7 @@
     "type": "registry:lib",
     "title": "Dither core",
     "description": "The engine every dithercn component uses: threshold matrices with blue noise, a WebGL dither shader, SVG patterns and CSS masks, image dithering, theme colours and motion hooks.",
+    "docs": "dithercn's components are examples built on this engine. To have your coding agent build any dither of its own on it, add the agent skill if you haven't: npx shadcn@latest add {{REGISTRY_URL}}/dithercn-skill.json",
     "registryDependencies": ["utils", "{{REGISTRY_URL}}/dither-tokens.json"],
     "files": [
       {

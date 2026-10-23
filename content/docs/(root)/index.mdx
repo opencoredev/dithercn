@@ -30,7 +30,7 @@ Once the skill is installed, describe what you want and where it goes. Name the 
 You don't need to know which component or API fits. The skill sends the agent through four steps:
 
 1. **Set up the engine.** It checks for `lib/dither` and installs `dither-core` if it's missing.
-2. **Pick a technique.** A WebGL field for anything that moves or varies per pixel, SVG patterns for chart and meter fills, CSS masks for blocks and bars, image dithering for photos, and export for files. If an example in the [catalog](/docs/examples) is close, it installs that and edits it.
+2. **Pick a technique.** A WebGL field for anything that moves or varies per pixel, SVG patterns for chart and meter fills, CSS masks for blocks and bars, image dithering for photos, and export for files. It reads the closest example in the [catalog](/docs/examples) for technique, and installs one only when it is exactly what you asked for.
 3. **Build the component.** It writes a typed component with props you can tweak, places it behind or inside your content, and colours it from your theme.
 4. **Check it in a browser.** It looks at the result in light and dark mode, at desktop and phone widths and with reduced motion, and fixes what doesn't read.
 

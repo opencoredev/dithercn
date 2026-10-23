@@ -3,6 +3,7 @@ title: "Palettes"
 description: "How dithers take their colours from your theme, and how to use more than two."
 ---
 
+import ConceptHues from "@/examples/concept-hues";
 import ConceptPalettes from "@/examples/concept-palettes";
 
 A palette is the list of colours a dither can use, ordered from paper (tone 0) to ink (tone 1). By default it's two colours, `--dither-paper` and `--dither-ink`, which [`dither-tokens`](/docs/theming) points at your `--background` and `--primary`.
@@ -24,6 +25,40 @@ Components that draw with `DitherShader` take a `palette` prop with two or more 
 Each entry is a CSS variable name such as `"--chart-1"`, or any CSS colour: `"var(--chart-1)"`, `"oklch(0.72 0.15 272)"`, `"#7c8cff"`, even `"transparent"` to let the page show through the paper. The type is `DitherPalette`, a tuple of at least two `DitherColor` strings, so a one-colour palette fails to compile.
 
 Order matters more than hue. Put colours in order of how much they stand out against the paper, or the ramp will jump back and forth.
+
+## Any number of hues
+
+A field returns one tone per cell, and the palette turns that tone into a colour. So with a palette of several hues, the tone decides both how dense the dots are and which colour they take. That suits ramps, such as a glow that runs from deep blue to white, but it can't draw a red line and a blue line at the same strength, or a spectrum that runs across the box.
+
+For that, keep shape and colour apart. Draw the shape with the field, and put the colour in a layer underneath. A palette of `["--background", "transparent"]` paints the page background where the tone is 0 and lets the layer show through where it is 1, with dithered steps in between:
+
+<ComponentPreview src="examples/concept-hues.tsx" size="lg" align="stretch">
+  <ConceptHues />
+</ComponentPreview>
+
+```tsx
+<div className="relative isolate overflow-hidden">
+  <div
+    aria-hidden
+    className="absolute inset-0"
+    style={{
+      background:
+        "linear-gradient(to bottom, red, orange, yellow, green, blue, violet)",
+    }}
+  />
+  <DitherShader
+    field={FIELD}
+    palette={["--background", "transparent"]}
+    className="absolute inset-0"
+  />
+</div>
+```
+
+The layer can be any CSS, SVG or canvas: a `linear-gradient` for hue that changes across the box, a `conic-gradient` for a ring whose colour runs around it, or an animated `background-position` for colour that drifts. When a scene has several shapes, give each its own layer positioned over it, a little larger than the shape and its glow. One gradient under everything gives every shape the colour at its height. The dither still does the shaping, so soft edges and glows fall off in dots of whatever colour sits underneath.
+
+You can also stack one shader per colour, each with a palette of `["transparent", colour]`, but every shader takes a WebGL context and at most eight run at once. One shader over a colour layer is cheaper.
+
+Literal colours don't follow the theme, so check them in light mode: yellow and cyan that glow on black can wash out on white. Pick darker stops for light mode, or set the colours as CSS variables with light and dark values.
 
 ## Following the theme
 

@@ -3,6 +3,7 @@ import { llms } from "fumadocs-core/source";
 import { LINK } from "@/constants/links";
 import { ROUTES } from "@/constants/routes";
 import { SITE } from "@/constants/site";
+import { agentStartHere } from "@/lib/agent-discovery/agent-guide";
 import { requestOrigin } from "@/lib/agent-discovery/request-origin";
 import { source } from "@/lib/source";
 
@@ -24,6 +25,8 @@ const docsIndex = (origin: string) => {
   return `# ${SITE.NAME}
 
 > ${SITE.DESCRIPTION.LONG} Use this index to discover the available documentation pages, markdown mirrors, and registry resources before browsing.
+
+${agentStartHere(base)}
 
 ${documentationIndex(base)}
 
