@@ -7,6 +7,7 @@
     "build": "pnpm registry:build && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "test": "jiti scripts/test-glsl.ts",
     "registry:build": "jiti scripts/build-registry.ts && shadcn build registry.json --output ./public/r",
     "postinstall": "fumadocs-mdx",
     "catalog:capture": "jiti scripts/capture-catalog.ts",

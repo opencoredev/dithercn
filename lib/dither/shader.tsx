@@ -8,6 +8,7 @@ import {
   resolveColor,
   subscribeToTheme,
 } from "@/lib/dither/color";
+import { withoutSharedHelpers } from "@/lib/dither/glsl";
 import { getThresholdMap } from "@/lib/dither/matrices";
 import type { DitherMatrix, ThresholdMap } from "@/lib/dither/matrices";
 import { useFrameLoop, usePrefersReducedMotion } from "@/lib/dither/motion";
@@ -145,72 +146,6 @@ const uniformSpecs = (uniforms: DitherUniforms): UniformSpec[] =>
       }
       return [{ name, size: uniformSize(value) }];
     });
-
-const COMMENTS = /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g;
-const DIRECTIVE = /^[ \t]*#/m;
-const STRUCT = /^\s*(?:(?:lowp|mediump|highp|const|uniform)\s+)*struct\b/;
-// GLSL tokens: numbers and names, the two-character operators, then any
-// other single character. `a + ++b` and `a++ +b` stay different.
-const TOKEN = /[\w.]+|\+\+|--|<=|>=|==|!=|&&|\|\||\^\^|[-+*/]=|[^\s\w.]/g;
-
-/**
- * GLSL without directives, split at the top level with comments dropped:
- * declarations ending in `;` and definitions ending in their `}`.
- */
-const topLevelChunks = (source: string): string[] => {
-  const code = source.replaceAll(COMMENTS, " ");
-  const chunks: string[] = [];
-  let depth = 0;
-  let start = 0;
-  const cut = (end: number) => {
-    const chunk = code.slice(start, end).trim();
-    start = end;
-    if (chunk !== "") {
-      chunks.push(chunk);
-    }
-  };
-  for (let index = 0; index < code.length; index += 1) {
-    const char = code[index];
-    if (char === "{") {
-      depth += 1;
-    } else if (char === "}") {
-      depth -= 1;
-      // A struct declaration runs on to its `;`, which may name variables.
-      if (depth === 0 && !STRUCT.test(code.slice(start, index))) {
-        cut(index + 1);
-      }
-    } else if (char === ";" && depth === 0) {
-      cut(index + 1);
-    }
-  }
-  cut(code.length);
-  return chunks;
-};
-
-const tokens = (chunk: string) => chunk.match(TOKEN)?.join(" ") ?? "";
-
-/**
- * `field` and `colorField` compile into one shader, where defining a helper
- * twice is an error. A common way to share one is to prepend the same
- * string to both, so drop any definition from `colorField` that `field`
- * already has, token for token. Two different definitions still fail.
- * Sources with preprocessor directives are left alone: a definition's
- * meaning can depend on `#if` and `#define` around it.
- */
-export const withoutSharedHelpers = (
-  field: string,
-  colorField: string
-): string => {
-  const hasDirective = (source: string) =>
-    DIRECTIVE.test(source.replaceAll(COMMENTS, " "));
-  if (hasDirective(field) || hasDirective(colorField)) {
-    return colorField;
-  }
-  const defined = new Set(topLevelChunks(field).map(tokens));
-  return topLevelChunks(colorField)
-    .filter((chunk) => !defined.has(tokens(chunk)))
-    .join("\n");
-};
 
 // With a colour field, a cell is either paper or the colour field's colour
 // there, chosen by the same tone and threshold as a two-colour palette.
