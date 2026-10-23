@@ -144,6 +144,15 @@ export const baseMetadata: Metadata = {
     title: SITE.NAME,
     type: "website",
     url: SITE.URL,
+    videos: [
+      {
+        height: 1260,
+        secureUrl: SITE.OG_VIDEO,
+        type: "video/mp4",
+        url: SITE.OG_VIDEO,
+        width: 2400,
+      },
+    ],
   },
   publisher: SITE.AUTHOR.NAME,
   title: {
