@@ -89,6 +89,8 @@ Values in `uniforms` are declared for you: a number becomes a `float`, and a tup
 
 The core gives every field three helpers: `hash21(vec2)` for stable per-cell randomness in [0, 1), `snoise(vec2)` for simplex noise in [-1, 1], and `fbm(vec2)` for four octaves of it in [0, 1]. Names starting with `u_` belong to the core's own uniforms, so your uniforms can't use them.
 
+A second, optional function, `colorField`, sets the colour of the dots independently of their density, for rainbows and a colour per shape. [Palettes](/docs/engine/palettes#any-number-of-hues) shows it, with the `spectrum` and `paletteColor` helpers it can use.
+
 ## Static fills
 
 Charts and small surfaces don't need a canvas. `DitherPattern` is an SVG `<pattern>` you reference from any shape, and `ditherMaskStyle` masks any element to one tone:

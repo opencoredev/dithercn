@@ -11,7 +11,7 @@ float field(vec2 uv, vec2 res, float t) {
 }
 ```
 
-The return value is clamped to [0, 1]. With a palette of more than two colours, the tone spreads across them: with four colours, 0.5 sits between the second and third. The tone sets both the dot density and the colour, so a field can't return a colour of its own. For colour that doesn't follow tone, such as a rainbow or a different hue per line, see [theme.md](theme.md#any-number-of-hues).
+The return value is clamped to [0, 1]. With a palette of more than two colours, the tone spreads across them: with four colours, 0.5 sits between the second and third. On its own, the tone sets both the dot density and the colour. To colour the dots independently (a rainbow, a hue per shape, colour that moves), add a `colorField`: see [Colour](#colour) below.
 
 ## The rules of the language
 
@@ -19,7 +19,7 @@ The return value is clamped to [0, 1]. With a palette of more than two colours, 
 - Loops need constant bounds: `for (int i = 0; i < 5; i++)`. Break early with `if (float(i) >= count) break;` when the count is a uniform.
 - No arrays in uniforms. Pass up to four numbers per uniform (`vec4`) and use several uniforms.
 - Write helpers above `field` in the same string. Give them a prefix from your component (`topoHeight`, `meterArc`) so they never collide with another field's names.
-- Reserved: uniforms starting with `u_`, helpers starting with `dither_`, and the names `field`, `main`, `hash21`, `snoise`, `fbm`.
+- Reserved: uniforms starting with `u_`, helpers starting with `dither_`, and the names `field`, `colorField`, `main`, `hash21`, `snoise`, `fbm`, `spectrum`, `paletteColor`.
 - GLSL ES 1.00 keeps more words than it uses, and none of them compile as names: `asm`, `cast`, `class`, `default`, `double`, `enum`, `extern`, `external`, `fixed`, `flat`, `goto`, `half`, `inline`, `input`, `interface`, `long`, `namespace`, `noinline`, `output`, `packed`, `public`, `short`, `sizeof`, `static`, `superp`, `switch`, `template`, `this`, `typedef`, `union`, `unsigned`, `using`, `volatile`, the vector types `hvec2` to `hvec4`, `dvec2` to `dvec4` and `fvec2` to `fvec4`, and the sampler types `sampler1D`, `sampler3D`, `sampler1DShadow`, `sampler2DShadow`, `sampler2DRect`, `sampler3DRect` and `sampler2DRectShadow`. Names starting with `gl_`, `webgl_` or `_webgl_`, or containing `__`, are reserved too. Built-in function names (`dot`, `step`, `mix`, `length`, `distance`, `smoothstep`, `noise`) can't be reused for variables either. Prefixed names (`topoHalf`, `waveStep`) avoid all of them.
 - A broken field logs `[dither-core] shader failed to compile` with the line and the error, and the component stays on its fallback. Read that log, fix the GLSL, reload.
 
@@ -27,11 +27,13 @@ The return value is clamped to [0, 1]. With a palette of more than two colours, 
 
 Available in every field without declaring them:
 
-| Helper                 | Returns                                                                                     |
-| ---------------------- | ------------------------------------------------------------------------------------------- |
-| `float hash21(vec2 p)` | A stable pseudo-random value in [0, 1). `hash21(floor(p))` gives one value per grid square. |
-| `float snoise(vec2 p)` | 2D simplex noise in [-1, 1], feature size about 1 unit of `p`.                              |
-| `float fbm(vec2 p)`    | Four octaves of simplex noise, in [0, 1], mean 0.5. Soft, cloudy, natural.                  |
+| Helper                       | Returns                                                                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `float hash21(vec2 p)`       | A stable pseudo-random value in [0, 1). `hash21(floor(p))` gives one value per grid square.                                   |
+| `float snoise(vec2 p)`       | 2D simplex noise in [-1, 1], feature size about 1 unit of `p`.                                                                |
+| `float fbm(vec2 p)`          | Four octaves of simplex noise, in [0, 1], mean 0.5. Soft, cloudy, natural.                                                    |
+| `vec3 spectrum(float h)`     | A saturated rainbow: 0 red, then yellow, green, cyan, blue, magenta, and red again at 1. Wraps, so `h` can grow with time.    |
+| `vec4 paletteColor(float x)` | The palette's ink colours (every entry after `palette[0]`) as a smooth ramp from 0 to 1. Theme colours inside a `colorField`. |
 
 ## Uniforms
 
@@ -156,3 +158,50 @@ float rim = disc * smoothstep(r * 0.6, r, length(c));                          /
 - Smoother gradients: `matrix="bayer8"`, or `"blue-noise"` for large soft fields.
 - Bigger dots for a bolder look: `cell={4}` to `cell={6}`. Fine grain: 2 to 3.
 - A shape that is solid ink: lower its peak tone to 0.7 to 0.9 so the dither pattern shows inside it, or shade it.
+
+## Colour
+
+`colorField` is an optional second function, passed as its own prop. It returns the colour of the dots in a cell; `field` still decides whether a cell has a dot. Cells without a dot are paper, `palette[0]`.
+
+```tsx
+const FIELD = `
+float field(vec2 uv, vec2 res, float t) {
+  vec2 c = (uv - 0.5) * vec2(res.x / res.y, 1.0);
+  float ring = abs(length(c) - 0.3);
+  return exp(-ring * ring * 900.0); // a thin glowing ring
+}
+`;
+
+const COLOR_FIELD = `
+vec3 colorField(vec2 uv, vec2 res, float t) {
+  vec2 c = (uv - 0.5) * vec2(res.x / res.y, 1.0);
+  return spectrum(atan(c.y, c.x) / 6.28318 + t * 0.05); // hue runs around it
+}
+`;
+
+<DitherShader
+  field={FIELD}
+  colorField={COLOR_FIELD}
+  palette={["--background", "--foreground"]}
+  className="absolute inset-0"
+/>;
+```
+
+- Same arguments as `field`, and the same uniforms. Return `vec3` RGB or `vec4` RGBA in [0, 1]; alpha below 1 lets the page show through the dots.
+- The two functions run separately. When both need the same geometry (which line is nearest, which shape a cell is in), put it in a helper inside the `field` string, which comes first, and call it from both.
+- Glows still work: a soft tone gives sparse dots, and each dot takes the colour, so a coloured glow fades out in dots rather than in a darker colour.
+- Without `colorField`, nothing changes: the palette maps tone to colour.
+
+Building blocks, each the body of a `colorField`:
+
+| Colour                                          | GLSL                                                                                                  |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Rainbow across the box                          | `return spectrum(uv.x);`                                                                              |
+| Rainbow along a line or beam, drifting          | `return spectrum(uv.x * 0.8 - t * 0.05);`                                                             |
+| Rainbow across a beam's thickness (stripes)     | `return spectrum((uv.y - beamY) * res.y / beamCells);`                                                |
+| Hue around a centre (a ring, a lens, a dial)    | `vec2 c = (uv - centre) * vec2(res.x / res.y, 1.0); return spectrum(atan(c.y, c.x) / 6.28318);`       |
+| One hue per shape                               | `return spectrum(shapeIndex / shapeCount);` with the index from a shared helper                       |
+| Theme colours along x, following light and dark | `return paletteColor(uv.x);` with `palette={["--background", "--chart-1", "--chart-2", "--chart-3"]}` |
+| A hue that fades out instead of thinning        | `return vec4(spectrum(uv.x), smoothstep(0.0, 0.3, uv.y));`                                            |
+
+`spectrum` is fully saturated, which glows on black and goes thin on white: yellow and cyan nearly vanish. Mix in some of the theme's ink to keep it readable in both modes, `mix(spectrum(h), paletteColor(0.0).rgb, 0.2)` with `palette={["--background", "--foreground"]}`, or darken it for light-only pages.

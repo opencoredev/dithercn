@@ -28,37 +28,38 @@ Order matters more than hue. Put colours in order of how much they stand out aga
 
 ## Any number of hues
 
-A field returns one tone per cell, and the palette turns that tone into a colour. So with a palette of several hues, the tone decides both how dense the dots are and which colour they take. That suits ramps, such as a glow that runs from deep blue to white, but it can't draw a red line and a blue line at the same strength, or a spectrum that runs across the box.
+A field returns one tone per cell, and the palette turns that tone into a colour. So with a palette of several hues, the tone decides both how dense the dots are and which colour they take. That suits ramps, such as a glow that runs from deep blue to white, but it can't draw a red line and a blue line at the same strength, or a spectrum that runs along a line.
 
-For that, keep shape and colour apart. Draw the shape with the field, and put the colour in a layer underneath. A palette of `["--background", "transparent"]` paints the page background where the tone is 0 and lets the layer show through where it is 1, with dithered steps in between:
+For that, add a `colorField`: a second function that returns the colour of the dots in each cell. The field still decides where the dots go, and cells without a dot are paper, `palette[0]`:
 
 <ComponentPreview src="examples/concept-hues.tsx" size="lg" align="stretch">
   <ConceptHues />
 </ComponentPreview>
 
 ```tsx
-<div className="relative isolate overflow-hidden">
-  <div
-    aria-hidden
-    className="absolute inset-0"
-    style={{
-      background:
-        "linear-gradient(to bottom, red, orange, yellow, green, blue, violet)",
-    }}
-  />
-  <DitherShader
-    field={FIELD}
-    palette={["--background", "transparent"]}
-    className="absolute inset-0"
-  />
-</div>
+const COLOR_FIELD = `
+vec3 colorField(vec2 uv, vec2 res, float t) {
+  return spectrum(uv.x * 0.75 - t * 0.03);
+}
+`;
+
+<DitherShader
+  field={FIELD}
+  colorField={COLOR_FIELD}
+  palette={["--background", "--foreground"]}
+/>;
 ```
 
-The layer can be any CSS, SVG or canvas: a `linear-gradient` for hue that changes across the box, a `conic-gradient` for a ring whose colour runs around it, or an animated `background-position` for colour that drifts. When a scene has several shapes, give each its own layer positioned over it, a little larger than the shape and its glow. One gradient under everything gives every shape the colour at its height. The dither still does the shaping, so soft edges and glows fall off in dots of whatever colour sits underneath.
+It takes the same arguments and uniforms as the field, and returns `vec3` RGB or `vec4` RGBA. Two helpers come with it:
 
-You can also stack one shader per colour, each with a palette of `["transparent", colour]`, but every shader takes a WebGL context and at most eight run at once. One shader over a colour layer is cheaper.
+- `spectrum(h)` is a saturated rainbow: 0 is red, then yellow, green, cyan, blue and magenta, and red again at 1. It wraps, so `h` can keep growing with time.
+- `paletteColor(x)` reads the palette's ink colours, every entry after the paper, as a smooth ramp from 0 to 1. Use it to colour by position in your theme colours: `return paletteColor(uv.x).rgb;` with `palette={["--background", "--chart-1", "--chart-2", "--chart-3"]}`.
 
-Literal colours don't follow the theme, so check them in light mode: yellow and cyan that glow on black can wash out on white. Pick darker stops for light mode, or set the colours as CSS variables with light and dark values.
+Soft tones still dither, so a coloured glow fades out in sparse dots of its colour. To colour several shapes differently, work out which shape a cell is in with a helper inside the field string, and call it from both functions; the demo above finds the nearest line that way and shifts each line's hue.
+
+`spectrum` is fully saturated, so check light mode: yellow and cyan nearly vanish on white. The demo mixes a fifth of the theme's foreground into every hue, `mix(spectrum(h), paletteColor(0.0).rgb, 0.2)`, which keeps it readable in both modes.
+
+If the colour has to come from outside the shader, such as an image or a CSS gradient, put that layer under the shader and use `palette={["--background", "transparent"]}`: tone 0 paints the background and tone 1 shows the layer.
 
 ## Following the theme
 

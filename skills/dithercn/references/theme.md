@@ -35,83 +35,24 @@ The field's tone snaps to `levels` steps before it is dithered, so a tone meant 
 
 ## Any number of hues
 
-The field returns one tone, and the palette maps that tone to a colour, so in a palette of several hues the tone sets both the dot density and the colour. It can't draw a red line and a blue line at the same strength, or a spectrum that runs left to right. When the user asks for a rainbow, a spectrum, an RGB effect or a different colour per line or shape, keep shape and colour apart:
+The palette maps the field's tone to a colour, so in a palette of several hues the tone sets both the dot density and the colour. That suits ramps (a glow from deep blue to white), but it can't draw a red line and a blue line at the same strength, or a spectrum that runs along a line.
 
-- The field draws only the shape, in tone 0 to 1, the same as any other field.
-- The colour is a layer under the shader: a CSS gradient, several gradients, SVG, or a canvas.
-- The palette is `["--background", "transparent"]`: tone 0 paints the page background, tone 1 lets the layer show through, and the tones between dither the layer's colour into the background.
+When the user asks for a rainbow, a spectrum, an RGB effect, or a different colour per line or shape, add a `colorField`: a second GLSL function that returns the dots' colour per cell, while `field` keeps deciding where the dots go. One shader, any colours, glows still dithered. See [fields.md](fields.md#colour) for the function, the `spectrum` and `paletteColor` helpers and building blocks, and [recipes.md](recipes.md#many-hues-a-spectrum-of-lines) for a complete component.
 
 ```tsx
-<div className="relative isolate overflow-hidden">
-  <div
-    aria-hidden
-    className="absolute inset-0"
-    style={{
-      background:
-        "linear-gradient(to bottom, red, orange, yellow, green, blue, violet)",
-    }}
-  />
-  <DitherShader
-    field={FIELD}
-    palette={["--background", "transparent"]}
-    className="absolute inset-0"
-  />
-</div>
+<DitherShader
+  field={FIELD} // where the dots go
+  colorField={COLOR_FIELD} // what colour they are, e.g. return spectrum(uv.x);
+  palette={["--background", "--foreground"]} // paper, then the colours paletteColor() reads
+  className="absolute inset-0"
+/>
 ```
 
-Pick the layer to match the request:
+Colour every shape in the scene from the one `colorField`: work out which shape a cell belongs to (a shared helper in the `field` string), then return that shape's colour, for example a hue that runs around a ring, a spectrum across a beam's thickness, and a hue along the lines. Don't run one shader per colour: each takes a WebGL context, and at most 8 run at once.
 
-- Hue across the box (a beam, a bar, a spectrum): `linear-gradient(to right, …)`.
-- One hue per line, with the lines stacked: `linear-gradient(to bottom, …)` with a stop at each line's height.
-- A ring or arc whose colour runs around it (a lens, a gauge): `conic-gradient(from 0deg at <centre>, …)` with its centre on the ring's centre.
-- Different shapes in different colours: one gradient per shape, each positioned over its own shape. A single gradient under everything gives every shape the colour at its height, so a ring or a beam that sits at one height comes out in one hue.
-
-When a scene has several shapes, give each its own colour layer, in the same coordinates as the field. The field still draws every shape in one shader; only the colour is split:
-
-```tsx
-// Shapes in the field: wavy lines on the left, a ring centred at (62%, 45%) from the top left, a beam to its right.
-<div className="relative isolate overflow-hidden bg-black">
-  {/* Lines: one hue per line, stacked top to bottom. */}
-  <div
-    aria-hidden
-    className="absolute inset-y-0 left-0 w-[55%]"
-    style={{
-      background:
-        "linear-gradient(to bottom, red, orange, yellow, lime, cyan, blue, violet)",
-    }}
-  />
-  {/* Ring: hue runs around it. Centre the conic gradient on the ring's centre. */}
-  <div
-    aria-hidden
-    className="absolute inset-0"
-    style={{
-      background:
-        "conic-gradient(from 0deg at 62% 45%, red, yellow, lime, cyan, blue, magenta, red)",
-      clipPath: "circle(16% at 62% 45%)",
-    }}
-  />
-  {/* Beam: hue across its thickness, so the rainbow reads along its length. */}
-  <div
-    aria-hidden
-    className="absolute right-0 left-[70%] top-[43%] h-[4%]"
-    style={{
-      background:
-        "linear-gradient(to bottom, red, yellow, lime, cyan, blue, violet)",
-    }}
-  />
-  <DitherShader field={FIELD} palette={PALETTE} className="absolute inset-0" />
-</div>
-```
-
-Where no layer sits, nothing shows through, so a shape needs a layer under all of it, glow included: make each region a little larger than its shape. Keep the region numbers and the field's numbers in one place (shared constants passed as uniforms) so they can't drift apart.
+If the colour has to come from outside the shader (an image, a CSS gradient you already have, an animated SVG), the other way still works: put that layer under the shader and use `palette={["--background", "transparent"]}`, so tone 0 paints the background and tone 1 shows the layer. Give each shape its own layer positioned over it, a little larger than the shape and its glow.
 
 A palette kept in a constant needs `as const`, because `palette` takes a tuple of at least two colours: `const PALETTE = ["#000", "transparent"] as const;`. Inline arrays work as they are.
-
-- Colour that moves: animate `background-position` on an oversized gradient, with `motion-reduce:animate-none`.
-
-One shader per colour, each with `["transparent", colour]`, also works but costs a WebGL context per colour, and at most 8 run at once. Use one shader over a colour layer.
-
-A complete component is in [recipes.md](recipes.md#many-hues-a-spectrum-of-lines). Literal colours don't follow the theme: check light mode, where yellow and cyan that glow on black wash out on white, and darken those stops or move the colours into CSS variables with light and dark values.
 
 ## Light and dark
 
