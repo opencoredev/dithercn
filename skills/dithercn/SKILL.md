@@ -5,7 +5,7 @@ description: Build any dithered visual with the dithercn engine (dither-core, in
 
 # dithercn
 
-dithercn is a dither engine. `dither-core` (installed into `lib/dither`) turns a tone you compute into ordered dither dots, in your theme's colours, with motion, resizing and reduced motion handled. You build the dither the user asked for on top of it. The dithercn components are examples of what the engine can do: start from one when it is close, and write your own when it isn't.
+dithercn is a dither engine. `dither-core` (installed into `lib/dither`) turns a tone you compute into ordered dither dots, in your theme's colours, with motion, resizing and reduced motion handled. You build the dither the user asked for on top of it. The dithercn components are examples of what the engine can do, not a menu to pick from. Install one only when it is exactly what the user asked for. Otherwise write your own, and borrow technique from the closest example's source.
 
 ## 1. Set up the engine
 
@@ -21,15 +21,18 @@ Done when `lib/dither/index.ts` exists and the global CSS defines `--dither-ink`
 
 ## 2. Pick the technique
 
-| The user wants                                                                                                                        | Use                                                                | Read                                                   |
-| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------ |
-| A surface whose tone varies per pixel or moves: gradients, glows, noise, contours, waves, rings, any shape you can describe with math | `DitherShader` with a GLSL `field`                                 | [fields.md](references/fields.md)                      |
-| A static fill inside SVG shapes: bars, arcs, gauges, meters, rings, icons, maps                                                       | `FillPattern` or `DitherPattern` in `<defs>`, `fill="url(#id)"`    | [engine-api.md](references/engine-api.md#static-fills) |
-| A static fill on a DOM element: a block, band, border, progress bar, skeleton                                                         | `fillStyle(variant)` or `ditherMaskStyle(level)` on an empty layer | [engine-api.md](references/engine-api.md#static-fills) |
-| A photo or logo, dithered                                                                                                             | `ditherImage` on canvas pixels                                     | [engine-api.md](references/engine-api.md#images)       |
-| A PNG, SVG or CSS file, or a background with no JavaScript                                                                            | `dither-export`                                                    | [engine-api.md](references/engine-api.md#export)       |
+| The user wants                                                                                                                        | Use                                                                                                | Read                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| A surface whose tone varies per pixel or moves: gradients, glows, noise, contours, waves, rings, any shape you can describe with math | `DitherShader` with a GLSL `field`                                                                 | [fields.md](references/fields.md)                      |
+| A static fill inside SVG shapes: bars, arcs, gauges, meters, rings, icons, maps                                                       | `FillPattern` or `DitherPattern` in `<defs>`, `fill="url(#id)"`                                    | [engine-api.md](references/engine-api.md#static-fills) |
+| A static fill on a DOM element: a block, band, border, progress bar, skeleton                                                         | `fillStyle(variant)` or `ditherMaskStyle(level)` on an empty layer                                 | [engine-api.md](references/engine-api.md#static-fills) |
+| Many hues at once: a rainbow, a spectrum, a different colour per line or shape                                                        | `DitherShader` for the shape over a colour layer, with `palette={["--background", "transparent"]}` | [theme.md](references/theme.md#any-number-of-hues)     |
+| A photo or logo, dithered                                                                                                             | `ditherImage` on canvas pixels                                                                     | [engine-api.md](references/engine-api.md#images)       |
+| A PNG, SVG or CSS file, or a background with no JavaScript                                                                            | `dither-export`                                                                                    | [engine-api.md](references/engine-api.md#export)       |
 
-Combine them freely: a dashboard card can hold an SVG meter with `FillPattern` over a `DitherShader` glow. Before writing from scratch, scan [examples.md](references/examples.md) (written when the skill is installed; if it's missing, read {{SITE_URL}}/.well-known/agent-skills/dithercn/references/examples.md): if an example is close, install it and edit its source, which is plain code in `components/dithercn/`.
+Combine them freely: a dashboard card can hold an SVG meter with `FillPattern` over a `DitherShader` glow.
+
+The examples in [examples.md](references/examples.md) (written when the skill is installed; if it's missing, read {{SITE_URL}}/.well-known/agent-skills/dithercn/references/examples.md) are references. If the user asked for exactly one of them, install it. If not, write your own: read the closest example's source for its field or SVG, then build the design the user described. Never swap the request for an example that is merely nearby, and never guess at an example's props; read its docs page or source.
 
 Done when every visual in the request has a technique.
 

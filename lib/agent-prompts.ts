@@ -19,7 +19,7 @@ export const quickStartPrompt = (
    This writes lib/dither, the skill in .agents/skills/dithercn and .claude/skills/dithercn, and the --dither-* CSS variables. The project needs shadcn/ui, Tailwind CSS v4 and React 19.
 2. Read .agents/skills/dithercn/SKILL.md and follow it for everything below. If it isn't on disk, read ${origin}${ROUTES.AGENT_SKILL}. The docs are at ${origin}${ROUTES.DOCS}, and ${origin}${ROUTES.LLMS} lists every page as Markdown.
 3. If I haven't said which dither I want and where it goes, ask me in one question, and suggest two or three that would suit this project.
-4. Build it on the engine, coloured from my theme. Start from an example component if one is close.
+4. Build the dither I asked for on the engine, coloured from my theme. The example components are references: install one only if it is exactly what I asked for. Otherwise write your own field on DitherShader and borrow technique from the closest example's source.
 5. Check it in a browser in light and dark mode, at desktop and phone widths and with reduced motion, and fix what doesn't read. Then tell me what you made and where.`;
 
 /** The prompt Write your own dither offers, for an agent to follow that page. */

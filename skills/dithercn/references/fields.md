@@ -11,7 +11,7 @@ float field(vec2 uv, vec2 res, float t) {
 }
 ```
 
-The return value is clamped to [0, 1]. With a palette of more than two colours, the tone spreads across them: with four colours, 0.5 sits between the second and third.
+The return value is clamped to [0, 1]. With a palette of more than two colours, the tone spreads across them: with four colours, 0.5 sits between the second and third. The tone sets both the dot density and the colour, so a field can't return a colour of its own. For colour that doesn't follow tone, such as a rainbow or a different hue per line, see [theme.md](theme.md#any-number-of-hues).
 
 ## The rules of the language
 

@@ -198,6 +198,85 @@ export const ContourHero = ({ children }: { children: React.ReactNode }) => {
 - Every value is relative to the section, so cell size and device pixel ratio don't matter.
 - More than one block to clear (a headline and a screenshot): pass a second box uniform and multiply the two `smoothstep`s.
 
+## Many hues: a spectrum of lines
+
+Wavy lines, each in its own hue, with a dithered glow. The field draws only the shape; a gradient underneath gives the colour, and a `["--background", "transparent"]` palette lets it through where the tone is high. See [theme.md](theme.md#any-number-of-hues) for why and for other colour layers.
+
+```tsx
+"use client";
+
+import type { CSSProperties } from "react";
+
+import { DitherShader } from "@/lib/dither";
+import type { DitherShaderProps } from "@/lib/dither";
+
+// The field draws only the shape: wavy lines with a soft glow. It says
+// nothing about colour.
+const FIELD = `
+float field(vec2 uv, vec2 res, float t) {
+  float x = uv.x * res.x / res.y;
+  float tone = 0.0;
+  for (int i = 0; i < 9; i++) {
+    if (float(i) >= spectrumLines) break;
+    float k = float(i);
+    float base = 0.18 + 0.64 * k / max(spectrumLines - 1.0, 1.0);
+    float y = base
+      + 0.035 * sin(x * 2.4 + t * 0.5 + k * 0.9)
+      + 0.015 * sin(x * 5.3 - t * 0.35 + k * 1.7);
+    float d = abs(uv.y - y) * res.y / spectrumWidth;
+    tone = max(tone, exp(-d * d) + 0.35 * exp(-d * 0.6));
+  }
+  return tone;
+}
+`;
+
+// The colour comes from a layer underneath: one hue per line, top to bottom.
+// The stops sit at the lines' heights within the layer.
+const SPECTRUM =
+  "linear-gradient(to bottom, oklch(0.68 0.22 25) 14%, oklch(0.75 0.18 60) 26%, oklch(0.8 0.17 100) 38%, oklch(0.72 0.2 145) 50%, oklch(0.72 0.14 210) 62%, oklch(0.62 0.2 265) 74%, oklch(0.62 0.24 310) 86%)";
+
+type SpectrumLinesProps = Omit<
+  DitherShaderProps,
+  "field" | "palette" | "uniforms"
+> & {
+  /** Any CSS background. Each line takes the colour beneath it. */
+  colors?: CSSProperties["background"];
+  /** How many lines, from 1 to 9. */
+  lines?: number;
+  /** Line thickness in cells; the glow spreads a few times wider. */
+  width?: number;
+};
+
+export const SpectrumLines = ({
+  colors = SPECTRUM,
+  lines = 7,
+  width = 1.2,
+  className,
+  style,
+  ...props
+}: SpectrumLinesProps) => (
+  <div className={className} style={style}>
+    {/* Covers only the band the lines and their glow use, so no colour shows at rounded corners. */}
+    <div
+      aria-hidden
+      className="absolute inset-x-0 inset-y-[6%]"
+      style={{ background: colors }}
+    />
+    {/* Tone 0 paints the page background; tone 1 is transparent and lets the colour through. */}
+    <DitherShader
+      {...props}
+      field={FIELD}
+      palette={["--background", "transparent"]}
+      stillTime={3}
+      uniforms={{ spectrumLines: lines, spectrumWidth: width }}
+      className="absolute inset-0"
+    />
+  </div>
+);
+```
+
+Use it like any background: `<SpectrumLines className="relative isolate h-[480px] overflow-hidden" />`, with content in a sibling above it. For a spectrum that runs left to right along each line instead, pass `colors="linear-gradient(to right, …)"`. To bend the lines into another shape (converging on a point, wrapping a ring), change `y` in the field and keep the rest.
+
 ## An SVG chart fill
 
 Static, server-renderable, sharp. The track uses a sparse fill and the data a dense ramp.
@@ -374,7 +453,7 @@ export const DitheredPhoto = ({
 };
 ```
 
-The palette goes from dark to light pixels: `[paper, ink]` maps dark pixels to paper. Swap it for a negative.
+Each pixel takes the nearest palette colour, so the order of the palette doesn't matter: with dark paper and light ink, dark pixels land on paper. For a negative, invert the pixels before dithering (`255 - value` on each of the red, green and blue bytes).
 
 ## A CSS-only band
 

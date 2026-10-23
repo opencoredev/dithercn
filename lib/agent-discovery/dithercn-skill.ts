@@ -98,7 +98,7 @@ const examplesMarkdown = (): string => {
 
   return `# Examples
 
-Components built on the engine. Each installs as plain source into \`components/dithercn/<name>.tsx\`, so you can read it, copy its field or SVG, or edit it in place. Install one with:
+Components built on the engine. They are references, not a menu: install one when it is exactly what the user asked for, and otherwise write your own and borrow technique from the closest one. Each installs as plain source into \`components/dithercn/<name>.tsx\`, so you can read its field or SVG. Install one with:
 
 \`\`\`bash
 npx shadcn@latest add {{REGISTRY_URL}}/<name>.json
