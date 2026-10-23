@@ -228,10 +228,13 @@ const compile = (gl: WebGLRenderingContext, type: GLenum, source: string) => {
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     if (!gl.isContextLost()) {
       // A broken `field` is a bug in the calling component; say why.
-      console.error(
-        "[dither-core] shader failed to compile",
-        gl.getShaderInfoLog(shader)
-      );
+      const log = gl.getShaderInfoLog(shader) ?? "";
+      console.error("[dither-core] shader failed to compile", log);
+      if (log.includes("already has a body")) {
+        console.error(
+          "[dither-core] a function is defined twice. `field` and `colorField` compile into one shader: define shared helpers once, in `field`, and call them from both."
+        );
+      }
     }
     gl.deleteShader(shader);
     return null;
