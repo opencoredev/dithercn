@@ -5,6 +5,7 @@ import { ROUTES } from "@/constants/routes";
 import { SITE } from "@/constants/site";
 import { getCatalog } from "@/lib/catalog";
 import { fillStyle } from "@/lib/dither";
+import { otherOpenCoreSites } from "@/lib/opencore-sites";
 
 interface FooterLink {
   href: string;
@@ -24,6 +25,12 @@ const FOR_AGENTS: readonly FooterLink[] = [
   { href: ROUTES.LLMS_FULL, label: "llms-full.txt" },
   { href: ROUTES.REGISTRY, label: "Registry index" },
 ];
+
+const LINK_CLASS =
+  "text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-sm text-sm transition-colors duration-150 outline-none focus-visible:ring-[3px]";
+
+// Plain followed links on purpose: they share authority between our sites.
+const OPENCORE_SITES = otherOpenCoreSites("https://dithercn.dev");
 
 // The closing wordmark: solid along its baseline, thinning upwards.
 const WORDMARK_FILL = fillStyle("gradient", {
@@ -45,10 +52,7 @@ const LinkColumn = ({
     <ul className="flex flex-col gap-2">
       {links.map((link) => (
         <li key={link.href}>
-          <Link
-            href={link.href}
-            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-sm text-sm transition-colors duration-150 outline-none focus-visible:ring-[3px]"
-          >
+          <Link href={link.href} className={LINK_CLASS}>
             {link.label}
           </Link>
         </li>
@@ -83,6 +87,27 @@ export const SiteFooter = () => {
           <LinkColumn title="Get started" links={START} />
           <LinkColumn title="Examples" links={examples} />
           <LinkColumn title="For agents" links={FOR_AGENTS} />
+          <nav
+            aria-labelledby="footer-opencore"
+            className="col-span-2 flex flex-col gap-3 lg:col-span-4"
+          >
+            <h2
+              id="footer-opencore"
+              className="text-foreground text-sm font-medium"
+            >
+              More from OpenCore
+            </h2>
+            <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+              {OPENCORE_SITES.map((site) => (
+                <li key={site.url}>
+                  <a href={site.url} className={LINK_CLASS}>
+                    <span className="text-foreground">{site.name}</span>{" "}
+                    {site.description}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
         <div
           aria-hidden="true"
