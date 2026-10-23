@@ -45,9 +45,10 @@ const SpectrumLines = ({
   lines = 7,
   width = 1.2,
   className,
+  style,
   ...props
 }: SpectrumLinesProps) => (
-  <div className={className}>
+  <div className={className} style={style}>
     {/* Covers only the band the lines and their glow use, so no colour shows at rounded corners. */}
     <div
       aria-hidden

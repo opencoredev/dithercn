@@ -1,4 +1,4 @@
-import { SITE } from "@/constants/site";
+import { getRegistryOrigin, SITE } from "@/constants/site";
 import { agentStartHere } from "@/lib/agent-discovery/agent-guide";
 import { getAllPagesFromFolder } from "@/lib/page-tree";
 import { getLLMText, isExamplePage, source } from "@/lib/source";
@@ -52,7 +52,9 @@ export const GET = async () => {
   return new Response(
     [
       `# ${SITE.NAME}: full documentation\n\n> ${SITE.DESCRIPTION.LONG}`,
-      agentStartHere(SITE.URL),
+      // The origin install commands use, so a preview's reading links and
+      // install commands point at the same deployment.
+      agentStartHere(getRegistryOrigin()),
       ...scanned,
     ].join("\n\n")
   );

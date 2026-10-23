@@ -1,5 +1,5 @@
 import { ROUTES } from "@/constants/routes";
-import { SITE } from "@/constants/site";
+import { getRegistryOrigin } from "@/constants/site";
 import { AGENT_PROMPTS } from "@/lib/agent-prompts";
 import { readOptionalFromRoot } from "@/lib/registry";
 import { registryItemUrl } from "@/lib/registry-items";
@@ -43,7 +43,9 @@ const isPromptName = (name: string): name is keyof typeof AGENT_PROMPTS =>
   Object.hasOwn(AGENT_PROMPTS, name);
 
 const agentPrompt = (name: string) =>
-  isPromptName(name) ? fence("text", AGENT_PROMPTS[name]()) : "";
+  isPromptName(name)
+    ? fence("text", AGENT_PROMPTS[name](getRegistryOrigin()))
+    : "";
 
 /** `String.replace` with an async replacer, run over every match in order. */
 const replaceAsync = async (
@@ -73,6 +75,9 @@ const previewSource = async ([, src = ""]: RegExpMatchArray) => {
     : fence("tsx", code, src);
 };
 
+const collapseBlankLines = (prose: string) =>
+  prose.replaceAll(/\n{3,}/g, "\n\n");
+
 /** Apply `transform` to the text between fenced code blocks only. */
 const outsideCode = async (
   markdown: string,
@@ -90,7 +95,7 @@ const outsideCode = async (
   return done.join("");
 };
 
-const expandProse = async ({
+const expandProse = ({
   prose,
   target,
   isExample,
@@ -102,7 +107,9 @@ const expandProse = async ({
   const plain = prose
     .replaceAll(INSTALL_BLOCK, (_, name: string) => installCommand(name))
     .replaceAll(AGENT_PROMPT, (_, name: string) => agentPrompt(name))
-    .replaceAll(COMMAND_BOX, () => fence("bash", `npx skills add ${SITE.URL}`))
+    .replaceAll(COMMAND_BOX, () =>
+      fence("bash", `npx skills add ${getRegistryOrigin()}`)
+    )
     .replaceAll(
       CATALOG_INDEX,
       () =>
@@ -110,13 +117,16 @@ const expandProse = async ({
     )
     .replaceAll(STEPS, "");
 
-  return target === "bundle" && isExample
-    ? plain.replaceAll(PREVIEW, "")
-    : await replaceAsync(plain, PREVIEW, previewSource);
+  // Dropped components leave runs of blank lines behind. Tidy them here,
+  // before any example source goes in, so code keeps its blank lines.
+  if (target === "bundle" && isExample) {
+    return Promise.resolve(collapseBlankLines(plain.replaceAll(PREVIEW, "")));
+  }
+  return replaceAsync(collapseBlankLines(plain), PREVIEW, previewSource);
 };
 
 /** Turn the docs' MDX components into plain Markdown an agent can act on. */
-export const expandDocsComponents = async ({
+export const expandDocsComponents = ({
   markdown,
   target,
   isExample,
@@ -124,13 +134,8 @@ export const expandDocsComponents = async ({
   markdown: string;
   target: MarkdownTarget;
   isExample: boolean;
-}): Promise<string> => {
-  const expanded = await outsideCode(markdown, (prose) =>
-    expandProse({ isExample, prose, target })
-  );
-  // Dropped components leave runs of blank lines behind.
-  return expanded.replaceAll(/\n{3,}/g, "\n\n");
-};
+}): Promise<string> =>
+  outsideCode(markdown, (prose) => expandProse({ isExample, prose, target }));
 
 /**
  * Said at the top of every example page's Markdown: the page documents one
