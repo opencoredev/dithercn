@@ -15,9 +15,17 @@ Find the engine: `lib/dither/index.ts`, under the `lib` alias in `components.jso
 npx shadcn@latest add {{REGISTRY_URL}}/dither-core.json
 ```
 
+If it exists, check that it is current: `grep -q colorField lib/dither/shader.tsx` (with the project's path). An engine installed before `colorField` existed lacks it and the `spectrum` and `paletteColor` helpers, and TypeScript reports `Property 'colorField' does not exist`. Replace the engine's files; this keeps the project's `lib/utils.ts` (the `n` answers shadcn's question about overwriting it) and restores `lib/dither/export.ts`:
+
+```bash
+rm -rf lib/dither && printf 'n\n' | npx shadcn@latest add {{REGISTRY_URL}}/dither-core.json {{REGISTRY_URL}}/dither-export.json
+```
+
+Don't use `--overwrite`: it also replaces `lib/utils.ts`. If the project edited files inside `lib/dither`, tell the user before replacing them.
+
 That also installs `dither-tokens`: the CSS variables `--dither-ink`, `--dither-paper`, `--dither-cell`, `--dither-bloom` and `--dither-color-<name>`, written into the project's global CSS and mapped to the shadcn `--primary` and `--background`. The engine needs React 19 and Tailwind CSS v4.
 
-Done when `lib/dither/index.ts` exists and the global CSS defines `--dither-ink`.
+Done when `lib/dither/index.ts` exists, `lib/dither/shader.tsx` mentions `colorField`, and the global CSS defines `--dither-ink`.
 
 ## 2. Pick the technique
 

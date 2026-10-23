@@ -121,6 +121,17 @@ Or install any example. Each one brings the engine with it on its first install:
 npx shadcn@latest add https://dithercn.dev/r/dither-gradient.json
 ```
 
+## Update the engine
+
+The engine is plain source in your project, so it doesn't update on its own. Newer docs can use features your copy lacks: if TypeScript says a prop such as `colorField` doesn't exist on `DitherShader`, delete `lib/dither` and add the engine again:
+
+```bash
+rm -rf lib/dither
+npx shadcn@latest add https://dithercn.dev/r/dither-core.json https://dithercn.dev/r/dither-export.json
+```
+
+If the CLI asks whether to overwrite `lib/utils.ts`, answer no. Avoid `--overwrite`, which replaces that file too. If you edited any file in `lib/dither`, copy your changes out first.
+
 ## Use a namespace
 
 To install by name instead of by URL, add dithercn to the `registries` field of your `components.json`:

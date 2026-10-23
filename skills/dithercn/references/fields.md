@@ -191,6 +191,7 @@ vec3 colorField(vec2 uv, vec2 res, float t) {
 - The two functions run separately. When both need the same geometry (which line is nearest, which shape a cell is in), put it in a helper inside the `field` string, which comes first, and call it from both.
 - Glows still work: a soft tone gives sparse dots, and each dot takes the colour, so a coloured glow fades out in dots rather than in a darker colour.
 - Without `colorField`, nothing changes: the palette maps tone to colour.
+- If TypeScript says `Property 'colorField' does not exist`, the project's engine predates it. Update it as SKILL.md's first step shows; never work around it with a palette of hues.
 
 Building blocks, each the body of a `colorField`:
 
