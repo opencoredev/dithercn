@@ -32,7 +32,7 @@ Read [landing-pages.md](landing-pages.md) first: it covers what the page is abou
 - **Cards and tiles:** charts, meters and gauges are usually static SVG with `FillPattern`. They render on the server, cost nothing after paint and stay sharp. Use a shader in a card only for an ambient glow or a live status surface.
 - **Data first:** a meter or chart needs a readable label and value as HTML text, and an accessible name on the SVG (`role="img"` plus `aria-label` with the value, or `role="meter"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax`).
 - **Track and fill:** draw the empty part of a meter or bar with a sparse fill (`level` 0.0625 to 0.125, or `fill="dotted"`) and the value with a dense one, so the empty track is still visible.
-- **Many on one page:** prefer SVG and CSS fills. At most 8 shaders run at once; past that, the oldest show their fallback.
+- **Many on one page:** prefer SVG and CSS fills. At most 8 shaders hold a WebGL context at once. A shader scrolling onto the screen takes the context of one that has scrolled away; if more than 8 are on screen together, the extras show their fallback until one frees up.
 - **Colour meaning:** status colours from the palette (`"green"`, `"orange"`, `"red"`) map to good, warning and critical. Pair colour with a label or icon so it never carries meaning alone.
 
 ## Sizing cells
