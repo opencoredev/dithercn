@@ -66,6 +66,8 @@ export const SITE = {
   ] as const,
   NAME: "dithercn",
   OG_IMAGE: `${baseUrl}/og`,
+  // The silent loop iMessage, Discord and Telegram play for a shared link.
+  OG_VIDEO: `${baseUrl}/og/og-video.mp4`,
   REGISTRY: `${getRegistryOrigin()}/r`,
   URL: baseUrl,
 };
