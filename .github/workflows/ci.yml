@@ -27,6 +27,9 @@ jobs:
       - name: Lint and format
         run: pnpm check
 
+      - name: Test
+        run: pnpm test
+
   typecheck:
     runs-on: tenki-standard-medium-4c-8g
     steps:

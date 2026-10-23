@@ -12,5 +12,5 @@ dithercn is an engine, not a component menu. The components under Backgrounds, C
 
 1. Install the engine and the agent skill: \`npx shadcn@latest add ${SITE.REGISTRY}/dithercn-skill.json\`. Then follow the skill (${base}${ROUTES.AGENT_SKILL}).
 2. Write your own field on \`DitherShader\`: [Write your own dither](${base}${ROUTES.DOCS_WRITE_YOUR_OWN}.md). A field is a GLSL function that returns a tone from 0 to 1; any shape you can describe with math works.
-3. Colour it from the theme: [Palettes](${base}/docs/engine/palettes.md). For many hues at once (a rainbow, a different colour per line), the "Any number of hues" section shows how.
+3. Colour it from the theme: [Palettes](${base}/docs/engine/palettes.md). For many hues at once (a rainbow, RGB, a different colour per line or shape), add a \`colorField\` next to the field; the "Any number of hues" section shows how.
 4. Install an example only when it is what the user asked for. Otherwise read the closest one's source for technique and write your own.`;

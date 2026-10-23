@@ -87,6 +87,11 @@
         "target": "lib/dither/motion.ts"
       },
       {
+        "path": "lib/dither/glsl.ts",
+        "type": "registry:lib",
+        "target": "lib/dither/glsl.ts"
+      },
+      {
         "path": "lib/dither/shader.tsx",
         "type": "registry:lib",
         "target": "lib/dither/shader.tsx"

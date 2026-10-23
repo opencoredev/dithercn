@@ -15,20 +15,28 @@ Find the engine: `lib/dither/index.ts`, under the `lib` alias in `components.jso
 npx shadcn@latest add {{REGISTRY_URL}}/dither-core.json
 ```
 
+If it exists, check that it is current: `grep -q colorField lib/dither/shader.tsx` (with the project's path). An engine installed before `colorField` existed lacks it and the `spectrum` and `paletteColor` helpers, and TypeScript reports `Property 'colorField' does not exist`. Replace the engine's files; this keeps the project's `lib/utils.ts` (`yes n` answers no to every question about overwriting a file) and restores `lib/dither/export.ts`:
+
+```bash
+rm -rf lib/dither && yes n | npx shadcn@latest add {{REGISTRY_URL}}/dither-core.json {{REGISTRY_URL}}/dither-export.json
+```
+
+Don't use `--overwrite`: it also replaces `lib/utils.ts`. If the project edited files inside `lib/dither`, tell the user before replacing them.
+
 That also installs `dither-tokens`: the CSS variables `--dither-ink`, `--dither-paper`, `--dither-cell`, `--dither-bloom` and `--dither-color-<name>`, written into the project's global CSS and mapped to the shadcn `--primary` and `--background`. The engine needs React 19 and Tailwind CSS v4.
 
-Done when `lib/dither/index.ts` exists and the global CSS defines `--dither-ink`.
+Done when `lib/dither/index.ts` exists, `lib/dither/shader.tsx` mentions `colorField`, and the global CSS defines `--dither-ink`.
 
 ## 2. Pick the technique
 
-| The user wants                                                                                                                        | Use                                                                                                | Read                                                   |
-| ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| A surface whose tone varies per pixel or moves: gradients, glows, noise, contours, waves, rings, any shape you can describe with math | `DitherShader` with a GLSL `field`                                                                 | [fields.md](references/fields.md)                      |
-| A static fill inside SVG shapes: bars, arcs, gauges, meters, rings, icons, maps                                                       | `FillPattern` or `DitherPattern` in `<defs>`, `fill="url(#id)"`                                    | [engine-api.md](references/engine-api.md#static-fills) |
-| A static fill on a DOM element: a block, band, border, progress bar, skeleton                                                         | `fillStyle(variant)` or `ditherMaskStyle(level)` on an empty layer                                 | [engine-api.md](references/engine-api.md#static-fills) |
-| Many hues at once: a rainbow, a spectrum, a different colour per line or shape                                                        | `DitherShader` for the shape over a colour layer, with `palette={["--background", "transparent"]}` | [theme.md](references/theme.md#any-number-of-hues)     |
-| A photo or logo, dithered                                                                                                             | `ditherImage` on canvas pixels                                                                     | [engine-api.md](references/engine-api.md#images)       |
-| A PNG, SVG or CSS file, or a background with no JavaScript                                                                            | `dither-export`                                                                                    | [engine-api.md](references/engine-api.md#export)       |
+| The user wants                                                                                                                        | Use                                                                           | Read                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
+| A surface whose tone varies per pixel or moves: gradients, glows, noise, contours, waves, rings, any shape you can describe with math | `DitherShader` with a GLSL `field`                                            | [fields.md](references/fields.md)                      |
+| A static fill inside SVG shapes: bars, arcs, gauges, meters, rings, icons, maps                                                       | `FillPattern` or `DitherPattern` in `<defs>`, `fill="url(#id)"`               | [engine-api.md](references/engine-api.md#static-fills) |
+| A static fill on a DOM element: a block, band, border, progress bar, skeleton                                                         | `fillStyle(variant)` or `ditherMaskStyle(level)` on an empty layer            | [engine-api.md](references/engine-api.md#static-fills) |
+| Many hues at once: a rainbow, a spectrum, RGB, a different colour per line or shape                                                   | `DitherShader` with a `field` for the shape and a `colorField` for the colour | [fields.md](references/fields.md#colour)               |
+| A photo or logo, dithered                                                                                                             | `ditherImage` on canvas pixels                                                | [engine-api.md](references/engine-api.md#images)       |
+| A PNG, SVG or CSS file, or a background with no JavaScript                                                                            | `dither-export`                                                               | [engine-api.md](references/engine-api.md#export)       |
 
 Combine them freely: a dashboard card can hold an SVG meter with `FillPattern` over a `DitherShader` glow.
 
@@ -58,6 +66,6 @@ Done when every check in quality.md passes. A screenshot that shows flat colour,
 
 - A field returns a continuous tone in [0, 1]: 0 paper, 1 ink. The engine quantises and dithers it, so write smooth math (`smoothstep`, `exp`, `mix`) and leave thresholds and Bayer matrices to the engine.
 - `uv` runs 0 to 1 on both axes with y up. Multiply x by `res.x / res.y` before measuring distances, or circles stretch into ovals.
-- Paint with theme colours (`"ink"`, palette names, `--css-variables`). Literal colours are for when the user names one.
+- Paint with theme colours (`"ink"`, palette names, `--css-variables`). Literal colours, and `spectrum()` in a `colorField`, are for when the user asks for specific colours or a rainbow.
 - Text sits on clear ground. Fade the tone down where text goes: to 0 for lines and sparse patterns, to 0.2 or less for soft fills. Text contrast stays at 4.5:1 or better.
 - Motion is slow, a drift of a few percent of the box per second. Choose `stillTime` so the reduced-motion frame looks finished.

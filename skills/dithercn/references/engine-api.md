@@ -27,6 +27,7 @@ A client component that draws a GLSL field as a dither on a WebGL canvas at one 
 ```tsx
 <DitherShader
   field={FIELD} // GLSL defining float field(vec2 uv, vec2 res, float t). See fields.md.
+  colorField={COLOR_FIELD} // optional GLSL defining vec3 (or vec4) colorField(vec2 uv, vec2 res, float t): the ink colour per cell. See fields.md#colour.
   uniforms={{ glowCentre: [0.5, 0.2], glowSize: 0.4 }} // declared for you: number → float, [a,b] → vec2, up to vec4
   matrix="bayer4" // default "bayer4"
   levels={17} // tones the field snaps to before dithering, 2 to 256. Default: every tone the matrix draws
@@ -48,8 +49,9 @@ A client component that draws a GLSL field as a dither on a WebGL canvas at one 
 - `fallback` shows before the first frame, without WebGL, and while the shader is far offscreen. Default: flat `palette[0]`. Make it resemble the dither (a CSS gradient in the ink colour).
 - Free behaviour: resize observer, whole-device-pixel cells, theme changes re-read the palette, pauses offscreen and in hidden tabs, a still frame under reduced motion, context loss recovery. At most 8 shaders hold a WebGL context at once (`MAX_LIVE_CONTEXTS`); past that, a shader coming on screen takes one from a shader just off screen, never from one still on screen, and waits otherwise, showing `fallback`.
 - `data-state` on the root: `running`, `paused` (offscreen or hidden tab), `static` (reduced motion or `animate={false}`), `fallback` (no frame drawn).
-- Changing `uniforms`, `palette`, `matrix`, `levels` or `speed` is cheap. Changing the `field` string recompiles, so keep it a module constant and drive variation through uniforms.
-- `DitherShaderProps` is exported. A wrapper component usually takes `Omit<DitherShaderProps, "field" | "uniforms" | "fallback">` plus its own props, and spreads the rest.
+- With `colorField`, each cell is either paper (`palette[0]`) or the colour `colorField` returns there; the field's tone still decides which, so density and colour are independent. The rest of the palette is what the `paletteColor(x)` helper reads. Without it, the palette maps tone to colour as before.
+- Changing `uniforms`, `palette`, `matrix`, `levels` or `speed` is cheap. Changing the `field` or `colorField` string recompiles, so keep it a module constant and drive variation through uniforms.
+- `DitherShaderProps` is exported. A wrapper component usually takes `Omit<DitherShaderProps, "field" | "colorField" | "uniforms" | "fallback">` plus its own props, and spreads the rest.
 
 ## Static fills
 

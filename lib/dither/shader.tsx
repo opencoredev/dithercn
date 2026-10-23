@@ -8,6 +8,7 @@ import {
   resolveColor,
   subscribeToTheme,
 } from "@/lib/dither/color";
+import { withoutSharedHelpers } from "@/lib/dither/glsl";
 import { getThresholdMap } from "@/lib/dither/matrices";
 import type { DitherMatrix, ThresholdMap } from "@/lib/dither/matrices";
 import { useFrameLoop, usePrefersReducedMotion } from "@/lib/dither/motion";
@@ -32,6 +33,10 @@ export type DitherShaderState = "fallback" | "running" | "paused" | "static";
  * - `float hash21(vec2 p)`: a stable pseudo-random value in [0, 1).
  * - `float snoise(vec2 p)`: 2D simplex noise in [-1, 1].
  * - `float fbm(vec2 p)`: four octaves of simplex noise, in [0, 1].
+ * - `vec3 spectrum(float h)`: a saturated rainbow. 0 is red, then yellow,
+ *   green, cyan, blue and magenta, back to red at 1; it wraps.
+ * - `vec4 paletteColor(float x)`: the palette's ink colours, every entry
+ *   after the paper, as a smooth ramp from x = 0 to 1.
  */
 const GLSL_HELPERS = `
 float hash21(vec2 p) {
@@ -78,6 +83,32 @@ float fbm(vec2 p) {
   }
   return clamp(0.5 + 0.5 * sum / 0.9375, 0.0, 1.0);
 }
+
+vec3 spectrum(float h) {
+  vec3 rgb = clamp(abs(mod(fract(h) * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+  return rgb * rgb * (3.0 - 2.0 * rgb);
+}
+
+vec4 dither_paletteEntry(float index) {
+  return texture2D(u_palette, vec2((index + 0.5) / u_paletteSize, 0.5));
+}
+
+vec4 paletteColor(float x) {
+  float last = u_paletteSize - 1.0;
+  float scaled = clamp(x, 0.0, 1.0) * (last - 1.0);
+  float index = floor(scaled);
+  vec4 from = dither_paletteEntry(1.0 + index);
+  vec4 to = dither_paletteEntry(min(2.0 + index, last));
+  return mix(from, to, scaled - index);
+}
+
+vec4 dither_rgba(vec3 color) {
+  return vec4(color, 1.0);
+}
+
+vec4 dither_rgba(vec4 color) {
+  return color;
+}
 `;
 
 const VERTEX_SHADER = `
@@ -116,7 +147,26 @@ const uniformSpecs = (uniforms: DitherUniforms): UniformSpec[] =>
       return [{ name, size: uniformSize(value) }];
     });
 
-const fragmentShader = (field: string, specs: readonly UniformSpec[]) => `
+// With a colour field, a cell is either paper or the colour field's colour
+// there, chosen by the same tone and threshold as a two-colour palette.
+const PALETTE_COLOR = `
+  float scaled = tone * (u_paletteSize - 1.0);
+  float index = floor(scaled);
+  index = min(index + step(threshold, scaled - index), u_paletteSize - 1.0);
+  vec4 color = dither_paletteEntry(index);`;
+
+const FIELD_COLOR = `
+  float ink = min(floor(tone) + step(threshold, fract(tone)), 1.0);
+  vec4 color = ink > 0.5
+    ? dither_rgba(colorField(uv, u_resolution, u_time))
+    : dither_paletteEntry(0.0);
+  color = clamp(color, 0.0, 1.0);`;
+
+const fragmentShader = (
+  field: string,
+  colorField: string | undefined,
+  specs: readonly UniformSpec[]
+) => `
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
 #else
@@ -134,6 +184,7 @@ uniform float u_paletteSize;
 ${specs.map(({ name, size }) => `uniform ${GLSL_TYPES[size]} ${name};`).join("\n")}
 ${GLSL_HELPERS}
 ${field}
+${colorField === undefined ? "" : withoutSharedHelpers(field, colorField)}
 
 void main() {
   vec2 cell = floor(gl_FragCoord.xy);
@@ -148,10 +199,7 @@ void main() {
   float stored = floor(texture2D(u_thresholds, at).r * 255.0 + 0.5);
   float threshold = (stored + 0.5 * u_rankStep) / 256.0;
 
-  float scaled = tone * (u_paletteSize - 1.0);
-  float index = floor(scaled);
-  index = min(index + step(threshold, scaled - index), u_paletteSize - 1.0);
-  vec4 color = texture2D(u_palette, vec2((index + 0.5) / u_paletteSize, 0.5));
+${colorField === undefined ? PALETTE_COLOR : FIELD_COLOR}
   gl_FragColor = vec4(color.rgb * color.a, color.a);
 }
 `;
@@ -181,10 +229,13 @@ const compile = (gl: WebGLRenderingContext, type: GLenum, source: string) => {
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     if (!gl.isContextLost()) {
       // A broken `field` is a bug in the calling component; say why.
-      console.error(
-        "[dither-core] shader failed to compile",
-        gl.getShaderInfoLog(shader)
-      );
+      const log = gl.getShaderInfoLog(shader) ?? "";
+      console.error("[dither-core] shader failed to compile", log);
+      if (log.includes("already has a body")) {
+        console.error(
+          "[dither-core] a function is defined twice. `field` and `colorField` compile into one shader: give helpers different names, or define a shared helper once, in `field`, and call it from both."
+        );
+      }
     }
     gl.deleteShader(shader);
     return null;
@@ -204,14 +255,21 @@ const createTexture = (gl: WebGLRenderingContext) => {
 
 const createRenderer = (
   gl: WebGLRenderingContext,
-  field: string,
-  specs: readonly UniformSpec[]
+  {
+    field,
+    colorField,
+    specs,
+  }: {
+    field: string;
+    colorField: string | undefined;
+    specs: readonly UniformSpec[];
+  }
 ): Renderer | null => {
   const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
   const fragment = compile(
     gl,
     gl.FRAGMENT_SHADER,
-    fragmentShader(field, specs)
+    fragmentShader(field, colorField, specs)
   );
   const program = gl.createProgram();
   if (!vertex || !fragment || !program) {
@@ -467,6 +525,15 @@ export interface DitherShaderProps extends Omit<
    */
   field: string;
   /**
+   * GLSL that defines `colorField(vec2 uv, vec2 res, float t)`, returning
+   * the ink colour for one cell as `vec3` or `vec4` RGB(A) in [0, 1], with
+   * the same arguments as `field`. Set it when colour should vary on its
+   * own: a rainbow, a hue per shape. The field's tone still decides where
+   * the dots go, and each dot takes this colour; cells without a dot are
+   * paper (`palette[0]`). `spectrum(h)` and `paletteColor(x)` help.
+   */
+  colorField?: string;
+  /**
    * Extra uniforms, declared for you by name: numbers become `float`,
    * tuples `vec2` to `vec4`. Names must not start with `u_`.
    */
@@ -477,7 +544,11 @@ export interface DitherShaderProps extends Omit<
   levels?: number;
   /** Cell size in CSS pixels. Default: `--dither-cell`, or 3. */
   cell?: number;
-  /** Colours from paper (tone 0) to ink (tone 1). Default `["--dither-paper", "--dither-ink"]`. */
+  /**
+   * Colours from paper (tone 0) to ink (tone 1). Default
+   * `["--dither-paper", "--dither-ink"]`. With `colorField`, the first is
+   * the paper and the rest are what `paletteColor` reads.
+   */
   palette?: DitherPalette;
   /** Time multiplier. Default 1. */
   speed?: number;
@@ -514,6 +585,7 @@ const CANVAS_CLASS =
  */
 export const DitherShader = ({
   field,
+  colorField,
   uniforms = NO_UNIFORMS,
   matrix = "bayer4",
   levels,
@@ -640,7 +712,7 @@ export const DitherShader = ({
 
     const build = () => {
       rendererRef.current?.dispose();
-      const renderer = createRenderer(gl, field, specs);
+      const renderer = createRenderer(gl, { colorField, field, specs });
       rendererRef.current = renderer;
       renderer?.setMatrix(live.current.map);
       renderer?.setPalette(resolvePalette());
@@ -704,7 +776,7 @@ export const DitherShader = ({
     };
     // `specs` is described by `specKey`; a new `cell` re-measures.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [field, specKey, cell, hasContext]);
+  }, [field, colorField, specKey, cell, hasContext]);
 
   useEffect(() => {
     rendererRef.current?.setMatrix(map);
