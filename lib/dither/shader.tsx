@@ -148,6 +148,7 @@ const uniformSpecs = (uniforms: DitherUniforms): UniformSpec[] =>
 
 const COMMENTS = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
 const DIRECTIVE = /^[ \t]*#/m;
+const STRUCT = /^\s*(?:(?:lowp|mediump|highp|const|uniform)\s+)*struct\b/;
 // GLSL tokens: numbers and names, the two-character operators, then any
 // other single character. `a + ++b` and `a++ +b` stay different.
 const TOKEN = /[\w.]+|\+\+|--|<=|>=|==|!=|&&|\|\||\^\^|[-+*/]=|[^\s\w.]/g;
@@ -164,10 +165,7 @@ const topLevelChunks = (source: string): string[] => {
   const cut = (end: number) => {
     const chunk = code.slice(start, end).trim();
     start = end;
-    if (chunk === ";" && chunks.length > 0) {
-      // The `;` after a struct's `}` belongs to it.
-      chunks[chunks.length - 1] += ";";
-    } else if (chunk !== "") {
+    if (chunk !== "") {
       chunks.push(chunk);
     }
   };
@@ -177,7 +175,8 @@ const topLevelChunks = (source: string): string[] => {
       depth += 1;
     } else if (char === "}") {
       depth -= 1;
-      if (depth === 0) {
+      // A struct declaration runs on to its `;`, which may name variables.
+      if (depth === 0 && !STRUCT.test(code.slice(start, index))) {
         cut(index + 1);
       }
     } else if (char === ";" && depth === 0) {
@@ -202,7 +201,9 @@ export const withoutSharedHelpers = (
   field: string,
   colorField: string
 ): string => {
-  if (DIRECTIVE.test(field) || DIRECTIVE.test(colorField)) {
+  const hasDirective = (source: string) =>
+    DIRECTIVE.test(source.replaceAll(COMMENTS, " "));
+  if (hasDirective(field) || hasDirective(colorField)) {
     return colorField;
   }
   const defined = new Set(topLevelChunks(field).map(tokens));
