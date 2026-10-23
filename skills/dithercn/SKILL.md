@@ -15,10 +15,10 @@ Find the engine: `lib/dither/index.ts`, under the `lib` alias in `components.jso
 npx shadcn@latest add {{REGISTRY_URL}}/dither-core.json
 ```
 
-If it exists, check that it is current: `grep -q colorField lib/dither/shader.tsx` (with the project's path). An engine installed before `colorField` existed lacks it and the `spectrum` and `paletteColor` helpers, and TypeScript reports `Property 'colorField' does not exist`. Replace the engine's files; this keeps the project's `lib/utils.ts` (the `n` answers shadcn's question about overwriting it) and restores `lib/dither/export.ts`:
+If it exists, check that it is current: `grep -q colorField lib/dither/shader.tsx` (with the project's path). An engine installed before `colorField` existed lacks it and the `spectrum` and `paletteColor` helpers, and TypeScript reports `Property 'colorField' does not exist`. Replace the engine's files; this keeps the project's `lib/utils.ts` (`yes n` answers no to every question about overwriting a file) and restores `lib/dither/export.ts`:
 
 ```bash
-rm -rf lib/dither && printf 'n\n' | npx shadcn@latest add {{REGISTRY_URL}}/dither-core.json {{REGISTRY_URL}}/dither-export.json
+rm -rf lib/dither && yes n | npx shadcn@latest add {{REGISTRY_URL}}/dither-core.json {{REGISTRY_URL}}/dither-export.json
 ```
 
 Don't use `--overwrite`: it also replaces `lib/utils.ts`. If the project edited files inside `lib/dither`, tell the user before replacing them.

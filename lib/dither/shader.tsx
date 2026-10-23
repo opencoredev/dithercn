@@ -147,10 +147,14 @@ const uniformSpecs = (uniforms: DitherUniforms): UniformSpec[] =>
     });
 
 const COMMENTS = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
+const DIRECTIVE = /^[ \t]*#/m;
+// GLSL tokens: numbers and names, the two-character operators, then any
+// other single character. `a + ++b` and `a++ +b` stay different.
+const TOKEN = /[\w.]+|\+\+|--|<=|>=|==|!=|&&|\|\||\^\^|[-+*/]=|[^\s\w.]/g;
 
 /**
- * GLSL source split at the top level, comments dropped: preprocessor
- * lines, declarations ending in `;`, and definitions ending in their `}`.
+ * GLSL without directives, split at the top level with comments dropped:
+ * declarations ending in `;` and definitions ending in their `}`.
  */
 const topLevelChunks = (source: string): string[] => {
   const code = source.replaceAll(COMMENTS, " ");
@@ -169,11 +173,7 @@ const topLevelChunks = (source: string): string[] => {
   };
   for (let index = 0; index < code.length; index += 1) {
     const char = code[index];
-    if (char === "#" && depth === 0 && code.slice(start, index).trim() === "") {
-      const newline = code.indexOf("\n", index);
-      index = newline === -1 ? code.length : newline;
-      cut(index);
-    } else if (char === "{") {
+    if (char === "{") {
       depth += 1;
     } else if (char === "}") {
       depth -= 1;
@@ -188,26 +188,26 @@ const topLevelChunks = (source: string): string[] => {
   return chunks;
 };
 
-// Whitespace only matters between two words, so drop the rest.
-const normalise = (chunk: string) =>
-  chunk
-    .replaceAll(/\s+/g, " ")
-    .replaceAll(/ ?([^\w ]) ?/g, "$1")
-    .trim();
+const tokens = (chunk: string) => chunk.match(TOKEN)?.join(" ") ?? "";
 
 /**
  * `field` and `colorField` compile into one shader, where defining a helper
  * twice is an error. A common way to share one is to prepend the same
  * string to both, so drop any definition from `colorField` that `field`
- * already has, word for word. Two different definitions still fail.
+ * already has, token for token. Two different definitions still fail.
+ * Sources with preprocessor directives are left alone: a definition's
+ * meaning can depend on `#if` and `#define` around it.
  */
 export const withoutSharedHelpers = (
   field: string,
   colorField: string
 ): string => {
-  const defined = new Set(topLevelChunks(field).map(normalise));
+  if (DIRECTIVE.test(field) || DIRECTIVE.test(colorField)) {
+    return colorField;
+  }
+  const defined = new Set(topLevelChunks(field).map(tokens));
   return topLevelChunks(colorField)
-    .filter((chunk) => !defined.has(normalise(chunk)))
+    .filter((chunk) => !defined.has(tokens(chunk)))
     .join("\n");
 };
 
