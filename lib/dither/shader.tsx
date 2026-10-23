@@ -146,6 +146,71 @@ const uniformSpecs = (uniforms: DitherUniforms): UniformSpec[] =>
       return [{ name, size: uniformSize(value) }];
     });
 
+const COMMENTS = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
+
+/**
+ * GLSL source split at the top level, comments dropped: preprocessor
+ * lines, declarations ending in `;`, and definitions ending in their `}`.
+ */
+const topLevelChunks = (source: string): string[] => {
+  const code = source.replaceAll(COMMENTS, " ");
+  const chunks: string[] = [];
+  let depth = 0;
+  let start = 0;
+  const cut = (end: number) => {
+    const chunk = code.slice(start, end).trim();
+    start = end;
+    if (chunk === ";" && chunks.length > 0) {
+      // The `;` after a struct's `}` belongs to it.
+      chunks[chunks.length - 1] += ";";
+    } else if (chunk !== "") {
+      chunks.push(chunk);
+    }
+  };
+  for (let index = 0; index < code.length; index += 1) {
+    const char = code[index];
+    if (char === "#" && depth === 0 && code.slice(start, index).trim() === "") {
+      const newline = code.indexOf("\n", index);
+      index = newline === -1 ? code.length : newline;
+      cut(index);
+    } else if (char === "{") {
+      depth += 1;
+    } else if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        cut(index + 1);
+      }
+    } else if (char === ";" && depth === 0) {
+      cut(index + 1);
+    }
+  }
+  cut(code.length);
+  return chunks;
+};
+
+// Whitespace only matters between two words, so drop the rest.
+const normalise = (chunk: string) =>
+  chunk
+    .replaceAll(/\s+/g, " ")
+    .replaceAll(/ ?([^\w ]) ?/g, "$1")
+    .trim();
+
+/**
+ * `field` and `colorField` compile into one shader, where defining a helper
+ * twice is an error. A common way to share one is to prepend the same
+ * string to both, so drop any definition from `colorField` that `field`
+ * already has, word for word. Two different definitions still fail.
+ */
+export const withoutSharedHelpers = (
+  field: string,
+  colorField: string
+): string => {
+  const defined = new Set(topLevelChunks(field).map(normalise));
+  return topLevelChunks(colorField)
+    .filter((chunk) => !defined.has(normalise(chunk)))
+    .join("\n");
+};
+
 // With a colour field, a cell is either paper or the colour field's colour
 // there, chosen by the same tone and threshold as a two-colour palette.
 const PALETTE_COLOR = `
@@ -183,7 +248,7 @@ uniform float u_paletteSize;
 ${specs.map(({ name, size }) => `uniform ${GLSL_TYPES[size]} ${name};`).join("\n")}
 ${GLSL_HELPERS}
 ${field}
-${colorField ?? ""}
+${colorField === undefined ? "" : withoutSharedHelpers(field, colorField)}
 
 void main() {
   vec2 cell = floor(gl_FragCoord.xy);
@@ -232,7 +297,7 @@ const compile = (gl: WebGLRenderingContext, type: GLenum, source: string) => {
       console.error("[dither-core] shader failed to compile", log);
       if (log.includes("already has a body")) {
         console.error(
-          "[dither-core] a function is defined twice. `field` and `colorField` compile into one shader: define shared helpers once, in `field`, and call them from both."
+          "[dither-core] a function is defined twice. `field` and `colorField` compile into one shader: give helpers different names, or define a shared helper once, in `field`, and call it from both."
         );
       }
     }

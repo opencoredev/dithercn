@@ -188,7 +188,7 @@ vec3 colorField(vec2 uv, vec2 res, float t) {
 ```
 
 - Same arguments as `field`, and the same uniforms. Return `vec3` RGB or `vec4` RGBA in [0, 1]; alpha below 1 lets the page show through the dots.
-- `field` and `colorField` compile into one shader, `field` first. When both need the same geometry (which line is nearest, which shape a cell is in), define a helper once, in the `field` string, and call it from both. Defining it in both strings fails with `function already has a body`.
+- `field` and `colorField` compile into one shader, `field` first. When both need the same geometry (which line is nearest, which shape a cell is in), write it as a helper and call it from both. Define it in the `field` string, or prepend the same helpers string to both: the engine keeps one copy of a definition that appears word for word in both. Two different definitions with the same name fail with `function already has a body`.
 - Glows still work: a soft tone gives sparse dots, and each dot takes the colour, so a coloured glow fades out in dots rather than in a darker colour.
 - Without `colorField`, nothing changes: the palette maps tone to colour.
 - If TypeScript says `Property 'colorField' does not exist`, the project's engine predates it. Update it as SKILL.md's first step shows; never work around it with a palette of hues.

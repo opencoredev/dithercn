@@ -55,7 +55,7 @@ It takes the same arguments and uniforms as the field, and returns `vec3` RGB or
 - `spectrum(h)` is a saturated rainbow: 0 is red, then yellow, green, cyan, blue and magenta, and red again at 1. It wraps, so `h` can keep growing with time.
 - `paletteColor(x)` reads the palette's ink colours, every entry after the paper, as a smooth ramp from 0 to 1. Use it to colour by position in your theme colours: `return paletteColor(uv.x).rgb;` with `palette={["--background", "--chart-1", "--chart-2", "--chart-3"]}`.
 
-Soft tones still dither, so a coloured glow fades out in sparse dots of its colour. To colour several shapes differently, work out which shape a cell is in with a helper. Both strings compile into one shader, so define the helper once, in the field string, and call it from both functions; the demo above finds the nearest line that way and shifts each line's hue.
+Soft tones still dither, so a coloured glow fades out in sparse dots of its colour. To colour several shapes differently, work out which shape a cell is in with a helper. Both strings compile into one shader: define the helper in the field string, or prepend the same helpers to both (the engine keeps one copy), and call it from both functions; the demo above finds the nearest line that way and shifts each line's hue.
 
 `spectrum` is fully saturated, so check light mode: yellow and cyan nearly vanish on white. The demo mixes a fifth of the theme's foreground into every hue, `mix(spectrum(h), paletteColor(0.0).rgb, 0.2)`, which keeps it readable in both modes.
 
