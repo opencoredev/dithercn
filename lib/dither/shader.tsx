@@ -146,7 +146,7 @@ const uniformSpecs = (uniforms: DitherUniforms): UniformSpec[] =>
       return [{ name, size: uniformSize(value) }];
     });
 
-const COMMENTS = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
+const COMMENTS = /\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g;
 const DIRECTIVE = /^[ \t]*#/m;
 const STRUCT = /^\s*(?:(?:lowp|mediump|highp|const|uniform)\s+)*struct\b/;
 // GLSL tokens: numbers and names, the two-character operators, then any
