@@ -75,10 +75,13 @@ const MobileNavGroup = ({
 export const MobileNav = ({
   items,
   tree,
+  githubLink,
   className,
 }: {
   items: { href: string; label: string }[];
   tree: PageTreeRoot;
+  /** The repo link, rendered on the server so its star count can stream in. */
+  githubLink: React.ReactNode;
   className?: string;
 }) => {
   const [open, setOpen] = useState(false);
@@ -137,6 +140,7 @@ export const MobileNav = ({
                   {item.label}
                 </MobileLink>
               ))}
+              {githubLink}
             </div>
           </div>
           {getDocsNav(tree).map((section) => (

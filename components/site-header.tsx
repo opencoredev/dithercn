@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { BrandContextMenu } from "@/components/brand-context-menu";
 import { CommandMenu } from "@/components/command-menu";
+import { GithubLink } from "@/components/github-link";
 import { Wordmark } from "@/components/logo";
 import { MainNav } from "@/components/main-nav";
 import { MobileNav } from "@/components/mobile-nav";
@@ -45,6 +46,12 @@ export const SiteHeader = () => (
       <MobileNav
         items={navItems}
         tree={source.pageTree}
+        githubLink={
+          <GithubLink
+            label="GitHub"
+            className="text-foreground gap-3 text-2xl font-medium [&_svg]:size-6"
+          />
+        }
         className="flex lg:hidden"
       />
       <BrandContextMenu>
@@ -59,6 +66,7 @@ export const SiteHeader = () => (
       <MainNav items={navItems} className="hidden lg:flex" />
       <div className="ml-auto flex items-center gap-2 max-md:gap-4">
         <CommandMenu groups={getSearchGroups()} />
+        <GithubLink className="extend-touch-target h-8 px-1.5" />
         <ModeSwitcher />
       </div>
     </div>

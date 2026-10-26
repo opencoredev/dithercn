@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { GithubLink } from "@/components/github-link";
 import { LogoMark } from "@/components/logo";
 import { ROUTES } from "@/constants/routes";
 import { SITE } from "@/constants/site";
@@ -83,6 +84,7 @@ export const SiteFooter = () => {
               A dither engine with an agent skill, for shadcn projects. MIT
               licensed.
             </p>
+            <GithubLink label="GitHub" className="w-fit gap-2 text-sm" />
           </div>
           <LinkColumn title="Get started" links={START} />
           <LinkColumn title="Examples" links={examples} />

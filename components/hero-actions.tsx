@@ -8,13 +8,6 @@ import {
 import Link from "next/link";
 
 import { Icon } from "@/components/icon";
-import {
-  ChatGptIcon,
-  ClaudeIcon,
-  CursorIcon,
-  GeminiIcon,
-  GrokIcon,
-} from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
@@ -22,15 +15,6 @@ import { useSiteOrigin } from "@/hooks/use-site-origin";
 import { quickStartPrompt } from "@/lib/agent-prompts";
 import { ditherMaskStyle } from "@/lib/dither";
 import { trackEvent } from "@/lib/events";
-
-// The agents the prompt works in, named under the buttons in one quiet line.
-const AGENTS = [
-  { Icon: ClaudeIcon, name: "Claude Code" },
-  { Icon: ChatGptIcon, name: "Codex" },
-  { Icon: CursorIcon, name: "Cursor" },
-  { Icon: GeminiIcon, name: "Gemini" },
-  { Icon: GrokIcon, name: "Grok" },
-] as const;
 
 const COPIED_WASH = ditherMaskStyle(0.25, { cell: 2 });
 
@@ -50,7 +34,7 @@ export const HeroActions = () => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-5 pt-2">
+    <div className="flex flex-col items-center pt-2">
       <div className="flex flex-col items-center gap-3 sm:flex-row">
         <Button
           asChild
@@ -108,15 +92,6 @@ export const HeroActions = () => {
           </span>
         </Button>
       </div>
-      <p className="text-muted-foreground flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 font-mono text-xs">
-        <span>Paste it into</span>
-        {AGENTS.map(({ Icon: AgentIcon, name }) => (
-          <span key={name} className="inline-flex items-center gap-1.5">
-            <AgentIcon aria-hidden="true" className="size-3.5" />
-            {name}
-          </span>
-        ))}
-      </p>
       <span aria-live="polite" className="sr-only">
         {isCopied ? "Quick start prompt copied" : ""}
       </span>

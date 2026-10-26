@@ -6,7 +6,6 @@ import { CommandBox } from "@/components/command-box";
 import { DitherHero } from "@/components/dither-hero";
 import { ExampleGallery } from "@/components/example-gallery";
 import { HeroActions } from "@/components/hero-actions";
-import { HeroUseCases } from "@/components/hero-use-cases";
 import { Icon } from "@/components/icon";
 import { PageTransition } from "@/components/page-transition";
 import { SiteFooter } from "@/components/site-footer";
@@ -60,10 +59,14 @@ export default function IndexPage() {
       <BreadcrumbJsonLd items={[{ name: "Home", path: ROUTES.HOME }]} />
       <SmoothScroll />
       <PageTransition>
-        {/* Pulled up under the sticky header, so the nav pill floats on the plate. */}
+        {/*
+         * Pulled up under the sticky header, so the nav pill floats on the
+         * plate. The plate runs to the bottom of the first screen and stops
+         * square there, so the planet's arc sits on the section's edge.
+         */}
         <section className="container-wrapper -mt-(--header-height) pt-2">
           {/* Always the dark plate, in both site themes. */}
-          <div className="dark bg-background text-foreground relative isolate flex min-h-[640px] flex-col items-center overflow-hidden rounded-[24px] border md:min-h-[740px]">
+          <div className="dark bg-background text-foreground relative isolate flex min-h-[max(600px,calc(100svh-0.5rem))] flex-col items-center justify-center overflow-hidden rounded-t-[24px] border border-b-0">
             <DitherHero className="-z-10" />
             <div className="flex w-full max-w-4xl flex-col items-center gap-6 px-5 pt-36 pb-64 text-center md:pt-48 md:pb-64">
               <h1
@@ -72,20 +75,13 @@ export default function IndexPage() {
               >
                 Add dithers to anything in your app.
               </h1>
-              <div
+              <p
                 style={stagger(1)}
-                className="rise-in flex flex-col items-center gap-2"
+                className="rise-in text-muted-foreground max-w-xl text-lg text-balance sm:text-xl"
               >
-                <p className="text-muted-foreground max-w-xl text-lg text-pretty sm:text-xl">
-                  <span className="text-foreground">
-                    Primitives your agent builds with.
-                  </span>{" "}
-                  dithercn gives your coding agent a dither engine and a skill
-                  that teaches it. Ask for a background, a chart or a loading
-                  state, and it builds one in your shadcn theme.
-                </p>
-                <HeroUseCases className="text-muted-foreground font-mono text-sm" />
-              </div>
+                Dithered shaders and UI for shadcn/ui. One prompt for your
+                coding agent.
+              </p>
               <div style={stagger(2)} className="rise-in">
                 <HeroActions />
               </div>
