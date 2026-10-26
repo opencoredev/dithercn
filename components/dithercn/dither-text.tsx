@@ -285,7 +285,9 @@ const showQueued = async (swapper: Swapper) => {
   frame.el.style.backgroundImage = `url(${frame.url})`;
   frame.el.style.backgroundSize = frame.size;
   frame.el.dataset.state = "ready";
-  await showQueued(swapper);
+  // Not awaited: this call finishes once it has handed off, so a long run
+  // of slow decodes doesn't build a chain of pending promises.
+  showQueued(swapper);
 };
 
 /** The fill, noise scale and gap opacity a set of props resolves to. */
