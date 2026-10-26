@@ -111,10 +111,3 @@ export type {
   PaletteColor,
   PixelBuffer,
 } from "@/lib/dither/diffuse";
-export {
-  cellArea,
-  curveAt,
-  monotoneTangents,
-  snapToCells,
-} from "@/lib/dither/area";
-export type { CurveKind, CurvePoint } from "@/lib/dither/area";

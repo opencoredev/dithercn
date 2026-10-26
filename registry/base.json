@@ -115,11 +115,6 @@
         "path": "lib/dither/diffuse.ts",
         "type": "registry:lib",
         "target": "lib/dither/diffuse.ts"
-      },
-      {
-        "path": "lib/dither/area.ts",
-        "type": "registry:lib",
-        "target": "lib/dither/area.ts"
       }
     ]
   }

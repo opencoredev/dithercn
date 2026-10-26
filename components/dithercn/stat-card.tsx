@@ -11,9 +11,7 @@ import type { ComponentProps, RefObject } from "react";
 
 import {
   BloomGroup,
-  cellArea,
   cssColor,
-  curveAt,
   DitherPattern,
   ditherMaskStyle,
   FillPattern,
@@ -106,8 +104,7 @@ const toPath = (points: readonly Point[]) =>
 const trendPaths = (
   values: readonly number[],
   width: number,
-  height: number,
-  cell: number
+  height: number
 ) => {
   const low = Math.min(...values);
   const high = Math.max(...values);
@@ -119,23 +116,21 @@ const trendPaths = (
     x: round((index / Math.max(1, values.length - 1)) * width),
     y: round(top + (1 - (value - low) / range) * (height - top - floor)),
   }));
-  // The area and its bands are whole dither cells, so their edges step
-  // along the grid instead of cutting cells; the line is drawn on top.
-  const lineAt = curveAt(points);
-  const below = (depth: number) => (x: number) =>
-    Math.min(height, lineAt(x) + depth);
-  const cells = (upper: (x: number) => number, lower: (x: number) => number) =>
-    cellArea({ bottom: lower, cell, from: 0, to: width, top: upper });
-  const bands = BAND_LEVELS.map((_, index) =>
-    cells(
-      below(index * BAND_DEPTH),
-      index === BAND_LEVELS.length - 1
-        ? () => height
-        : below((index + 1) * BAND_DEPTH)
-    )
-  );
+  const shifted = (depth: number) =>
+    points.map(({ x, y }) => ({ x, y: Math.min(height, y + depth) }));
+  const bands = BAND_LEVELS.map((_, index) => {
+    const upper = toPath(shifted(index * BAND_DEPTH));
+    const last = index === BAND_LEVELS.length - 1;
+    const lower = last
+      ? `L${width} ${height}L0 ${height}`
+      : shifted((index + 1) * BAND_DEPTH)
+          .toReversed()
+          .map(({ x, y }) => `L${x} ${y}`)
+          .join("");
+    return `${upper}${lower}Z`;
+  });
   return {
-    area: cells(lineAt, () => height),
+    area: `${toPath(points)}L${width} ${height}L0 ${height}Z`,
     bands,
     end: points.at(-1) ?? { x: width, y: height },
     line: toPath(points),
@@ -163,9 +158,7 @@ const Trend = ({
   const prefix = `stat${useId().replaceAll(/[^a-zA-Z0-9]/g, "")}`;
   const height = TREND_HEIGHT;
   const paths =
-    width > 0 && values.length > 1
-      ? trendPaths(values, width, height, cellSize)
-      : null;
+    width > 0 && values.length > 1 ? trendPaths(values, width, height) : null;
   const marker = cellSize * 2;
 
   return (

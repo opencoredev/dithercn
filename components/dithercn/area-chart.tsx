@@ -24,15 +24,7 @@ import type {
   Scale,
   ValueFormat,
 } from "@/components/dithercn/cartesian-chart";
-import {
-  BloomGroup,
-  cellArea,
-  cssColor,
-  curveAt,
-  DitherPattern,
-  FillPattern,
-  snapToCells,
-} from "@/lib/dither";
+import { BloomGroup, cssColor, DitherPattern, FillPattern } from "@/lib/dither";
 import type { DitherColor, DitherMatrix } from "@/lib/dither";
 
 export type {
@@ -127,6 +119,9 @@ const stackValues = (
   );
 };
 
+/** The same path drawn backwards, minus its opening move, to close a shape. */
+const continuePath = (path: string) => path.replace(/^M/u, "L");
+
 /**
  * An area chart: each series is a crisp line over a dithered fill. The
  * default `gradient` fill is densest under the line and thins toward the
@@ -217,21 +212,12 @@ export const AreaChart = <T,>({
       const line = toPath(top);
       const [first] = top;
       const last = top.at(-1);
-      // The area is whole dither cells, so its edge steps along the grid
-      // instead of cutting cells; the line is drawn smooth on top.
       let area = "";
       if (first !== undefined && last !== undefined) {
-        const low = row.map((edge, index) => ({
-          x: xAt(index),
-          y: yAt(edge.low),
-        }));
-        area = cellArea({
-          bottom: stack === "none" ? () => baseline : curveAt(low, curve),
-          cell: px,
-          from: first.x,
-          to: last.x,
-          top: curveAt(top, curve),
-        });
+        area =
+          stack === "none"
+            ? `${line}L${last.x} ${baseline}L${first.x} ${baseline}Z`
+            : `${line}${continuePath(toPath(row.map((edge, index) => ({ x: xAt(index), y: yAt(edge.low) })).toReversed()))}Z`;
       }
       return {
         area,
@@ -290,7 +276,7 @@ export const AreaChart = <T,>({
                           />
                           <path
                             d={area}
-                            transform={`translate(0 ${snapToCells(Math.max(px * 2, band.depth * plotHeight), px)})`}
+                            transform={`translate(0 ${Math.max(px * 2, band.depth * plotHeight)})`}
                             fill="black"
                             shapeRendering="crispEdges"
                           />

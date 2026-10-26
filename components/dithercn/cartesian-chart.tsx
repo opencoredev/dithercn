@@ -18,7 +18,6 @@ import type {
 
 import {
   cssColor,
-  monotoneTangents,
   MOTION,
   readDitherCell,
   SERIES_COLORS,
@@ -219,7 +218,39 @@ export const monotonePath = (points: readonly Point[]) => {
   if (count < 3) {
     return linearPath(points);
   }
-  const tangents = monotoneTangents(points);
+  const slopes: number[] = [];
+  for (let index = 0; index < count - 1; index += 1) {
+    const a = points[index];
+    const b = points[index + 1];
+    slopes.push(a && b ? (b.y - a.y) / (b.x - a.x || 1) : 0);
+  }
+  const tangents = points.map((_, index) => {
+    const before = slopes[index - 1];
+    const after = slopes[index];
+    if (before === undefined) {
+      return after ?? 0;
+    }
+    if (after === undefined) {
+      return before;
+    }
+    return before * after <= 0 ? 0 : (before + after) / 2;
+  });
+  for (let index = 0; index < count - 1; index += 1) {
+    const slope = slopes[index] ?? 0;
+    if (slope === 0) {
+      tangents[index] = 0;
+      tangents[index + 1] = 0;
+    } else {
+      const a = (tangents[index] ?? 0) / slope;
+      const b = (tangents[index + 1] ?? 0) / slope;
+      const length = a * a + b * b;
+      if (length > 9) {
+        const scale = 3 / Math.sqrt(length);
+        tangents[index] = scale * a * slope;
+        tangents[index + 1] = scale * b * slope;
+      }
+    }
+  }
   let path = "";
   for (let index = 0; index < count; index += 1) {
     const point = points[index];

@@ -22,14 +22,7 @@ import type {
   NonEmpty,
   ValueFormat,
 } from "@/components/dithercn/cartesian-chart";
-import {
-  BloomGroup,
-  cellArea,
-  cssColor,
-  curveAt,
-  DitherPattern,
-  FillPattern,
-} from "@/lib/dither";
+import { BloomGroup, cssColor, DitherPattern, FillPattern } from "@/lib/dither";
 import type { DitherColor, DitherMatrix } from "@/lib/dither";
 
 export type {
@@ -123,6 +116,9 @@ const markedPoints = <P,>(
   }
 };
 
+/** The same path drawn backwards, minus its opening move, to close a band. */
+const reversed = (path: string) => path.replace(/^M/u, "L");
+
 /**
  * A line chart: one or more crisp lines, each with an optional dithered
  * range band and point markers. Hover or focus it for a readout.
@@ -206,18 +202,10 @@ export const LineChart = <T,>({
           y: yAt(readValue(datum, accessor)),
         }));
       const { range } = entry;
-      // The band is whole dither cells between the range's edges.
-      const high = range === undefined ? [] : pointAt(range.high);
       const band =
         range === undefined
           ? null
-          : cellArea({
-              bottom: curveAt(pointAt(range.low), curve),
-              cell: px,
-              from: high[0]?.x ?? 0,
-              to: high.at(-1)?.x ?? 0,
-              top: curveAt(high, curve),
-            });
+          : `${toPath(pointAt(range.high))}${reversed(toPath(pointAt(range.low).toReversed()))}Z`;
       const color = colorOf(seriesIndex);
       const points = pointAt(entry.value);
       return {

@@ -85,6 +85,7 @@ const TAIL_LEVEL = 9 / 16;
 const GAP_PX = 2;
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+const round = (value: number) => Math.round(value * 100) / 100;
 
 /** `cell`, or `--dither-cell` as it applies to the element. 3 on the server. */
 const useCellSize = (ref: RefObject<Element | null>, cell?: number) =>
@@ -101,114 +102,36 @@ interface Ring {
   outer: number;
 }
 
-/**
- * The arc as whole dither cells. Every cell on the gauge's grid is tested at
- * its centre: its distance from the middle picks the ring, its angle picks
- * the block, and its distance from the nearest block boundary leaves the
- * gaps. So the curved edges and the gaps step along the grid, like the
- * globe's limb, instead of cutting cells in half.
- */
-interface ArcCells {
-  /** Each block's cells as an SVG path, in CSS pixels. */
-  track: readonly string[];
-  /** Each lit block's cells; the head block only up to the value. */
-  lit: readonly string[];
+/** A point at `degrees` clockwise from 12 o'clock. */
+const polar = (cx: number, cy: number, radius: number, degrees: number) => {
+  const radians = (degrees * Math.PI) / 180;
+  return `${round(cx + radius * Math.sin(radians))} ${round(cy - radius * Math.cos(radians))}`;
+};
+
+/** An annular sector from `from` to `to` degrees. */
+const sector = ({ cx, cy, inner, outer }: Ring, from: number, to: number) => {
+  const large = to - from > 180 ? 1 : 0;
+  return [
+    `M${polar(cx, cy, outer, from)}`,
+    `A${outer} ${outer} 0 ${large} 1 ${polar(cx, cy, outer, to)}`,
+    `L${polar(cx, cy, inner, to)}`,
+    `A${inner} ${inner} 0 ${large} 0 ${polar(cx, cy, inner, from)}`,
+    "Z",
+  ].join("");
+};
+
+interface Block {
+  from: number;
+  to: number;
+  index: number;
 }
-
-const runPath = (runs: readonly [number, number, number][], cell: number) =>
-  runs
-    .map(
-      ([col, row, length]) =>
-        `M${col * cell} ${row * cell}h${length * cell}v${cell}h${-length * cell}z`
-    )
-    .join("");
-
-/** Add a cell to a list of row runs, extending the last run when adjacent. */
-const addCell = (
-  target: [number, number, number][],
-  col: number,
-  row: number
-) => {
-  const last = target.at(-1);
-  if (last && last[1] === row && last[0] + last[2] === col) {
-    last[2] += 1;
-  } else {
-    target.push([col, row, 1]);
-  }
-};
-
-const rasterArc = ({
-  ring,
-  sweep,
-  count,
-  active,
-  filled,
-  cell,
-  width,
-  height,
-}: {
-  ring: Ring;
-  sweep: Sweep;
-  count: number;
-  active: number;
-  filled: number;
-  cell: number;
-  width: number;
-  height: number;
-}): ArcCells => {
-  const step = sweep.span / count;
-  const halfGap = Math.max(GAP_PX, cell) * 0.6;
-  const head = active - 1;
-  // The head block reaches the value, and steps out by a cell.
-  const headEnd = (head + clamp01(filled - head)) * step;
-  const track: [number, number, number][][] = Array.from(
-    { length: count },
-    () => []
-  );
-  const lit: [number, number, number][][] = Array.from(
-    { length: count },
-    () => []
-  );
-  const cols = Math.ceil(width / cell);
-  const rows = Math.ceil(height / cell);
-  for (let row = 0; row < rows; row += 1) {
-    const dy = (row + 0.5) * cell - ring.cy;
-    for (let col = 0; col < cols; col += 1) {
-      const dx = (col + 0.5) * cell - ring.cx;
-      const r = Math.hypot(dx, dy);
-      if (r < ring.inner || r > ring.outer + cell) {
-        continue;
-      }
-      // Degrees clockwise from 12 o'clock, measured from the sweep's start.
-      const degrees = (Math.atan2(dx, -dy) * 180) / Math.PI;
-      const along = (((degrees - sweep.start) % 360) + 360) % 360;
-      if (along > sweep.span) {
-        continue;
-      }
-      const index = Math.min(count - 1, Math.floor(along / step));
-      const offset = Math.min(along - index * step, (index + 1) * step - along);
-      if (r * Math.sin((offset * Math.PI) / 180) < halfGap) {
-        continue;
-      }
-      const inRing = r <= ring.outer;
-      if (inRing) {
-        addCell(track[index] ?? [], col, row);
-      }
-      if (index < head ? inRing : index === head && along <= headEnd) {
-        addCell(lit[index] ?? [], col, row);
-      }
-    }
-  }
-  return {
-    lit: lit.map((runs) => runPath(runs, cell)),
-    track: track.map((runs) => runPath(runs, cell)),
-  };
-};
 
 /** The arc: faint track blocks, bloom, then the filled blocks. */
 const Arc = ({
-  cells,
+  ring,
+  blocks,
   active,
+  filled,
   size,
   height,
   fill,
@@ -220,8 +143,10 @@ const Arc = ({
   cellSize,
   prefix,
 }: {
-  cells: ArcCells;
+  ring: Ring;
+  blocks: readonly Block[];
   active: number;
+  filled: number;
   size: number;
   height: number;
   fill: FillVariant;
@@ -235,10 +160,7 @@ const Arc = ({
 }) => {
   const levelFor = (index: number) =>
     Math.max(TAIL_LEVEL, 1 - (active - 1 - index) * HEAD_FALLOFF);
-  const lit = cells.lit
-    .slice(0, active)
-    .map((d, index) => ({ d, index }))
-    .filter(({ d }) => d !== "");
+  const lit = blocks.slice(0, active);
   const levels = [...new Set(lit.map(({ index }) => levelFor(index)))];
   const levelId = (level: number) => `${prefix}-${Math.round(level * 16)}`;
   const fillOf = (index: number) => {
@@ -248,6 +170,17 @@ const Arc = ({
     return fill === "gradient"
       ? `url(#${levelId(levelFor(index))})`
       : `url(#${prefix}-texture)`;
+  };
+  // The block at the value steps out by a cell, like a needle.
+  const head: Ring = { ...ring, outer: ring.outer + cellSize };
+  const pathOf = ({ from, index, to }: Block) => {
+    const partial = index === active - 1 ? filled - index : 1;
+    const end = from + (to - from) * clamp01(partial);
+    return sector(
+      index === active - 1 ? head : ring,
+      from,
+      Math.max(end, from + 0.5)
+    );
   };
   return (
     <svg
@@ -284,25 +217,27 @@ const Arc = ({
           fill: `color-mix(in oklab, ${cssColor(trackColor)} 14%, transparent)`,
         }}
       >
-        <path d={cells.track.join("")} shapeRendering="crispEdges" />
+        {blocks.map(({ from, index, to }) => (
+          <path key={index} d={sector(ring, from, to)} />
+        ))}
       </g>
       <BloomGroup bloom={bloom} fill={cssColor(color)}>
-        {lit.map(({ d, index }) => (
-          <path key={index} d={d} />
+        {lit.map((block) => (
+          <path key={block.index} d={pathOf(block)} />
         ))}
       </BloomGroup>
-      {lit.map(({ d, index }) => (
+      {lit.map((block) => (
         <path
-          key={index}
-          d={d}
-          fill={fillOf(index)}
+          key={block.index}
+          d={pathOf(block)}
+          fill={fillOf(block.index)}
           shapeRendering="crispEdges"
           className={cn(
             animate &&
               "transition-opacity motion-reduce:transition-none starting:opacity-0"
           )}
           style={{
-            transitionDelay: `${index * 14}ms`,
+            transitionDelay: `${block.index * 14}ms`,
             transitionDuration: `${MOTION.base}ms`,
             transitionTimingFunction: MOTION.ease,
           }}
@@ -381,23 +316,21 @@ const layoutGauge = ({
   const middle = outer - thickness / 2;
   const rangeWidth =
     2 * middle * Math.sin((sweep.span * Math.PI) / 360) + thickness;
+  const step = sweep.span / count;
+  const gap = (GAP_PX / middle) * (180 / Math.PI);
   const filled = ratio * count;
-  const active = Math.ceil(filled - 1e-6);
-  const height = heights[variant];
+  const blocks = Array.from({ length: count }, (_, index) => ({
+    from: sweep.start + index * step + gap / 2,
+    index,
+    to: sweep.start + (index + 1) * step - gap / 2,
+  }));
   return {
-    active,
-    cells: rasterArc({
-      active,
-      cell: cellSize,
-      count,
-      filled,
-      height: height + cellSize,
-      ring,
-      sweep,
-      width: size,
-    }),
-    height,
+    active: Math.ceil(filled - 1e-6),
+    blocks,
+    filled,
+    height: heights[variant],
     rangeWidth,
+    ring,
     thickness,
   };
 };
@@ -454,8 +387,10 @@ export const Gauge = ({
     >
       <div className="relative" style={{ height: layout.height, width: size }}>
         <Arc
-          cells={layout.cells}
+          ring={layout.ring}
+          blocks={layout.blocks}
           active={layout.active}
+          filled={layout.filled}
           size={size}
           height={layout.height}
           fill={fill}
