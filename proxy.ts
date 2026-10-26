@@ -4,6 +4,11 @@ import type { NextRequest } from "next/server";
 
 import { ROUTES } from "@/constants/routes";
 import { markdownNotFound } from "@/lib/agent-discovery/markdown-404";
+import { problemResponse } from "@/lib/agent-discovery/problem";
+import {
+  API_VERSION,
+  API_VERSION_HEADER,
+} from "@/lib/agent-discovery/status-api";
 import { docsContentRoute, homeContentRoute } from "@/lib/docs";
 import { isTrustPageSlug } from "@/lib/trust-pages";
 
@@ -60,8 +65,32 @@ const trustSlug = (pathname: string) => {
   return isTrustPageSlug(slug) ? slug : undefined;
 };
 
+// Every operation in /openapi.json takes X-API-Version, so every documented
+// path rejects a version it doesn't serve instead of silently ignoring it.
+const isVersionedApiPath = (pathname: string) =>
+  isRateLimited(pathname) ||
+  pathname === ROUTES.LLMS ||
+  pathname === ROUTES.LLMS_FULL ||
+  pathname === homeContentRoute;
+
+const isUnsupportedVersion = (requested: string | null) =>
+  requested !== null && requested.trim() !== API_VERSION;
+
+const unsupportedVersion = (request: NextRequest, requested: string) =>
+  problemResponse({
+    code: "unsupported_api_version",
+    detail: `${API_VERSION_HEADER} "${requested}" is not supported. The only version is ${API_VERSION}.`,
+    origin: request.nextUrl.origin,
+    request,
+    resolution: `Send ${API_VERSION_HEADER}: ${API_VERSION}, or leave the header out.`,
+  });
+
 const route = (request: NextRequest): NextResponse | Response => {
   const { pathname } = request.nextUrl;
+  const requested = request.headers.get(API_VERSION_HEADER);
+  if (isVersionedApiPath(pathname) && isUnsupportedVersion(requested)) {
+    return unsupportedVersion(request, requested ?? "");
+  }
   const markdown =
     (request.method === "GET" || request.method === "HEAD") &&
     isMarkdownPreferred(request);
