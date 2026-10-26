@@ -244,6 +244,50 @@ const paintCells = (
   }
 };
 
+interface Frame {
+  el: HTMLElement;
+  /** CSS `background-size` for the frame. */
+  size: string;
+  url: string;
+}
+
+interface Swapper {
+  /** A frame is decoding. */
+  busy: boolean;
+  /** The newest frame waiting to decode; older waiting frames are dropped. */
+  queued: Frame | null;
+  /** The frame on screen. Holding it keeps it in Safari's memory cache. */
+  shown: HTMLImageElement | null;
+}
+
+/**
+ * Swap queued frames into the background one at a time, each only once it
+ * has decoded. Safari loads a new background image asynchronously and paints
+ * a frame without it, which blinks the (transparent) text out. One decode at
+ * a time, plus the newest waiting frame, keeps a slow device from piling up.
+ */
+const showQueued = async (swapper: Swapper) => {
+  const frame = swapper.queued;
+  if (!frame) {
+    swapper.busy = false;
+    return;
+  }
+  swapper.busy = true;
+  swapper.queued = null;
+  const image = new Image();
+  image.src = frame.url;
+  try {
+    await image.decode();
+  } catch {
+    // Swap anyway: a frame that will not decode beats a frozen fill.
+  }
+  swapper.shown = image;
+  frame.el.style.backgroundImage = `url(${frame.url})`;
+  frame.el.style.backgroundSize = frame.size;
+  frame.el.dataset.state = "ready";
+  await showQueued(swapper);
+};
+
 /** The fill, noise scale and gap opacity a set of props resolves to. */
 const fillSettings = (props: DitherTextFill & { ghost?: number }) => {
   const fill = props.fill ?? "gradient";
@@ -293,10 +337,10 @@ export const DitherText = (props: DitherTextProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sizeRef = useRef({ cell: 3, height: 0, width: 0 });
   const timeRef = useRef(0);
-  const frameRef = useRef(0);
-  const shownRef = useRef<{ id: number; image: HTMLImageElement | null }>({
-    id: 0,
-    image: null,
+  const swapperRef = useRef<Swapper>({
+    busy: false,
+    queued: null,
+    shown: null,
   });
   const resolved = useDitherColors(
     ref,
@@ -338,32 +382,15 @@ export const DitherText = (props: DitherTextProps) => {
         matrix
       );
       context.putImageData(image, 0, 0);
-      const url = canvas.toDataURL();
-      const backgroundSize = `${cols * size}px ${rows * size}px`;
-      // Safari loads a new background image asynchronously and paints a
-      // frame without it, which blinks the (transparent) text out. Decode
-      // the frame off-screen first and swap it in once it is ready. Frames
-      // apply in order; one that lands after a newer frame is dropped.
-      frameRef.current += 1;
-      const id = frameRef.current;
-      const next = new Image();
-      next.src = url;
-      const swap = async () => {
-        try {
-          await next.decode();
-        } catch {
-          // Swap anyway: a frame that will not decode beats a frozen fill.
-        }
-        if (id <= shownRef.current.id) {
-          return;
-        }
-        // Holding the decoded image keeps it in Safari's memory cache.
-        shownRef.current = { id, image: next };
-        el.style.backgroundImage = `url(${url})`;
-        el.style.backgroundSize = backgroundSize;
-        el.dataset.state = "ready";
+      const swapper = swapperRef.current;
+      swapper.queued = {
+        el,
+        size: `${cols * size}px ${rows * size}px`,
+        url: canvas.toDataURL(),
       };
-      swap();
+      if (!swapper.busy) {
+        showQueued(swapper);
+      }
     },
     [custom, dx, dy, fill, from, gapOpacity, matrix, resolved, scale, to]
   );
