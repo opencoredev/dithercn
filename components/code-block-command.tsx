@@ -9,7 +9,6 @@ import {
   isPackageManager,
   usePackageManager,
 } from "@/hooks/use-package-manager";
-import type { Event } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
 export const CodeBlockCommand = ({
@@ -18,14 +17,12 @@ export const CodeBlockCommand = ({
   __pnpm__,
   __bun__,
   className,
-  copyEvent = "copy_npm_command",
 }: {
   __npm__?: string;
   __yarn__?: string;
   __pnpm__?: string;
   __bun__?: string;
   className?: string;
-  copyEvent?: Event["name"];
 }) => {
   const [packageManager, setPackageManager] = usePackageManager();
 
@@ -100,7 +97,11 @@ export const CodeBlockCommand = ({
       <CopyButton
         className="absolute top-2 right-2 z-10 size-7 opacity-70 hover:opacity-100 focus-visible:opacity-100"
         value={copyValue}
-        event={copyEvent}
+        event="install_command_copied"
+        eventProperties={{
+          package_manager: packageManager,
+          section: "docs_install_tabs",
+        }}
       />
     </div>
   );

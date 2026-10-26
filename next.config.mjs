@@ -113,6 +113,22 @@ const nextConfig = {
       },
     ];
   },
+  // PostHog through a first-party path, so ad blockers that block its domain
+  // don't drop events. Its API paths end in slashes, so Next must not
+  // redirect them.
+  rewrites() {
+    return [
+      {
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+        source: "/ingest/static/:path*",
+      },
+      {
+        destination: "https://us.i.posthog.com/:path*",
+        source: "/ingest/:path*",
+      },
+    ];
+  },
+  skipTrailingSlashRedirect: true,
 };
 
 const withMDX = createMDX({});

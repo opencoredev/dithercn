@@ -50,7 +50,11 @@ const SourceFile = async ({
       className="mx-0! mt-0! rounded-[14px]! [&_pre]:max-h-80 [&_pre]:overflow-auto"
     >
       <figcaption data-rehype-pretty-code-title="">{target}</figcaption>
-      <CopyButton value={code} event="copy_primitive_code" />
+      <CopyButton
+        value={code}
+        event="component_code_copied"
+        eventProperties={{ file: target, section: "manual_install" }}
+      />
       <div dangerouslySetInnerHTML={{ __html: html }} />
     </figure>
   );

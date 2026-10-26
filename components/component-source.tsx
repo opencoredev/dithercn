@@ -32,7 +32,11 @@ const ComponentCode = ({
         {title}
       </figcaption>
     ) : null}
-    <CopyButton event="copy_primitive_code" value={code} />
+    <CopyButton
+      event="component_code_copied"
+      eventProperties={{ section: "source" }}
+      value={code}
+    />
     <div dangerouslySetInnerHTML={{ __html: highlightedCode }} />
   </figure>
 );

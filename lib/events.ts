@@ -1,27 +1,22 @@
 import { track } from "@vercel/analytics";
+import { posthog } from "posthog-js";
 import { z } from "zod";
 
 const eventSchema = z.object({
   name: z.enum([
-    "copy_npm_command",
-    "copy_usage_import_code",
-    "copy_usage_code",
-    "copy_primitive_code",
-    "copy_theme_code",
-    "copy_block_code",
-    "copy_chunk_code",
-    "enable_lift_mode",
-    "copy_chart_code",
-    "copy_chart_theme",
-    "copy_chart_data",
+    // Product events the PostHog dashboard reads.
+    "agent_prompt_copied",
+    "install_command_copied",
+    "component_code_copied",
+    "shader_control_tweaked",
+    "example_card_clicked",
+    "github_link_clicked",
+    "theme_toggled",
+    "search_performed",
+    // Older events, still sent.
     "copy_color",
-    "set_layout",
     "open_command_menu",
     "click_edit_page",
-    "click_registry_add_button",
-    "copy_registry_command",
-    "copy_quick_start_prompt",
-    "copy_write_your_own_prompt",
     "keyboard_shortcut_navigate",
   ]),
   properties: z
@@ -33,10 +28,41 @@ const eventSchema = z.object({
 });
 
 export type Event = z.infer<typeof eventSchema>;
+export type EventName = Event["name"];
+export type EventProperties = NonNullable<Event["properties"]>;
+
+const DOCS_PATH = /^\/docs\/([^/]+)\/([^/#?]+)/;
+
+/**
+ * The docs page an event happened on, as the component and its group, e.g.
+ * /docs/charts/area-chart -> { category: "charts", component_name: "area-chart" }.
+ */
+export const pageContext = (): EventProperties => {
+  if (typeof window === "undefined") {
+    return {};
+  }
+  const match = DOCS_PATH.exec(window.location.pathname);
+  return match
+    ? { category: match[1] ?? null, component_name: match[2] ?? null }
+    : {};
+};
+
+// Vercel Web Analytics drops string values over 255 characters.
+const VERCEL_MAX = 255;
+const forVercel = (properties: EventProperties) =>
+  Object.fromEntries(
+    Object.entries(properties).map(([key, value]) => [
+      key,
+      typeof value === "string" ? value.slice(0, VERCEL_MAX) : value,
+    ])
+  );
 
 export const trackEvent = (input: Event): void => {
-  const event = eventSchema.parse(input);
-  if (event) {
-    track(event.name, event.properties);
+  const parsed = eventSchema.safeParse(input);
+  if (!parsed.success) {
+    return;
   }
+  const { name, properties = {} } = parsed.data;
+  posthog.capture(name, properties);
+  track(name, forVercel(properties));
 };

@@ -72,7 +72,20 @@ export const InstallCommand = ({
       </div>
       <CopyButton
         value={command}
-        event="copy_registry_command"
+        event="install_command_copied"
+        eventProperties={{
+          component_name: urls
+            .map(
+              (url) =>
+                url
+                  .split("/")
+                  .pop()
+                  ?.replace(/\.json$/, "") ?? url
+            )
+            .join(","),
+          package_manager: packageManager,
+          section: "install_block",
+        }}
         className="top-1.5 right-2"
       />
     </div>

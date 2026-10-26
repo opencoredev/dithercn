@@ -28,8 +28,16 @@ export const HeroActions = () => {
   const label = isCopied ? "Prompt copied" : "Copy agent prompt";
 
   const copyPrompt = async () => {
-    if (await copyToClipboard(quickStartPrompt(origin))) {
-      trackEvent({ name: "copy_quick_start_prompt" });
+    const prompt = quickStartPrompt(origin);
+    if (await copyToClipboard(prompt)) {
+      trackEvent({
+        name: "agent_prompt_copied",
+        properties: {
+          location: "hero",
+          prompt_name: "quick-start",
+          prompt_text: prompt,
+        },
+      });
     }
   };
 

@@ -33,14 +33,19 @@ const StarCount = async () => {
  */
 export const GithubLink = ({
   label,
+  location,
   className,
 }: {
+  /** Where the link sits, sent with github_link_clicked. */
+  location: "navbar" | "mobile_menu" | "footer";
   /** Visible text after the mark, such as "GitHub" in the footer. */
   label?: string;
   className?: string;
 }) => (
   <a
     href={LINK.GITHUB_REPO}
+    data-track="github_link_clicked"
+    data-track-location={location}
     className={cn(
       "text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex items-center gap-1.5 rounded-full outline-none transition-colors duration-150 focus-visible:ring-[3px]",
       className

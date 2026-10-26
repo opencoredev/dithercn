@@ -13,8 +13,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
-import type { Event } from "@/lib/events";
-import { trackEvent } from "@/lib/events";
+import type { EventName, EventProperties } from "@/lib/events";
+import { pageContext, trackEvent } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
 export const motionIconVariants: Variants = {
@@ -37,12 +37,33 @@ export interface CopyButtonProps extends Omit<
 > {
   value: string | (() => Promise<string> | string);
   src?: string;
-  event?: Event["name"];
+  event?: EventName;
+  /** Extra context for the event; the copied text is added for you. */
+  eventProperties?: EventProperties;
   showTooltip?: boolean;
 }
 
+// Commands and prompts are short and worth reading in full; source code is
+// summarised by its length rather than sent whole.
+const COPIED_TEXT_KEY: Partial<Record<EventName, string>> = {
+  agent_prompt_copied: "prompt_text",
+  install_command_copied: "command",
+};
+const copyProperties = (
+  event: EventName,
+  text: string,
+  extra: EventProperties | undefined
+): EventProperties => {
+  const key = COPIED_TEXT_KEY[event];
+  const copied: EventProperties = key
+    ? { [key]: text }
+    : { code_length: text.length };
+  return { ...pageContext(), ...extra, ...copied };
+};
+
 export const CopyButton = ({
   value,
+  eventProperties,
   className,
   variant = "ghost",
   event,
@@ -69,12 +90,10 @@ export const CopyButton = ({
     if (hasCopied && event) {
       trackEvent({
         name: event,
-        properties: {
-          code: text,
-        },
+        properties: copyProperties(event, text, eventProperties),
       });
     }
-  }, [copyToClipboard, event, getValue]);
+  }, [copyToClipboard, event, eventProperties, getValue]);
 
   const copyButton = (
     <Button

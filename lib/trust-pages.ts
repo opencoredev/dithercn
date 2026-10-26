@@ -95,13 +95,14 @@ export const TRUST_PAGES: Record<TrustPageSlug, TrustPage> = {
   },
   privacy: {
     description:
-      "What dithercn.dev collects, what it stores in your browser, and who hosts it. No accounts, no ads, no tracking cookies.",
-    lead: "dithercn.dev is a documentation site. It has no accounts, no ads and no newsletter, and it collects as little as it can to keep the docs working and learn which pages help.",
+      "What dithercn.dev collects, what it stores in your browser, and who hosts it. No accounts, no ads, no session recording.",
+    lead: "dithercn.dev is a documentation site. It has no accounts, no ads and no newsletter. It measures how the docs are used so we can tell which pages and components help, and nothing it collects is sold or used for advertising.",
     sections: [
       {
         heading: "Analytics",
         paragraphs: [
-          "The site uses Vercel Web Analytics to count page views and a few named events, such as copying an install command or the agent prompt. It doesn't set cookies, and it doesn't follow you across other sites or build a profile of you. We see totals, such as how many people opened the installation page, not individuals.",
+          "The site uses [PostHog](https://posthog.com/privacy) and Vercel Web Analytics. PostHog records page views, time on page, clicks, page-load performance and a few named actions, such as copying an install command or the agent prompt, searching the docs, changing a preview's controls or switching the theme. It stores a random ID in a cookie and local storage so repeat visits count as one visitor, and it receives your IP address with each event, which it uses to estimate your country and city. Vercel Web Analytics counts page views without cookies.",
+          "Events go through dithercn.dev itself on their way to PostHog's US servers. The site doesn't record your screen or keystrokes, doesn't sell or share this data, and doesn't use it for advertising. Blocking cookies or analytics scripts in your browser stops all of it, and the docs work the same.",
         ],
       },
       {
@@ -114,7 +115,7 @@ export const TRUST_PAGES: Record<TrustPageSlug, TrustPage> = {
         heading: "Hosting and server logs",
         paragraphs: [
           "Vercel hosts the site. Like any web host, it processes your IP address and request details to serve pages and protect the site from abuse, under the [Vercel privacy policy](https://vercel.com/legal/privacy-policy). The GitHub star count in the header is fetched by our server, so your browser doesn't contact GitHub until you follow the link.",
-          "When the shadcn CLI or the skills CLI installs dithercn, it downloads files from this site. Those requests are handled like any other page request, and nothing about your project is sent.",
+          "When the shadcn CLI, the skills CLI or a coding agent downloads a registry item, the agent skill or llms.txt, the site records which file was fetched, the tool's user agent and the referring page, so we can count installs. That record has no IP address and no ID that links it to you or your other requests, and nothing about your project is sent.",
         ],
       },
       {
@@ -126,7 +127,7 @@ export const TRUST_PAGES: Record<TrustPageSlug, TrustPage> = {
     ],
     slug: "privacy",
     title: "Privacy",
-    updated: "2026-10-25",
+    updated: "2026-10-26",
   },
 };
 

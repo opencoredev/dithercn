@@ -7,7 +7,7 @@ import {
   SlidersHorizontalIcon,
 } from "@hugeicons/core-free-icons";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode, UIEvent } from "react";
 
 import { CopyButton } from "@/components/copy-button";
@@ -19,6 +19,7 @@ import {
 import type { PreviewControlsLayout } from "@/components/preview-controls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNearViewport } from "@/hooks/use-near-viewport";
+import { pageContext, trackEvent } from "@/lib/events";
 import type { PreviewControlSet, PreviewValue } from "@/lib/preview-controls";
 import { cn } from "@/lib/utils";
 
@@ -107,6 +108,34 @@ const ReplayButton = ({ onReplay }: { onReplay: () => void }) => (
   </button>
 );
 
+// A slider sends one event when it settles, not one per frame of the drag.
+const TWEAK_SETTLE_MS = 600;
+
+const useDebouncedTweak = () => {
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
+      for (const timer of pending.values()) {
+        clearTimeout(timer);
+      }
+    };
+  }, []);
+  return (controlName: string, value: PreviewValue) => {
+    clearTimeout(timers.current.get(controlName));
+    timers.current.set(
+      controlName,
+      setTimeout(() => {
+        timers.current.delete(controlName);
+        trackEvent({
+          name: "shader_control_tweaked",
+          properties: { ...pageContext(), control_name: controlName, value },
+        });
+      }, TWEAK_SETTLE_MS)
+    );
+  };
+};
+
 export const ComponentPreviewFrame = ({
   children,
   code,
@@ -134,6 +163,7 @@ export const ComponentPreviewFrame = ({
   const hasControls = controlList.length > 0;
   const showPanel = hasControls && panelOpen;
 
+  const trackTweak = useDebouncedTweak();
   const replay = () => setRun((count) => count + 1);
   const togglePanel = () => setPanelOpen((open) => !open);
 
@@ -152,9 +182,10 @@ export const ComponentPreviewFrame = ({
       <PreviewControlsPanel
         controls={controlList}
         values={values}
-        onChange={(id, value) =>
-          setValues((current) => ({ ...current, [id]: value }))
-        }
+        onChange={(id, value) => {
+          setValues((current) => ({ ...current, [id]: value }));
+          trackTweak(id, value);
+        }}
         onReset={() => setValues({})}
         layout={layout}
       />
@@ -221,7 +252,8 @@ export const ComponentPreviewFrame = ({
             >
               <CopyButton
                 value={code}
-                event="copy_primitive_code"
+                event="component_code_copied"
+                eventProperties={{ section: "preview_code" }}
                 className="top-3 right-3"
               />
               <div dangerouslySetInnerHTML={{ __html: codeHtml }} />

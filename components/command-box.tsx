@@ -92,7 +92,12 @@ export const CommandBox = ({
       <CopyButton
         className="absolute top-1.5 right-1.5 z-10 size-7"
         value={command}
-        event="copy_npm_command"
+        event="install_command_copied"
+        eventProperties={{
+          component_name: tool === "skills" ? "dithercn-skill" : tool,
+          package_manager: packageManager,
+          section: "command_box",
+        }}
       />
     </div>
   );

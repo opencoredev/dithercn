@@ -5,6 +5,7 @@ import { useCallback, useEffect } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 
 import { useMetaColor } from "@/hooks/use-meta-color";
+import { trackEvent } from "@/lib/events";
 
 export const useThemeToggle = () => {
   const { setTheme, resolvedTheme } = useTheme();
@@ -15,7 +16,9 @@ export const useThemeToggle = () => {
   }, [metaColor, setMetaColor]);
 
   const toggleTheme = useCallback(() => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+    const theme = resolvedTheme === "dark" ? "light" : "dark";
+    setTheme(theme);
+    trackEvent({ name: "theme_toggled", properties: { theme } });
   }, [resolvedTheme, setTheme]);
 
   useHotkeys("d", () => toggleTheme(), { preventDefault: true });

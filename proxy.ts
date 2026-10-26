@@ -1,6 +1,6 @@
 import { isMarkdownPreferred, rewritePath } from "fumadocs-core/negotiation";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
 
 import { ROUTES } from "@/constants/routes";
 import { markdownNotFound } from "@/lib/agent-discovery/markdown-404";
@@ -9,6 +9,7 @@ import {
   API_VERSION,
   API_VERSION_HEADER,
 } from "@/lib/agent-discovery/status-api";
+import { capture, serverEventFor } from "@/lib/analytics/server-capture";
 import { docsContentRoute, homeContentRoute } from "@/lib/docs";
 import { isTrustPageSlug } from "@/lib/trust-pages";
 
@@ -31,6 +32,7 @@ const NON_PAGE_PREFIXES = [
   "/og",
   `${ROUTES.LLMS_MD}/`,
   "/catalog-capture",
+  "/ingest",
 ] as const;
 
 // Machine-readable surfaces that advertise the request budget agents should
@@ -126,9 +128,17 @@ const route = (request: NextRequest): NextResponse | Response => {
   return NextResponse.next();
 };
 
-const proxy = (request: NextRequest) => {
+const proxy = (request: NextRequest, event: NextFetchEvent) => {
   const response = route(request);
   const { pathname } = request.nextUrl;
+
+  // Agent and CLI fetches (registry items, the skill, llms.txt) run no
+  // JavaScript, so they're recorded here, after the response is on its way.
+  const analytics =
+    request.method === "GET" ? serverEventFor(pathname) : undefined;
+  if (analytics) {
+    event.waitUntil(capture(analytics, request));
+  }
 
   // Pages answer in HTML or Markdown depending on Accept, so caches must key
   // on it. Next's own router Vary is repeated so this never drops it.

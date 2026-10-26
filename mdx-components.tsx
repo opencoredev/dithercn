@@ -25,6 +25,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
+// A docs code block that runs a package manager is an install command.
+const INSTALL_COMMAND = /^\s*(npx|pnpm|yarn|bunx?|npm)\s/;
+
 export const mdxComponents = {
   Accordion,
   AccordionContent,
@@ -198,7 +201,19 @@ export const mdxComponents = {
     return (
       <>
         {__raw__ && (
-          <CopyButton value={__raw__} src={__src__} event="copy_usage_code" />
+          <CopyButton
+            value={__raw__}
+            src={__src__}
+            {...(INSTALL_COMMAND.test(__raw__)
+              ? {
+                  event: "install_command_copied",
+                  eventProperties: { section: "docs_code_block" },
+                }
+              : {
+                  event: "component_code_copied",
+                  eventProperties: { section: "docs_usage" },
+                })}
+          />
         )}
         <code {...props} />
       </>

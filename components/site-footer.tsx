@@ -90,7 +90,11 @@ export const SiteFooter = () => {
               A dither engine with an agent skill, for shadcn projects. MIT
               licensed.
             </p>
-            <GithubLink label="GitHub" className="w-fit gap-2 text-sm" />
+            <GithubLink
+              label="GitHub"
+              location="footer"
+              className="w-fit gap-2 text-sm"
+            />
           </div>
           <LinkColumn title="Get started" links={START} />
           <LinkColumn title="Examples" links={examples} />

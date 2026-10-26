@@ -108,6 +108,10 @@ const PieceTile = ({
       <Link
         href={piece.url}
         transitionTypes={["nav-forward"]}
+        data-track="example_card_clicked"
+        data-track-component-name={piece.url.split("/").pop()}
+        data-track-category={piece.url.split("/")[2]}
+        data-track-location="catalog"
         className="group/tile focus-visible:ring-ring/50 flex flex-col gap-2.5 rounded-[18px] outline-none focus-visible:ring-[3px] focus-visible:ring-offset-4 focus-visible:ring-offset-background"
       >
         <span className="bg-card relative block aspect-[4/3] overflow-hidden rounded-[14px] sm:rounded-[18px]">

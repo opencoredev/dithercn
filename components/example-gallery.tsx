@@ -218,6 +218,10 @@ const Tile = ({
       <Link
         href={example.url}
         transitionTypes={["nav-forward"]}
+        data-track="example_card_clicked"
+        data-track-component-name={example.url.split("/").pop()}
+        data-track-category={category}
+        data-track-location="home_gallery"
         className="hover:bg-muted/40 focus-visible:ring-ring/60 flex items-baseline justify-between gap-3 border-t px-5 py-4 transition-colors duration-150 outline-none focus-visible:ring-[3px] focus-visible:ring-inset"
       >
         <span className="font-medium tracking-[-0.01em]">{name}</span>

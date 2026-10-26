@@ -49,6 +49,7 @@ export const SiteHeader = () => (
         githubLink={
           <GithubLink
             label="GitHub"
+            location="mobile_menu"
             className="text-foreground gap-3 text-2xl font-medium [&_svg]:size-6"
           />
         }
@@ -66,7 +67,10 @@ export const SiteHeader = () => (
       <MainNav items={navItems} className="hidden lg:flex" />
       <div className="ml-auto flex items-center gap-2 max-md:gap-4">
         <CommandMenu groups={getSearchGroups()} />
-        <GithubLink className="extend-touch-target h-8 px-1.5" />
+        <GithubLink
+          location="navbar"
+          className="extend-touch-target h-8 px-1.5"
+        />
         <ModeSwitcher />
       </div>
     </div>

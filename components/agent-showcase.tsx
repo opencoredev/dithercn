@@ -14,6 +14,7 @@ import {
   usePrefersReducedMotion,
 } from "@/lib/dither";
 import type { DitherMatrix } from "@/lib/dither";
+import { trackEvent } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
 /**
@@ -318,6 +319,14 @@ export const AgentShowcase = ({ className }: { className?: string }) => {
         if (isShowcaseId(next)) {
           setValue(next);
           setUserPicked(true);
+          trackEvent({
+            name: "shader_control_tweaked",
+            properties: {
+              component_name: "agent-showcase",
+              control_name: "tab",
+              value: next,
+            },
+          });
         }
       }}
       onPointerEnter={() => setHovered(true)}

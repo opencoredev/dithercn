@@ -10,7 +10,7 @@ import {
 import type { IconSvgElement } from "@hugeicons/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/icon";
 import {
@@ -178,6 +178,30 @@ const Pane = ({ located }: { located: Located | undefined }) =>
     </aside>
   ) : null;
 
+// A search is recorded once the reader stops typing, not on every key.
+const SEARCH_SETTLE_MS = 800;
+const MIN_QUERY = 2;
+
+const useSearchTracking = () => {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancel = () => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+    }
+  };
+  useEffect(() => cancel, []);
+  return (query: string) => {
+    cancel();
+    const trimmed = query.trim();
+    if (trimmed.length < MIN_QUERY) {
+      return;
+    }
+    timer.current = setTimeout(() => {
+      trackEvent({ name: "search_performed", properties: { query: trimmed } });
+    }, SEARCH_SETTLE_MS);
+  };
+};
+
 export const CommandMenu = ({
   groups,
   ...props
@@ -185,6 +209,7 @@ export const CommandMenu = ({
   groups: SearchGroup[];
 }) => {
   const router = useRouter();
+  const trackSearch = useSearchTracking();
   const isMac = useIsMac();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("");
@@ -282,7 +307,10 @@ export const CommandMenu = ({
           filter={handleFilter}
           className="rounded-none bg-transparent **:data-[slot=command-input-wrapper]:h-14 **:data-[slot=command-input-wrapper]:gap-3 **:data-[slot=command-input-wrapper]:px-5 **:data-[slot=command-input]:h-14 **:data-[slot=command-input]:text-base"
         >
-          <CommandInput placeholder="Search components and docs" />
+          <CommandInput
+            placeholder="Search components and docs"
+            onValueChange={trackSearch}
+          />
           <div className="flex h-[min(26rem,58vh)] min-h-0">
             <CommandList className="no-scrollbar max-h-none min-w-0 flex-1 scroll-pt-10 scroll-pb-2 px-2 pb-2">
               <CommandEmpty className="text-muted-foreground py-14 text-center text-sm">
