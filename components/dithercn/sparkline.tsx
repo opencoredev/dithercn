@@ -5,10 +5,13 @@ import type { ComponentProps, KeyboardEvent, PointerEvent } from "react";
 
 import {
   BloomGroup,
+  cellArea,
   cssColor,
+  curveAt,
   DitherPattern,
   FillPattern,
   readDitherCell,
+  snapToCells,
 } from "@/lib/dither";
 import type {
   Bloom,
@@ -92,19 +95,25 @@ interface SparkPoint {
   y: number;
 }
 
-/** Points, the line through them and the closed fill below it, in px. */
+/**
+ * Points, the line through them and the fill below it, in px. The fill is
+ * whole dither cells, so its edge steps along the grid instead of cutting
+ * cells; the line is drawn smooth on top.
+ */
 const sparkGeometry = ({
   data,
   width,
   height,
   inset,
   domain,
+  cell,
 }: {
   data: readonly number[];
   width: number | null;
   height: number;
   inset: number;
   domain: readonly [number, number];
+  cell: number;
 }) => {
   const [floor, ceiling] = domain;
   const span = ceiling - floor || 1;
@@ -126,7 +135,13 @@ const sparkGeometry = ({
   const area =
     start === undefined || end === undefined
       ? ""
-      : `${line}L${end.x} ${height}L${start.x} ${height}Z`;
+      : cellArea({
+          bottom: () => height,
+          cell,
+          from: start.x,
+          to: end.x,
+          top: curveAt(points),
+        });
   return { area, end, line, points };
 };
 
@@ -228,7 +243,7 @@ const SparkFill = ({
             <rect width={width} height={height} fill="white" />
             <path
               d={area}
-              transform={`translate(0 ${Math.max(cell * 2, height * 0.3)})`}
+              transform={`translate(0 ${snapToCells(Math.max(cell * 2, height * 0.3), cell)})`}
               fill="black"
               shapeRendering="crispEdges"
             />
@@ -465,6 +480,7 @@ export const Sparkline = ({
   const summary = describe(label, data, numbers);
   // Leave room for the stroke and the dot so neither is clipped.
   const geometry = sparkGeometry({
+    cell: px,
     data,
     domain: domain ?? [Math.min(...data), Math.max(...data)],
     height,

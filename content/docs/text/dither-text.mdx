@@ -39,7 +39,7 @@ export function Hero() {
 }
 ```
 
-The text stays a real element: people can select and copy it, screen readers read it, and search engines index it. The dither is a small image drawn on the client and clipped to the letters with `background-clip: text`.
+The text stays a real element: people can select and copy it, screen readers read it, and search engines index it. The text turns transparent and a canvas over it draws the letters as whole dither cells, so their edges step along the grid instead of cutting cells in half.
 
 `fill` picks what goes inside the letters:
 
