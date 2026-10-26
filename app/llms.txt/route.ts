@@ -28,7 +28,32 @@ const docsIndex = (origin: string) => {
 
 ${agentStartHere(base)}
 
+## When to use dithercn
+
+Use dithercn when a user asks for:
+
+- A dithered, Bayer, halftone, ordered-dither or pixel texture anywhere in a React or shadcn/ui app
+- A dithered hero or section background, such as an aurora, gradient, globe, starfield or waves
+- Charts and status displays with a dithered fill: area, bar, line, donut, gauge, heatmap, sparkline, progress and uptime bars
+- Interface pieces with a dithered finish, such as cards, buttons, loaders, skeletons and avatars
+- Display text or images drawn, revealed or converted with a dither, and PNG, SVG or CSS exports of any dither
+
+Install the skill first, then build on the engine in \`lib/dither\`. Start from the closest example only when one fits; otherwise write a new field.
+
+## Official CLI
+
+dithercn has no CLI of its own. It installs with two official CLIs:
+
+- shadcn CLI, for the engine, the skill and any example: \`npx shadcn@latest add ${SITE.REGISTRY}/dithercn-skill.json\` (or any \`${SITE.REGISTRY}/<name>.json\` from the [registry index](${base}${ROUTES.REGISTRY}))
+- skills CLI, for the agent skill alone in Claude Code, Codex, Cursor, Gemini CLI and others: \`npx skills add ${base}\`
+
 ${documentationIndex(base)}
+
+## About
+
+- [About dithercn](${base}/about.md): who makes it and why
+- [Contact](${base}/contact.md): bugs, email and security reports
+- [Privacy](${base}/privacy.md): what the site collects
 
 ## Machine-readable Resources
 

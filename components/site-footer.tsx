@@ -27,6 +27,12 @@ const FOR_AGENTS: readonly FooterLink[] = [
   { href: ROUTES.REGISTRY, label: "Registry index" },
 ];
 
+const SITE_LINKS: readonly FooterLink[] = [
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
+  { href: "/privacy", label: "Privacy" },
+];
+
 const LINK_CLASS =
   "text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-sm text-sm transition-colors duration-150 outline-none focus-visible:ring-[3px]";
 
@@ -74,7 +80,7 @@ export const SiteFooter = () => {
       style={{ viewTransitionName: "site-footer" }}
     >
       <div className="container-wrapper">
-        <div className="container grid grid-cols-2 gap-x-6 gap-y-10 pt-14 pb-10 md:pt-20 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]">
+        <div className="container grid grid-cols-2 gap-x-6 gap-y-10 pt-14 pb-10 md:pt-20 lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))]">
           <div className="col-span-2 flex max-w-xs flex-col gap-3 lg:col-span-1">
             <p className="flex items-center gap-2 font-mono text-sm font-medium">
               <LogoMark className="text-primary size-4" />
@@ -89,9 +95,10 @@ export const SiteFooter = () => {
           <LinkColumn title="Get started" links={START} />
           <LinkColumn title="Examples" links={examples} />
           <LinkColumn title="For agents" links={FOR_AGENTS} />
+          <LinkColumn title="dithercn" links={SITE_LINKS} />
           <nav
             aria-labelledby="footer-opencore"
-            className="col-span-2 flex flex-col gap-3 lg:col-span-4"
+            className="col-span-2 flex flex-col gap-3 lg:col-span-5"
           >
             <h2
               id="footer-opencore"

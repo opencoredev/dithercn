@@ -39,6 +39,7 @@ const catalogLinkset = (origin: string) => {
           { href: LINK.SHADCN_MCP_DOCS, type: "text/html" },
         ],
         status: [
+          { href: `${base}${ROUTES.API_STATUS_V1}`, type: "application/json" },
           { href: `${base}${ROUTES.API_STATUS}`, type: "application/json" },
         ],
       },

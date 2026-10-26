@@ -6,11 +6,13 @@ import { CommandBox } from "@/components/command-box";
 import { DitherHero } from "@/components/dither-hero";
 import { ExampleGallery } from "@/components/example-gallery";
 import { HeroActions } from "@/components/hero-actions";
+import { HomeOverview } from "@/components/home-overview";
 import { Icon } from "@/components/icon";
 import { PageTransition } from "@/components/page-transition";
 import { SiteFooter } from "@/components/site-footer";
 import { SmoothScroll } from "@/components/smooth-scroll";
 import { ROUTES } from "@/constants/routes";
+import { SITE } from "@/constants/site";
 import { countPieces, getCatalog } from "@/lib/catalog";
 import { BreadcrumbJsonLd } from "@/seo/json-ld";
 
@@ -132,6 +134,12 @@ export default function IndexPage() {
           </div>
         </section>
 
+        <HomeOverview
+          catalog={catalog}
+          headingClassName={H2_CLS}
+          leadClassName={LEAD_CLS}
+        />
+
         <section className="container-wrapper" aria-labelledby="start-heading">
           <div className="container flex flex-col items-center gap-10 pt-20 pb-20 text-center md:pt-28 md:pb-28">
             <div className="flex flex-col items-center gap-5">
@@ -167,8 +175,8 @@ export default function IndexPage() {
             </Link>
             <p className="text-muted-foreground max-w-xl text-sm text-pretty">
               Using shadcn?{" "}
-              <code className="text-foreground font-mono text-[0.8rem]">
-                npx shadcn add
+              <code className="text-foreground font-mono text-[0.8rem] break-all">
+                npx shadcn@latest add {SITE.REGISTRY}/dithercn-skill.json
               </code>{" "}
               installs the skill and the engine together.{" "}
               <Link

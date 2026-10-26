@@ -5,6 +5,8 @@ import { SITE } from "@/constants/site";
 
 interface CreatePageMetadataOptions {
   description?: string;
+  /** Markdown mirror for pages outside /docs, which get `<path>.md` already. */
+  markdownPath?: string;
   noIndex?: boolean;
   ogDescription?: string;
   ogImage?: string;
@@ -17,6 +19,7 @@ interface CreatePageMetadataOptions {
 
 export const createPageMetadata = ({
   description,
+  markdownPath,
   noIndex = false,
   ogDescription,
   ogImage,
@@ -32,7 +35,7 @@ export const createPageMetadata = ({
   const markdownAlternate =
     canonical === ROUTES.DOCS || canonical.startsWith(`${ROUTES.DOCS}/`)
       ? `${canonical}.md`
-      : undefined;
+      : markdownPath;
   const resolvedOgImage =
     ogImage ?? `${ROUTES.OG}${canonical === ROUTES.HOME ? "" : canonical}`;
   const resolvedTitle = ogTitle ?? title;

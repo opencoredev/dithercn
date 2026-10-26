@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { ROUTES } from "@/constants/routes";
+import { markdownNotFound } from "@/lib/agent-discovery/markdown-404";
 import { docsContentRoute, homeContentRoute } from "@/lib/docs";
+import { isTrustPageSlug } from "@/lib/trust-pages";
 
 const { rewrite: rewriteDocs } = rewritePath(
   `${ROUTES.DOCS}{/*path}`,
@@ -14,32 +16,102 @@ const { rewrite: rewriteSuffix } = rewritePath(
   `${docsContentRoute}{/*path}/content.md`
 );
 
-const proxy = (request: NextRequest) => {
-  if (
-    request.nextUrl.pathname === ROUTES.HOME &&
+// Paths that are files, APIs or machine endpoints, never pages, so a
+// Markdown request for them is left to their own route.
+const NON_PAGE_PREFIXES = [
+  "/_next/",
+  "/api/",
+  "/r/",
+  "/.well-known/",
+  "/og",
+  `${ROUTES.LLMS_MD}/`,
+  "/catalog-capture",
+] as const;
+
+// Machine-readable surfaces that advertise the request budget agents should
+// keep to. The numbers document a policy; Vercel's platform limits enforce it.
+const RATE_LIMITED_PREFIXES = ["/api/", "/r/", "/.well-known/"] as const;
+const RATE_LIMIT_HEADERS = {
+  "RateLimit-Limit": "1000",
+  "RateLimit-Policy": "1000;w=60",
+  "RateLimit-Remaining": "999",
+  "RateLimit-Reset": "60",
+  "X-RateLimit-Limit": "1000",
+  "X-RateLimit-Remaining": "999",
+  "X-RateLimit-Reset": "60",
+} as const;
+
+const PAGE_VARY =
+  "Accept, rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch";
+
+const hasFileExtension = (pathname: string) => /\.[a-z0-9]+$/i.test(pathname);
+
+const isPagePath = (pathname: string) =>
+  !hasFileExtension(pathname) &&
+  !NON_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+const isRateLimited = (pathname: string) =>
+  pathname === ROUTES.OPENAPI ||
+  RATE_LIMITED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+/** `/about` or `/about.md` to the trust page's slug, if it is one. */
+const trustSlug = (pathname: string) => {
+  const slug = pathname.slice(1).replace(/\.md$/, "");
+  return isTrustPageSlug(slug) ? slug : undefined;
+};
+
+const route = (request: NextRequest): NextResponse | Response => {
+  const { pathname } = request.nextUrl;
+  const markdown =
     (request.method === "GET" || request.method === "HEAD") &&
-    isMarkdownPreferred(request)
-  ) {
+    isMarkdownPreferred(request);
+
+  if (pathname === ROUTES.HOME && markdown) {
     const url = request.nextUrl.clone();
     url.pathname = homeContentRoute;
-
     return NextResponse.rewrite(url);
   }
 
-  const result = rewriteSuffix(request.nextUrl.pathname);
+  const result = rewriteSuffix(pathname);
   if (result) {
     return NextResponse.rewrite(new URL(result, request.nextUrl));
   }
 
-  if (isMarkdownPreferred(request)) {
-    const result2 = rewriteDocs(request.nextUrl.pathname);
+  const slug = trustSlug(pathname);
+  if (slug && (markdown || pathname.endsWith(".md"))) {
+    return NextResponse.rewrite(
+      new URL(`${ROUTES.LLMS_MD}/pages/${slug}`, request.nextUrl)
+    );
+  }
 
+  if (markdown) {
+    const result2 = rewriteDocs(pathname);
     if (result2) {
       return NextResponse.rewrite(new URL(result2, request.nextUrl));
+    }
+    if (pathname !== ROUTES.HOME && !slug && isPagePath(pathname)) {
+      return markdownNotFound(request.nextUrl.origin, pathname);
     }
   }
 
   return NextResponse.next();
+};
+
+const proxy = (request: NextRequest) => {
+  const response = route(request);
+  const { pathname } = request.nextUrl;
+
+  // Pages answer in HTML or Markdown depending on Accept, so caches must key
+  // on it. Next's own router Vary is repeated so this never drops it.
+  if (isPagePath(pathname) || pathname.endsWith(".md")) {
+    response.headers.set("Vary", PAGE_VARY);
+  }
+  if (isRateLimited(pathname)) {
+    for (const [name, value] of Object.entries(RATE_LIMIT_HEADERS)) {
+      response.headers.set(name, value);
+    }
+  }
+  return response;
 };
 
 export default proxy;

@@ -4,6 +4,7 @@ export const ROUTES = {
   AGENT_SKILL_ARCHIVE: "/.well-known/agent-skills/dithercn.tar.gz",
   API_CATALOG: "/.well-known/api-catalog",
   API_STATUS: "/api/status",
+  API_STATUS_V1: "/api/v1/status",
   DOCS: "/docs",
   DOCS_ASK_YOUR_AGENT: "/docs#ask-your-agent-for-a-dither",
   DOCS_ENGINE: "/docs/engine/dither-engine",

@@ -1,4 +1,6 @@
+import { ROUTES } from "@/constants/routes";
 import { renderSkillFile } from "@/lib/agent-discovery/dithercn-skill";
+import { problemResponse } from "@/lib/agent-discovery/problem";
 import { requestOrigin } from "@/lib/agent-discovery/request-origin";
 
 export const GET = async (
@@ -6,9 +8,16 @@ export const GET = async (
   { params }: RouteContext<"/.well-known/agent-skills/dithercn/[...file]">
 ) => {
   const { file } = await params;
-  const markdown = renderSkillFile(file.join("/"), requestOrigin(request));
+  const origin = requestOrigin(request);
+  const markdown = renderSkillFile(file.join("/"), origin);
   if (markdown === null) {
-    return new Response("Not found", { status: 404 });
+    return problemResponse({
+      code: "not_found",
+      detail: `The dithercn skill has no file named ${file.join("/")}.`,
+      origin,
+      request,
+      resolution: `Start from ${origin.replace(/\/$/, "")}${ROUTES.AGENT_SKILL}, which links every reference file.`,
+    });
   }
   return new Response(markdown, {
     headers: {

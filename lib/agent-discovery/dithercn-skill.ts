@@ -17,7 +17,7 @@ import { gzipSync } from "node:zlib";
 export const SKILL_NAME = "dithercn";
 
 export const SKILL_DESCRIPTION =
-  "Build any dithered visual with the dithercn engine: backgrounds, charts, meters, cards, text and images for landing pages and dashboards.";
+  "Build any dithered visual with the dithercn engine: backgrounds, charts, meters, cards, text and images for landing pages and dashboards. When to use: Use when the user asks for a dither, a dithered, Bayer, halftone or pixel texture, or a dithered background, hero, chart, meter, loader, text effect or image in a React or shadcn/ui app, or when code imports lib/dither or components/dithercn.";
 
 const ROOT = process.cwd();
 const SKILL_DIR = path.join(ROOT, "skills", SKILL_NAME);

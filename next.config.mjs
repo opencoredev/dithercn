@@ -31,7 +31,15 @@ const nextConfig = {
       `<${ROUTES.AGENT_SKILLS_INDEX}>; rel="describedby"`,
     ].join(", ");
 
-    return [{ headers: [{ key: "Link", value: link }], source: ROUTES.HOME }];
+    return [
+      { headers: [{ key: "Link", value: link }], source: ROUTES.HOME },
+      // Pages answer in HTML or Markdown depending on Accept (see proxy.ts),
+      // so caches must key on it. Next appends its own RSC Vary after this.
+      {
+        headers: [{ key: "Vary", value: "Accept" }],
+        source: "/((?!_next/|api/|r/|og|\\.well-known/).*)",
+      },
+    ];
   },
   images: {
     remotePatterns: [
