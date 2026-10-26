@@ -1,6 +1,7 @@
+import { GithubIcon, StarIcon } from "@hugeicons/core-free-icons";
 import { Suspense } from "react";
 
-import { GithubIcon } from "@/components/icons";
+import { Icon } from "@/components/icon";
 import { LINK } from "@/constants/links";
 import { getRepoStars } from "@/lib/github";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,8 @@ const StarCount = async () => {
     return null;
   }
   return (
-    <span className="font-mono text-xs tabular-nums">
+    <span className="inline-flex items-center gap-0.5 font-mono text-xs tabular-nums">
+      <Icon icon={StarIcon} className="size-3" />
       {compact.format(stars)}
       <span className="sr-only"> stars</span>
     </span>
@@ -44,7 +46,7 @@ export const GithubLink = ({
       className
     )}
   >
-    <GithubIcon aria-hidden="true" className="size-4 shrink-0" />
+    <Icon icon={GithubIcon} className="size-4 shrink-0" />
     {label ? <span>{label}</span> : <span className="sr-only">GitHub</span>}
     <Suspense fallback={null}>
       <StarCount />

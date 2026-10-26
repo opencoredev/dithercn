@@ -25,7 +25,7 @@ const COPIED_WASH = ditherMaskStyle(0.25, { cell: 2 });
 export const HeroActions = () => {
   const { copyToClipboard, isCopied } = useCopyToClipboard();
   const origin = useSiteOrigin();
-  const label = isCopied ? "Copied, now paste it" : "Copy agent prompt";
+  const label = isCopied ? "Prompt copied" : "Copy agent prompt";
 
   const copyPrompt = async () => {
     if (await copyToClipboard(quickStartPrompt(origin))) {
@@ -39,7 +39,9 @@ export const HeroActions = () => {
         <Button
           asChild
           size="lg"
-          className="h-11 rounded-full px-6 text-[0.95rem] motion-safe:active:scale-100"
+          // The chevron's glyph sits inside 6px of empty viewBox, so the
+          // right padding and the gap are trimmed to balance it optically.
+          className="h-11 gap-1 rounded-full pt-px pr-[15.5px] pl-5 text-[0.95rem] has-[>svg]:pr-[15.5px] has-[>svg]:pl-5 motion-safe:active:scale-100"
         >
           <Link href={ROUTES.DOCS} transitionTypes={["nav-forward"]}>
             Read the docs
@@ -53,7 +55,7 @@ export const HeroActions = () => {
           onClick={copyPrompt}
           aria-label={label}
           data-copied={isCopied}
-          className="group/copy bg-foreground/[0.04] hover:bg-foreground/[0.08] border-foreground/15 relative isolate h-11 overflow-hidden rounded-full px-5 text-[0.95rem] motion-safe:active:scale-100"
+          className="group/copy bg-foreground/[0.04] hover:bg-foreground/[0.08] border-foreground/15 relative isolate h-11 overflow-hidden rounded-full pr-5 pb-px pl-[19px] text-[0.95rem] motion-safe:active:scale-100"
         >
           {/* Stays while it says Copied: the site's ink, as a fine dither. */}
           <span
@@ -77,17 +79,20 @@ export const HeroActions = () => {
           </span>
           {/*
            * Both labels share one grid cell, so the button keeps its width.
+           * The copied label is the shorter one, so the resting label sets the
+           * cell's width exactly and nothing pads its right; the copied label
+           * starts beside the tick.
            * The old one lifts out with a blur while the new one rises in.
            */}
           <span
             aria-hidden="true"
-            className="grid text-left *:col-start-1 *:row-start-1 *:transition-[opacity,filter,translate] *:duration-150 *:ease-in-out motion-reduce:*:translate-y-0! motion-reduce:*:blur-none! motion-reduce:*:transition-opacity"
+            className="grid justify-items-start text-left *:col-start-1 *:row-start-1 *:transition-[opacity,filter,translate] *:duration-150 *:ease-in-out motion-reduce:*:translate-y-0! motion-reduce:*:blur-none! motion-reduce:*:transition-opacity"
           >
             <span className="group-data-[copied=true]/copy:-translate-y-1 group-data-[copied=true]/copy:opacity-0 group-data-[copied=true]/copy:blur-[2px]">
               Copy agent prompt
             </span>
             <span className="translate-y-1 opacity-0 blur-[2px] group-data-[copied=true]/copy:translate-y-0 group-data-[copied=true]/copy:opacity-100 group-data-[copied=true]/copy:blur-none">
-              Copied, now paste it
+              Prompt copied
             </span>
           </span>
         </Button>
