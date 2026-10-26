@@ -32,11 +32,11 @@ export const bloom = segmented({
 });
 
 export const cell = slider({
-  default: 3,
+  default: 2,
   id: "cell",
   label: "Cell",
   max: 6,
-  min: 2,
+  min: 1,
   step: 1,
   unit: "px",
 });

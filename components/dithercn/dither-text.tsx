@@ -100,8 +100,8 @@ export type DitherTextProps = Omit<
     /** Threshold matrix for gradient and noise. Default `"bayer4"`. */
     matrix?: DitherMatrix;
     /**
-     * Cell size in CSS pixels. Default: about 1/24 of the font size, at
-     * least 2, so hero and section sizes both read well.
+     * Cell size in CSS pixels. Default: about 1/44 of the font size, at
+     * least 1, fine enough that seven dither levels keep the letters sharp.
      */
     cell?: number;
     /** Slowly shift the fill. Default `true`. */
@@ -197,19 +197,37 @@ interface Paint {
 }
 
 interface Grid {
+  /** Cells across and down the canvas, margins included. */
   cols: number;
   rows: number;
+  /** Cells of margin around the element's box, for overhanging glyphs. */
+  margin: number;
+  /** Cells across and down the element's box. */
+  boxCols: number;
+  boxRows: number;
   aspect: number;
   time: number;
+  /** How much of each cell the glyphs cover, 0 to 1. */
+  coverage: Float32Array;
 }
 
-/** Fill `data` (RGBA bytes, `cols` × `rows`) with the dithered field. */
+// Each cell's ink, glyph coverage times the fill's tone, is quantised to
+// seven levels (0, 1/6 … 1) with the threshold matrix, so the letters' edges
+// and the fill both step through dithered levels instead of on and off.
+const LEVELS = 7;
+const STEPS = LEVELS - 1;
+
+const quantise = (value: number, threshold: number) =>
+  Math.min(STEPS, Math.max(0, Math.floor(value * STEPS + threshold))) / STEPS;
+
+/** Fill `data` (RGBA bytes, `cols` × `rows`) with the dithered letters. */
 const paintCells = (
   data: Uint8ClampedArray,
-  { cols, rows, aspect, time }: Grid,
+  { cols, rows, margin, boxCols, boxRows, aspect, time, coverage }: Grid,
   field: FieldOptions,
   { colors, gap }: Paint,
-  matrix: DitherMatrix
+  matrix: DitherMatrix,
+  custom: boolean
 ) => {
   const { size: tile, thresholds } = getThresholdMap(matrix);
   const segments = colors.length - 1;
@@ -221,73 +239,226 @@ const paintCells = (
   // Textures drift a cell at a time, about two cells a second.
   const ox = Math.round(-field.dx * time * 2);
   const oy = Math.round(-field.dy * time * 2);
+  data.fill(0);
   for (let y = 0; y < rows; y += 1) {
-    const v = (y + 0.5) / rows;
+    const v = (y - margin + 0.5) / boxRows;
     for (let x = 0; x < cols; x += 1) {
-      let pick: Rgba | undefined = ink;
-      if (texture) {
-        pick = texture(x + ox, y + oy) ? ink : gap;
-      } else if (field.fill !== "solid") {
-        const tone = toneAt(field, (x + 0.5) / cols, v, aspect, time);
-        const scaled = clamp01(tone) * segments;
-        const low = Math.min(segments - 1, Math.floor(scaled));
-        const threshold = thresholds[(y % tile) * tile + (x % tile)] ?? 0.5;
-        pick = scaled - low > threshold ? colors[low + 1] : colors[low];
+      const cell = y * cols + x;
+      const covered = coverage[cell] ?? 0;
+      if (covered <= 0) {
+        continue;
       }
-      const [r, g, b, alpha] = pick ?? [0, 0, 0, 0];
-      const offset = (y * cols + x) * 4;
+      const threshold = thresholds[(y % tile) * tile + (x % tile)] ?? 0.5;
+      let pick: Rgba = ink;
+      let strength = 1;
+      if (texture) {
+        const on = texture(x + ox, y + oy);
+        pick = on ? ink : gap;
+        strength = on ? 1 : 0;
+      } else if (field.fill !== "solid") {
+        const u = (x - margin + 0.5) / boxCols;
+        const tone = clamp01(toneAt(field, u, v, aspect, time));
+        if (custom) {
+          // A palette steps through its colours; coverage alone sets alpha.
+          const scaled = tone * segments;
+          const low = Math.min(segments - 1, Math.floor(scaled));
+          pick =
+            (scaled - low > threshold ? colors[low + 1] : colors[low]) ?? ink;
+        } else {
+          strength = tone;
+        }
+      }
+      const [r, g, b, alpha] = pick;
+      // A texture's gaps keep their faint ghost; ink cells quantise.
+      const level =
+        texture && strength === 0
+          ? quantise(covered, threshold) * alpha
+          : quantise(covered * strength, threshold) * alpha;
+      if (level <= 0) {
+        continue;
+      }
+      const offset = cell * 4;
       data[offset] = toByte(r);
       data[offset + 1] = toByte(g);
       data[offset + 2] = toByte(b);
-      data[offset + 3] = toByte(alpha);
+      data[offset + 3] = toByte(level);
     }
   }
 };
 
-interface Frame {
-  el: HTMLElement;
-  /** CSS `background-size` for the frame. */
-  size: string;
-  url: string;
-}
+// Glyphs are drawn this many samples across each cell to measure coverage.
+const SUPERSAMPLE = 4;
 
-interface Swapper {
-  /** A frame is decoding. */
-  busy: boolean;
-  /** The newest frame waiting to decode; older waiting frames are dropped. */
-  queued: Frame | null;
-  /** The frame on screen. Holding it keeps it in Safari's memory cache. */
-  shown: HTMLImageElement | null;
+const segmenter =
+  typeof Intl !== "undefined" && "Segmenter" in Intl
+    ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+    : null;
+
+const graphemes = (text: string) =>
+  segmenter
+    ? Array.from(segmenter.segment(text), (part) => ({
+        index: part.index,
+        value: part.segment,
+      }))
+    : Array.from(text, (value, index) => ({ index, value }));
+
+const TRANSFORMS: Record<string, (text: string) => string> = {
+  lowercase: (text) => text.toLocaleLowerCase(),
+  uppercase: (text) => text.toLocaleUpperCase(),
+};
+
+/** The CSS `font` shorthand for an element, built from longhands for Firefox. */
+const fontOf = (style: CSSStyleDeclaration) =>
+  style.font ||
+  `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+
+interface LineRun {
+  text: string;
+  left: number;
+  right: number;
+  top: number;
+  height: number;
 }
 
 /**
- * Swap queued frames into the background one at a time, each only once it
- * has decoded. Safari loads a new background image asynchronously and paints
- * a frame without it, which blinks the (transparent) text out. One decode at
- * a time, plus the newest waiting frame, keeps a slow device from piling up.
+ * The text node split at the browser's own line breaks: one rect per
+ * grapheme finds where each line starts, so each line can be drawn in one
+ * call and keep the font's kerning and ligatures.
  */
-const showQueued = async (swapper: Swapper) => {
-  const frame = swapper.queued;
-  if (!frame) {
-    swapper.busy = false;
-    return;
+const lineRuns = (node: Node, text: string, range: Range) => {
+  const runs: LineRun[] = [];
+  let current: LineRun | undefined;
+  for (const { index, value } of graphemes(text)) {
+    range.setStart(node, index);
+    range.setEnd(node, index + value.length);
+    const rect = range.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) {
+      continue;
+    }
+    if (!current || Math.abs(rect.top - current.top) > 1) {
+      current = {
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        text: value,
+        top: rect.top,
+      };
+      runs.push(current);
+    } else {
+      current.text += value;
+      current.right = rect.right;
+    }
   }
-  swapper.busy = true;
-  swapper.queued = null;
-  const image = new Image();
-  image.src = frame.url;
-  try {
-    await image.decode();
-  } catch {
-    // Swap anyway: a frame that will not decode beats a frozen fill.
+  return runs;
+};
+
+interface GlyphMap {
+  cols: number;
+  rows: number;
+  margin: number;
+  boxCols: number;
+  boxRows: number;
+  coverage: Float32Array;
+}
+
+/**
+ * Draws every line of `el` where the browser laid it out, onto a canvas
+ * `SUPERSAMPLE` samples per cell, and measures how much of each cell the
+ * letters cover. Each line is drawn in one call at its own position, so wrapping,
+ * kerning, letter spacing and alignment all come from the page.
+ */
+const measureGlyphs = (
+  el: HTMLElement,
+  cell: number,
+  scratch: HTMLCanvasElement
+): GlyphMap | null => {
+  const width = el.offsetWidth;
+  const height = el.offsetHeight;
+  const box = el.getBoundingClientRect();
+  if (width === 0 || height === 0 || box.width === 0) {
+    return null;
   }
-  swapper.shown = image;
-  frame.el.style.backgroundImage = `url(${frame.url})`;
-  frame.el.style.backgroundSize = frame.size;
-  frame.el.dataset.state = "ready";
-  // Not awaited: this call finishes once it has handed off, so a long run
-  // of slow decodes doesn't build a chain of pending promises.
-  showQueued(swapper);
+  // Undo any transform on the element (an entrance scale, say).
+  const scale = box.width / width;
+  const fontSize = Number.parseFloat(getComputedStyle(el).fontSize) || 16;
+  const margin = Math.ceil((fontSize * 0.3) / cell);
+  const boxCols = Math.ceil(width / cell);
+  const boxRows = Math.ceil(height / cell);
+  const cols = boxCols + margin * 2;
+  const rows = boxRows + margin * 2;
+  scratch.width = cols * SUPERSAMPLE;
+  scratch.height = rows * SUPERSAMPLE;
+  const context = scratch.getContext("2d", { willReadFrequently: true });
+  if (!context) {
+    return null;
+  }
+  const unit = SUPERSAMPLE / cell;
+  context.setTransform(
+    unit,
+    0,
+    0,
+    unit,
+    margin * SUPERSAMPLE,
+    margin * SUPERSAMPLE
+  );
+  context.fillStyle = "#fff";
+  context.textBaseline = "alphabetic";
+  const range = document.createRange();
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const parent = node.parentElement;
+    const text = node.textContent ?? "";
+    if (!parent || !text.trim()) {
+      continue;
+    }
+    const style = getComputedStyle(parent);
+    context.font = fontOf(style);
+    // Canvas text ignores CSS letter spacing unless it's set here too.
+    if ("letterSpacing" in context) {
+      context.letterSpacing =
+        style.letterSpacing === "normal" ? "0px" : style.letterSpacing;
+    }
+    const transform = TRANSFORMS[style.textTransform];
+    const runs = lineRuns(node, text, range);
+    for (const run of runs) {
+      const glyphs = (transform ? transform(run.text) : run.text).trimEnd();
+      if (!glyphs.trim()) {
+        continue;
+      }
+      const metrics = context.measureText(glyphs);
+      const ascent = metrics.fontBoundingBoxAscent;
+      const descent = metrics.fontBoundingBoxDescent;
+      const top = (run.top - box.top) / scale;
+      const lineHeight = run.height / scale;
+      const baseline = top + (lineHeight - ascent - descent) / 2 + ascent;
+      // The line's laid-out width caps the draw, so a browser without
+      // canvas letter spacing squeezes the line to fit instead of overrunning.
+      context.fillText(
+        glyphs,
+        (run.left - box.left) / scale,
+        baseline,
+        Math.max(1, (run.right - run.left) / scale)
+      );
+    }
+  }
+  const { data } = context.getImageData(0, 0, scratch.width, scratch.height);
+  const coverage = new Float32Array(cols * rows);
+  const samples = SUPERSAMPLE * SUPERSAMPLE * 255;
+  const stride = scratch.width;
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      let sum = 0;
+      for (let sy = 0; sy < SUPERSAMPLE; sy += 1) {
+        const rowStart =
+          ((y * SUPERSAMPLE + sy) * stride + x * SUPERSAMPLE) * 4;
+        for (let sx = 0; sx < SUPERSAMPLE; sx += 1) {
+          sum += data[rowStart + sx * 4 + 3] ?? 0;
+        }
+      }
+      coverage[y * cols + x] = sum / samples;
+    }
+  }
+  return { boxCols, boxRows, cols, coverage, margin, rows };
 };
 
 /** The fill, noise scale and gap opacity a set of props resolves to. */
@@ -302,10 +473,11 @@ const fillSettings = (props: DitherTextFill & { ghost?: number }) => {
 };
 
 /**
- * Display text whose letters are filled with a dither: a gradient, noise,
+ * Display text whose letters are drawn as a dither: a gradient, noise,
  * dots or hatching in any palette colour. The text stays a real element
- * (selectable, read by screen readers, indexed); the dither is a small
- * generated image clipped to the glyphs with `background-clip: text`.
+ * (selectable, read by screen readers, indexed) and turns transparent; a
+ * canvas over it draws the letters as whole dither cells, so their edges
+ * step along the grid like the rest of the engine instead of cutting cells.
  */
 export const DitherText = (props: DitherTextProps) => {
   const {
@@ -336,34 +508,34 @@ export const DitherText = (props: DitherTextProps) => {
   const setRef = useCallback((node: HTMLElement | null) => {
     ref.current = node;
   }, []);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const sizeRef = useRef({ cell: 3, height: 0, width: 0 });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scratchRef = useRef<HTMLCanvasElement | null>(null);
+  const glyphsRef = useRef<GlyphMap | null>(null);
+  const cellRef = useRef(3);
   const timeRef = useRef(0);
-  const swapperRef = useRef<Swapper>({
-    busy: false,
-    queued: null,
-    shown: null,
-  });
   const resolved = useDitherColors(
     ref,
     palette ?? (["transparent", color] as const)
   );
 
-  // Paint one frame into a cell-sized canvas and set it as the background.
+  // Paint one frame of the fill into the letters' cells.
   const draw = useCallback(
     (time: number) => {
       const el = ref.current;
-      const { width, height, cell: size } = sizeRef.current;
-      if (!el || !resolved || width === 0 || height === 0) {
+      const canvas = canvasRef.current;
+      const glyphs = glyphsRef.current;
+      if (!el || !canvas || !glyphs || !resolved) {
         return;
       }
-      const cols = Math.ceil(width / size);
-      const rows = Math.ceil(height / size);
-      canvasRef.current ??= document.createElement("canvas");
-      const canvas = canvasRef.current;
+      const size = cellRef.current;
+      const { cols, rows, margin } = glyphs;
       if (canvas.width !== cols || canvas.height !== rows) {
         canvas.width = cols;
         canvas.height = rows;
+        canvas.style.width = `${cols * size}px`;
+        canvas.style.height = `${rows * size}px`;
+        canvas.style.left = `${-margin * size}px`;
+        canvas.style.top = `${-margin * size}px`;
       }
       const context = canvas.getContext("2d");
       if (!context) {
@@ -378,21 +550,18 @@ export const DitherText = (props: DitherTextProps) => {
       const image = context.createImageData(cols, rows);
       paintCells(
         image.data,
-        { aspect: width / height, cols, rows, time },
+        {
+          ...glyphs,
+          aspect: glyphs.boxCols / glyphs.boxRows || 1,
+          time,
+        },
         { dx, dy, fill, from, scale, to },
         { colors, gap: custom ? (colors[0] ?? gap) : gap },
-        matrix
+        matrix,
+        custom
       );
       context.putImageData(image, 0, 0);
-      const swapper = swapperRef.current;
-      swapper.queued = {
-        el,
-        size: `${cols * size}px ${rows * size}px`,
-        url: canvas.toDataURL(),
-      };
-      if (!swapper.busy) {
-        showQueued(swapper);
-      }
+      el.dataset.state = "ready";
     },
     [custom, dx, dy, fill, from, gapOpacity, matrix, resolved, scale, to]
   );
@@ -405,33 +574,53 @@ export const DitherText = (props: DitherTextProps) => {
     { enabled: animate && fill !== "solid", fps: 12, target: ref }
   );
 
-  // Track the box and font size; redraw at the last time on any change.
+  // Re-measure the glyphs when the box, the text or a web font changes;
+  // the fill then redraws at the last time.
   useEffect(() => {
     const el = ref.current;
     if (!el) {
       return;
     }
+    let frame = 0;
     const measure = () => {
-      const fontSize = Number.parseFloat(getComputedStyle(el).fontSize);
-      const auto = Math.max(2, Math.round(fontSize / 24));
-      sizeRef.current = {
-        cell: cell ?? (Number.isFinite(auto) ? auto : readDitherCell(el)),
-        height: el.offsetHeight,
-        width: el.offsetWidth,
-      };
-      draw(timeRef.current);
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const fontSize = Number.parseFloat(getComputedStyle(el).fontSize);
+        const auto = Math.max(1, Math.round(fontSize / 44));
+        cellRef.current =
+          cell ?? (Number.isFinite(auto) ? auto : readDitherCell(el));
+        scratchRef.current ??= document.createElement("canvas");
+        glyphsRef.current = measureGlyphs(
+          el,
+          cellRef.current,
+          scratchRef.current
+        );
+        draw(timeRef.current);
+      });
     };
     measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
+    const resize = new ResizeObserver(measure);
+    resize.observe(el);
+    const content = new MutationObserver(measure);
+    content.observe(el, {
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+    document.fonts?.addEventListener("loadingdone", measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      resize.disconnect();
+      content.disconnect();
+      document.fonts?.removeEventListener("loadingdone", measure);
+    };
   }, [cell, draw]);
 
   const ink = palette?.at(-1) ?? color;
   const rootStyle: CSSProperties & Record<"--dither-text-ink", string> = {
     "--dither-text-ink": cssColor(ink),
     filter: bloomFilter(ink, bloom),
-    // Until the dither is painted, a CSS mask at the average tone.
+    // Until the canvas has drawn, a CSS mask at the average tone.
     ...(resolved || fill === "solid"
       ? {}
       : ditherMaskStyle((from + to) / 2, { matrix })),
@@ -444,14 +633,19 @@ export const DitherText = (props: DitherTextProps) => {
       ref={setRef}
       data-state="fallback"
       className={cn(
-        "inline-block bg-no-repeat text-(--dither-text-ink) [image-rendering:pixelated]",
-        "data-[state=ready]:bg-clip-text data-[state=ready]:text-transparent",
-        "forced-colors:bg-none forced-colors:text-[CanvasText]",
+        "group/dither-text relative inline-block text-(--dither-text-ink)",
+        "data-[state=ready]:text-transparent",
+        "forced-colors:text-[CanvasText]",
         className
       )}
       style={rootStyle}
     >
       {children}
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute hidden [image-rendering:pixelated] group-data-[state=ready]/dither-text:block forced-colors:hidden!"
+      />
     </Tag>
   );
 };
