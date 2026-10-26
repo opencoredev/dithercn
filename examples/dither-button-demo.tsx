@@ -20,7 +20,10 @@ export default function DitherButtonDemo() {
     <div className="flex flex-wrap items-center justify-center gap-3">
       <DitherButton {...shared} bloom={bloom} loading={loading}>
         {loading ? "Deploying" : "Deploy"}
-        {loading ? null : <Icon icon={ArrowRight01Icon} />}
+        {loading ? null : (
+          // The chevron sits inside empty viewBox; pull it into the padding.
+          <Icon icon={ArrowRight01Icon} className="-mr-[5px]" />
+        )}
       </DitherButton>
       <DitherButton {...shared} variant="outline">
         View logs

@@ -167,14 +167,16 @@ const Page = async (props: { params: Promise<{ slug?: string[] }> }) => {
                     {links?.doc && (
                       <Badge asChild variant="secondary">
                         <Link href={links.doc} target="_blank" rel="noreferrer">
-                          Docs <Icon icon={ArrowUpRight01Icon} />
+                          Docs
+                          <Icon icon={ArrowUpRight01Icon} className="-mr-0.5" />
                         </Link>
                       </Badge>
                     )}
                     {links?.api && (
                       <Badge asChild variant="secondary">
                         <Link href={links.api} target="_blank" rel="noreferrer">
-                          API Reference <Icon icon={ArrowUpRight01Icon} />
+                          API Reference
+                          <Icon icon={ArrowUpRight01Icon} className="-mr-0.5" />
                         </Link>
                       </Badge>
                     )}

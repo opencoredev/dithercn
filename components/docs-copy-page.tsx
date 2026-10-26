@@ -171,8 +171,8 @@ export const DocsCopyPage = ({
   const trigger = (
     <Button
       variant="secondary"
-      size="sm"
-      className="peer -ml-0.5 size-8 md:size-7 md:text-[0.8rem]"
+      size="icon-sm"
+      className="peer -ml-0.5 md:size-7"
       aria-label="More ways to use this page"
     >
       <Icon icon={ArrowDown01Icon} className="rotate-180 sm:rotate-0" />

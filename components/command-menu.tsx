@@ -53,7 +53,7 @@ const ITEM_CLS =
   "group/item text-foreground/80 data-[selected=true]:bg-foreground/[0.07] data-[selected=true]:text-foreground h-12 gap-3 rounded-lg px-2! text-[0.9rem]";
 
 const KEY_CLS =
-  "border-border/80 text-foreground/70 inline-flex h-5 min-w-5 items-center justify-center rounded border px-1 font-mono text-[0.7rem]";
+  "border-border/80 text-foreground/70 inline-flex h-5 min-w-5 items-center justify-center rounded border px-1 pb-px font-mono text-[0.7rem]";
 
 // Docs pages have no print: their group's icon on a faint dither of the ink.
 const PLATE_GRAIN = ditherMaskStyle(0.125, { cell: 2 });

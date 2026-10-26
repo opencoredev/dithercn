@@ -63,36 +63,36 @@ export const HeroActions = () => {
             className="bg-dither-ink absolute inset-0 -z-10 opacity-0 transition-opacity duration-150 ease-out group-data-[copied=true]/copy:opacity-30"
             style={COPIED_WASH}
           />
-          <span
-            aria-hidden="true"
-            className="grid size-4 *:col-start-1 *:row-start-1 *:transition-[opacity,filter,scale] *:duration-250 *:ease-in-out motion-reduce:*:scale-100! motion-reduce:*:blur-none! motion-reduce:*:transition-opacity"
-          >
-            <Icon
-              icon={Copy01Icon}
-              className="text-muted-foreground group-data-[copied=true]/copy:scale-25 group-data-[copied=true]/copy:opacity-0 group-data-[copied=true]/copy:blur-[2px]"
-            />
-            <Icon
-              icon={Tick02Icon}
-              strokeWidth={2.5}
-              className="text-dither-ink scale-25 opacity-0 blur-[2px] group-data-[copied=true]/copy:scale-100 group-data-[copied=true]/copy:opacity-100 group-data-[copied=true]/copy:blur-none"
-            />
-          </span>
           {/*
-           * Both labels share one grid cell, so the button keeps its width.
-           * The copied label is the shorter one, so the resting label sets the
-           * cell's width exactly and nothing pads its right; the copied label
-           * starts beside the tick.
-           * The old one lifts out with a blur while the new one rises in.
+           * Each state is its own icon-and-label group, stacked in one grid
+           * cell and centred in it. The resting group is the wider one, so it
+           * sets the button's width with no slack, and the copied group sits
+           * centred inside that width rather than leaving space on one side.
+           * The old icon shrinks away and its label lifts out with a blur
+           * while the new ones rise in.
            */}
           <span
             aria-hidden="true"
-            className="grid justify-items-start text-left *:col-start-1 *:row-start-1 *:transition-[opacity,filter,translate] *:duration-150 *:ease-in-out motion-reduce:*:translate-y-0! motion-reduce:*:blur-none! motion-reduce:*:transition-opacity"
+            className="grid place-items-center *:col-start-1 *:row-start-1"
           >
-            <span className="group-data-[copied=true]/copy:-translate-y-1 group-data-[copied=true]/copy:opacity-0 group-data-[copied=true]/copy:blur-[2px]">
-              Copy agent prompt
+            <span className="inline-flex items-center gap-2">
+              <Icon
+                icon={Copy01Icon}
+                className="text-muted-foreground transition-[opacity,filter,scale] duration-250 ease-in-out group-data-[copied=true]/copy:scale-25 group-data-[copied=true]/copy:opacity-0 group-data-[copied=true]/copy:blur-[2px] motion-reduce:scale-100! motion-reduce:blur-none! motion-reduce:transition-opacity"
+              />
+              <span className="transition-[opacity,filter,translate] duration-150 ease-in-out group-data-[copied=true]/copy:-translate-y-1 group-data-[copied=true]/copy:opacity-0 group-data-[copied=true]/copy:blur-[2px] motion-reduce:translate-y-0! motion-reduce:blur-none! motion-reduce:transition-opacity">
+                Copy agent prompt
+              </span>
             </span>
-            <span className="translate-y-1 opacity-0 blur-[2px] group-data-[copied=true]/copy:translate-y-0 group-data-[copied=true]/copy:opacity-100 group-data-[copied=true]/copy:blur-none">
-              Prompt copied
+            <span className="inline-flex items-center gap-2">
+              <Icon
+                icon={Tick02Icon}
+                strokeWidth={2.5}
+                className="text-dither-ink scale-25 opacity-0 blur-[2px] transition-[opacity,filter,scale] duration-250 ease-in-out group-data-[copied=true]/copy:scale-100 group-data-[copied=true]/copy:opacity-100 group-data-[copied=true]/copy:blur-none motion-reduce:scale-100! motion-reduce:blur-none! motion-reduce:transition-opacity"
+              />
+              <span className="translate-y-1 opacity-0 blur-[2px] transition-[opacity,filter,translate] duration-150 ease-in-out group-data-[copied=true]/copy:translate-y-0 group-data-[copied=true]/copy:opacity-100 group-data-[copied=true]/copy:blur-none motion-reduce:translate-y-0! motion-reduce:blur-none! motion-reduce:transition-opacity">
+                Prompt copied
+              </span>
             </span>
           </span>
         </Button>

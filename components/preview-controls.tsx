@@ -132,7 +132,7 @@ const Segmented = ({
               onRadioKeys(event, control.options, value, onChange)
             }
             className={cn(
-              "focus-visible:ring-ring/50 relative h-7 min-w-0 flex-1 truncate rounded-full px-2 font-mono text-[11px] transition-colors duration-150 ease-out outline-none focus-visible:ring-[3px]",
+              "focus-visible:ring-ring/50 relative h-7 min-w-0 flex-1 truncate rounded-full px-2 pb-[0.5px] font-mono text-[11px] transition-colors duration-150 ease-out outline-none focus-visible:ring-[3px]",
               checked
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground"

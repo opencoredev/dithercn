@@ -17,6 +17,12 @@ import { cn } from "@/lib/utils";
 const NUDGE_CLS =
   "transition-transform duration-150 ease-(--ease-out) motion-reduce:transition-none";
 
+// A chevron's glyph sits inside about 5px of empty viewBox on each side. Next
+// to a label, pull it into the padding on its outer side and closer to the
+// text, so the pill's ink is centred. A lone chevron is already centred.
+const BACK_TRIM_CLS = "-mr-0.5 -ml-[5px]";
+const FORWARD_TRIM_CLS = "-mr-[5px] -ml-0.5";
+
 export const DocsNavLink = ({
   href,
   children,
@@ -34,6 +40,7 @@ export const DocsNavLink = ({
 }) => {
   const isBack = transitionTypes?.includes("nav-back") ?? false;
   const isForward = transitionTypes?.includes("nav-forward") ?? false;
+  const labelled = size !== "icon";
 
   const link = (
     <Button
@@ -49,6 +56,7 @@ export const DocsNavLink = ({
             icon={ArrowLeft01Icon}
             className={cn(
               NUDGE_CLS,
+              labelled && BACK_TRIM_CLS,
               "[@media(hover:hover)]:group-hover/nav:-translate-x-0.5"
             )}
           />
@@ -59,6 +67,7 @@ export const DocsNavLink = ({
             icon={ArrowRight01Icon}
             className={cn(
               NUDGE_CLS,
+              labelled && FORWARD_TRIM_CLS,
               "[@media(hover:hover)]:group-hover/nav:translate-x-0.5"
             )}
           />

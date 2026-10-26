@@ -88,7 +88,7 @@ const ControlsButton = ({
     onClick={onToggle}
     className={cn(TOOL_BUTTON, open && "text-foreground")}
   >
-    <Icon icon={SlidersHorizontalIcon} className="size-3.5" />
+    <Icon icon={SlidersHorizontalIcon} className="size-3.5 sm:-ml-0.5" />
     <span className={TOOL_LABEL}>Controls</span>
   </button>
 );

@@ -25,7 +25,7 @@ export default function EmptyStateDemo() {
       action={
         <>
           <DitherButton color={color}>
-            <Icon icon={Add01Icon} />
+            <Icon icon={Add01Icon} className="-ml-[3px]" />
             New project
           </DitherButton>
           <DitherButton variant="outline" color="grey">

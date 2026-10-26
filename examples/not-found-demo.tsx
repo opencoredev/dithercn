@@ -29,7 +29,7 @@ export default function NotFoundDemo() {
       actions={
         <>
           <DitherButton color={color}>
-            <Icon icon={ArrowLeft01Icon} />
+            <Icon icon={ArrowLeft01Icon} className="-ml-[5px]" />
             Back to home
           </DitherButton>
           <DitherButton variant="outline" color="grey">

@@ -58,7 +58,7 @@ export const InstallCommand = ({
             <TabsTrigger
               key={pm}
               value={pm}
-              className="text-muted-foreground hover:text-foreground data-[state=active]:bg-background/60 data-[state=active]:text-foreground dark:data-[state=active]:bg-background/60 h-7 flex-none rounded-full border-0 px-2.5 font-mono text-xs transition-colors duration-150 data-[state=active]:shadow-none dark:data-[state=active]:border-0"
+              className="text-muted-foreground hover:text-foreground data-[state=active]:bg-background/60 data-[state=active]:text-foreground dark:data-[state=active]:bg-background/60 h-7 flex-none rounded-full border-0 px-2.5 pt-[3px] font-mono text-xs transition-colors duration-150 data-[state=active]:shadow-none dark:data-[state=active]:border-0"
             >
               {pm}
             </TabsTrigger>
@@ -89,7 +89,8 @@ export const ManualSteps = ({ children }: { children: React.ReactNode }) => {
         Manual installation
         <Icon
           icon={ArrowDown01Icon}
-          className="size-4 transition-transform duration-200 ease-(--ease-out) group-data-[state=open]/manual:rotate-180 motion-reduce:transition-none"
+          // The glyph sits inside empty viewBox; pull it into the padding.
+          className="-mr-[3.5px] size-4 transition-transform duration-200 ease-(--ease-out) group-data-[state=open]/manual:rotate-180 motion-reduce:transition-none"
         />
       </CollapsibleTrigger>
       <CollapsibleContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 motion-reduce:animate-none">

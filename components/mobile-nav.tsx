@@ -101,13 +101,13 @@ export const MobileNav = ({
               <span
                 className={cn(
                   "bg-foreground absolute left-0 block h-0.5 w-4 transition-all duration-100",
-                  open ? "top-[0.4rem] -rotate-45" : "top-1"
+                  open ? "top-[7px] -rotate-45" : "top-1"
                 )}
               />
               <span
                 className={cn(
                   "bg-foreground absolute left-0 block h-0.5 w-4 transition-all duration-100",
-                  open ? "top-[0.4rem] rotate-45" : "top-2.5"
+                  open ? "top-[7px] rotate-45" : "top-2.5"
                 )}
               />
             </div>
