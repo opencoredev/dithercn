@@ -244,6 +244,52 @@ const paintCells = (
   }
 };
 
+interface Frame {
+  el: HTMLElement;
+  /** CSS `background-size` for the frame. */
+  size: string;
+  url: string;
+}
+
+interface Swapper {
+  /** A frame is decoding. */
+  busy: boolean;
+  /** The newest frame waiting to decode; older waiting frames are dropped. */
+  queued: Frame | null;
+  /** The frame on screen. Holding it keeps it in Safari's memory cache. */
+  shown: HTMLImageElement | null;
+}
+
+/**
+ * Swap queued frames into the background one at a time, each only once it
+ * has decoded. Safari loads a new background image asynchronously and paints
+ * a frame without it, which blinks the (transparent) text out. One decode at
+ * a time, plus the newest waiting frame, keeps a slow device from piling up.
+ */
+const showQueued = async (swapper: Swapper) => {
+  const frame = swapper.queued;
+  if (!frame) {
+    swapper.busy = false;
+    return;
+  }
+  swapper.busy = true;
+  swapper.queued = null;
+  const image = new Image();
+  image.src = frame.url;
+  try {
+    await image.decode();
+  } catch {
+    // Swap anyway: a frame that will not decode beats a frozen fill.
+  }
+  swapper.shown = image;
+  frame.el.style.backgroundImage = `url(${frame.url})`;
+  frame.el.style.backgroundSize = frame.size;
+  frame.el.dataset.state = "ready";
+  // Not awaited: this call finishes once it has handed off, so a long run
+  // of slow decodes doesn't build a chain of pending promises.
+  showQueued(swapper);
+};
+
 /** The fill, noise scale and gap opacity a set of props resolves to. */
 const fillSettings = (props: DitherTextFill & { ghost?: number }) => {
   const fill = props.fill ?? "gradient";
@@ -293,6 +339,11 @@ export const DitherText = (props: DitherTextProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sizeRef = useRef({ cell: 3, height: 0, width: 0 });
   const timeRef = useRef(0);
+  const swapperRef = useRef<Swapper>({
+    busy: false,
+    queued: null,
+    shown: null,
+  });
   const resolved = useDitherColors(
     ref,
     palette ?? (["transparent", color] as const)
@@ -333,9 +384,15 @@ export const DitherText = (props: DitherTextProps) => {
         matrix
       );
       context.putImageData(image, 0, 0);
-      el.style.backgroundImage = `url(${canvas.toDataURL()})`;
-      el.style.backgroundSize = `${cols * size}px ${rows * size}px`;
-      el.dataset.state = "ready";
+      const swapper = swapperRef.current;
+      swapper.queued = {
+        el,
+        size: `${cols * size}px ${rows * size}px`,
+        url: canvas.toDataURL(),
+      };
+      if (!swapper.busy) {
+        showQueued(swapper);
+      }
     },
     [custom, dx, dy, fill, from, gapOpacity, matrix, resolved, scale, to]
   );
