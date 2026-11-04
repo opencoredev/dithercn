@@ -113,6 +113,21 @@
     "dependencies": ["radix-ui"]
   },
   {
+    "name": "dither-slider",
+    "type": "registry:component",
+    "title": "Dither slider",
+    "description": "A range slider on Radix Slider whose fill is a Bayer ramp that gets denser towards a lit, dithered thumb, with one or two thumbs, steps, tick marks and a readout.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-slider.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-slider.tsx"
+      }
+    ],
+    "dependencies": ["radix-ui"]
+  },
+  {
     "name": "dither-switch",
     "type": "registry:component",
     "title": "Dither switch",
