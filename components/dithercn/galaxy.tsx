@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 import { cssColor, DitherShader } from "@/lib/dither";
 import type { DitherPalette, DitherShaderProps } from "@/lib/dither";
 
@@ -204,14 +206,147 @@ const CENTRE: GalaxyPoint = [0.5, 0.5];
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
-const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
+/** GLSL's smoothstep, for the fallback's profiles. */
+const smooth = (lo: number, hi: number, x: number) => {
+  const t = clamp((x - lo) / (hi - lo), 0, 1);
+  return t * t * (3 - 2 * t);
+};
 
-const mixed = (color: string, share: number) =>
-  `color-mix(in oklab, ${color} ${share}%, transparent)`;
+const fixed = (value: number) => value.toFixed(3);
+
+/** Half the side of the fallback's square, in disc radii. */
+const EXTENT = 1.35;
+
+/** Points along each side of an arm. The spiral is denser near the core. */
+const ARM_STEPS = 72;
+const ARM_INNER = 0.06;
+const ARM_OUTER = 1.3;
 
 /**
- * A CSS stand-in shown without WebGL: a tilted glow for the disc, faint
- * spokes for the arms and a few tiled stars, in the same colours.
+ * Soft arms as stacked ribbons, widest and faintest first. `width` is the
+ * half-width in the shader's arm phase (its crest is half as bright 0.52
+ * away), `alpha` the share of the arm's brightness each ribbon adds, and
+ * `level` how bright the arm is at the ribbon's edge, which picks its
+ * colour from a palette of three or more.
+ */
+const ARM_LAYERS = [
+  { alpha: 0.2, level: 0.3, width: 1.2 },
+  { alpha: 0.35, level: 0.65, width: 0.75 },
+  { alpha: 0.75, level: 1, width: 0.38 },
+] as const;
+
+/** Radii where the fallback's gradients sample the shader's profiles. */
+const PROFILE_STOPS = [
+  0, 0.04, 0.08, 0.12, 0.17, 0.22, 0.28, 0.34, 0.42, 0.5, 0.6, 0.7, 0.8, 0.9, 1,
+  1.1, 1.2, 1.3,
+];
+
+/**
+ * Brightness of an arm's crest at radius `r`, as in `field`. Sparse dots
+ * still trace a line where the same share of smooth paint fades out, so
+ * the fallback lifts the faint ends of each arm.
+ */
+const armTone = (r: number) =>
+  Math.min(
+    1,
+    1.05 *
+      Math.exp(-r * 0.4) *
+      (1 - smooth(0.75, 1.3, r)) *
+      smooth(0.08, 0.34, r)
+  ) ** 0.8;
+
+/** The faint light of the disc between the arms. */
+const discTone = (r: number) =>
+  0.24 * Math.exp(-r * 0.75) * (1 - smooth(0.6, 1.15, r));
+
+/**
+ * Brightness of the bulge at bulge radius `r`, as in `field`. Its faint
+ * outskirts are sparse dots in the shader, which leave the inner arms
+ * clear, but a smooth glow would fill the gap, so the fallback dims them.
+ */
+const bulgeTone = (r: number) =>
+  Math.min(
+    1,
+    0.7 * Math.exp(-r * r * 70) +
+      0.45 * Math.exp(-r * r * 11) +
+      0.05 * Math.exp(-r * 3) * (1 - smooth(0.8, 1.6, r))
+  ) ** 1.6;
+
+/** Strength of the dust lane along an arm at radius `r`. */
+const laneTone = (r: number) =>
+  smooth(0.06, 0.2, r) * (1 - smooth(0.75, 1.3, r));
+
+/** Strength of the dusty ring at radius `r`. */
+const ringTone = (r: number) =>
+  smooth(0.1, 0.28, r) * (1 - smooth(0.6, 0.95, r));
+
+/**
+ * The outline of one arm: the shader's logarithmic spiral, widened by
+ * `width` radians either side of its crest and thinned at the tip. Drawn
+ * in the plane of the disc, x along the long axis, y down the screen.
+ */
+const armPath = ({
+  phase,
+  twist,
+  width,
+  spin,
+}: {
+  phase: number;
+  twist: number;
+  width: number;
+  spin: number;
+}) => {
+  const side = (sign: number) =>
+    Array.from({ length: ARM_STEPS + 1 }, (_, step) => {
+      const r = ARM_INNER * (ARM_OUTER / ARM_INNER) ** (step / ARM_STEPS);
+      const taper = 1 - 0.55 * smooth(0.8, ARM_OUTER, r);
+      const theta =
+        twist * 2.1 * Math.log(r + 0.03) + phase + sign * width * taper;
+      return `${fixed(spin * r * Math.cos(theta))} ${fixed(-r * Math.sin(theta))}`;
+    });
+  return `M${side(1).join("L")}L${side(-1).toReversed().join("L")}Z`;
+};
+
+/** Half the length of the edge-on lane, along the long axis. */
+const LANE_REACH = 0.4;
+
+/**
+ * The edge-on lane: the near half of a dust ring of radius 0.18, as in
+ * `field`, as it crosses the bulge.
+ */
+const lanePath = (squash: number) =>
+  `M${Array.from({ length: 25 }, (_, step) => {
+    const x = LANE_REACH * (step / 12 - 1);
+    return `${fixed(x)} ${fixed(squash * Math.sqrt(Math.max(0.0324 - x * x, 0)))}`;
+  }).join("L")}`;
+
+/**
+ * A fixed scatter of background stars, as fractions of the box. A
+ * low-discrepancy sequence spreads any first few evenly, and a seeded
+ * jitter keeps them from lining up.
+ */
+const STARS = Array.from({ length: 120 }, (_, index) => {
+  const jitter = (salt: number) => {
+    const s = Math.sin(index * 127.1 + salt * 311.7) * 43_758.5453;
+    return s - Math.floor(s);
+  };
+  const n = index + 1;
+  return {
+    bright: jitter(3) > 0.6,
+    pick: jitter(4),
+    x: (0.5 + n * 0.754_877_666_2 + 0.06 * (jitter(1) - 0.5)) % 1,
+    y: (0.5 + n * 0.569_840_291 + 0.06 * (jitter(2) - 0.5)) % 1,
+  };
+});
+
+/** Background stars per unit of `stars`. */
+const STARS_PER_UNIT = 36;
+
+/**
+ * A static SVG stand-in shown without WebGL: the same tilted disc with one
+ * logarithmic spiral per arm, soft and fading outwards, dust along their
+ * inner edges, a bright bulge and a fixed scatter of stars, in the same
+ * colours.
  */
 const GalaxyFallback = ({
   palette,
@@ -220,6 +355,10 @@ const GalaxyFallback = ({
   tilt,
   angle,
   arms,
+  twist,
+  spin,
+  turn,
+  dust,
   colorField,
   stars,
 }: {
@@ -229,60 +368,282 @@ const GalaxyFallback = ({
   tilt: number;
   angle: number;
   arms: number;
+  twist: number;
+  spin: number;
+  turn: number;
+  dust: number;
   colorField: boolean;
   stars: number;
 }) => {
+  const id = useId().replaceAll(/[^\w-]/g, "");
   const paper = cssColor(palette[0]);
-  const ink = cssColor(palette.at(-1) ?? palette[1]);
-  const arm = colorField ? cssColor(palette[1]) : ink;
-  const squash = Math.max(0.17, Math.cos((tilt * Math.PI) / 180));
-  const width = `${(size * 200).toFixed(1)}cqmin`;
-  const disc = {
-    height: `calc(${width} * ${squash.toFixed(3)})`,
-    left: percent(center[0]),
-    top: percent(center[1]),
-    transform: `translate(-50%, -50%) rotate(${angle - 90}deg)`,
-    width,
+  const inks = palette.slice(1).map(cssColor);
+  const ink = inks.at(-1) ?? paper;
+  const between = (low: number, share: number) =>
+    `color-mix(in oklab, ${inks[low]}, ${inks[low + 1]} ${(share * 100).toFixed(0)}%)`;
+  // The dots a tone of `tone` paints at radius `r`, as the engine picks
+  // them. By default a tone covers a share of the dots that grows with the
+  // number of inks and steps through them from first to last. With
+  // colorField it covers its own share, coloured by place: the first ink
+  // on the arms, the last at the core. Dots of two colours side by side
+  // still read as both, but painted they average to grey, so the fallback
+  // takes the nearer ink by tone, and blends by place over a narrower ring
+  // than the shader.
+  const paint = (tone: number, r: number, level = 1) => {
+    if (colorField) {
+      const warmth = (1 - smooth(0.04, 0.3, r)) * (inks.length - 1);
+      const low = Math.min(Math.floor(warmth), inks.length - 2);
+      return {
+        color: low < 0 ? ink : between(low, warmth - low),
+        opacity: clamp(tone, 0, 1),
+      };
+    }
+    const scaled = clamp(level * tone, 0, 1) * inks.length - 1;
+    return {
+      color: inks[clamp(Math.round(scaled), 0, inks.length - 1)] ?? ink,
+      opacity: clamp(tone * inks.length, 0, 1),
+    };
   };
-  const slice = 100 / arms;
+  const squash = Math.max(0.17, Math.cos((tilt * Math.PI) / 180));
+  const slant = 1 - squash;
+  const edgeOn = smooth(0.5, 0.85, slant);
+  const veil = smooth(0.35, 0.8, slant) * dust * 0.85;
+  // Painted, a dark lane reads stronger than the same gap in the dots, so
+  // the fallback's is a little lighter and shorter than the shader's.
+  const band = clamp(edgeOn * dust * 1.2, 0, 0.97) * 0.85;
+  // Seen edge-on, the lanes along the arms pile up on the long axis into
+  // one hard seam, so they give way to the lane across the core.
+  const lanes = 0.4 * dust * (1 - 0.75 * edgeOn);
+  const scale = (outer: number, tone: (r: number) => number, level = 1) =>
+    PROFILE_STOPS.filter((r) => r <= outer).map((r) => {
+      const { color, opacity } = paint(tone(r), r, level);
+      return (
+        <stop
+          key={r}
+          offset={fixed(r / outer)}
+          style={{ stopColor: color, stopOpacity: fixed(opacity) }}
+        />
+      );
+    });
+  const paperScale = (outer: number, tone: (r: number) => number) =>
+    PROFILE_STOPS.filter((r) => r <= outer).map((r) => (
+      <stop
+        key={r}
+        offset={fixed(r / outer)}
+        style={{ stopColor: paper, stopOpacity: fixed(tone(r)) }}
+      />
+    ));
+  const phases = Array.from(
+    { length: arms },
+    (_, arm) => (2 * Math.PI * arm) / arms - turn
+  );
+  const width = `${(2 * EXTENT * size * 100).toFixed(1)}cqmin`;
   return (
-    <div
-      className="absolute inset-0"
-      style={{
-        backgroundColor: paper,
-        backgroundImage:
-          stars <= 0
-            ? undefined
-            : [
-                [ink, 17, 23],
-                [arm, 61, 131],
-                [ink, 139, 71],
-                [arm, 101, 13],
-              ]
-                .map(
-                  ([color, x, y]) =>
-                    `radial-gradient(circle at ${x}px ${y}px, ${color} 1px, transparent 1.5px)`
-                )
-                .join(", "),
-        backgroundSize: "157px 149px",
-      }}
-    >
-      <div
-        className="absolute"
+    <div className="absolute inset-0" style={{ backgroundColor: paper }}>
+      {stars > 0 && (
+        <svg aria-hidden="true" className="absolute inset-0 size-full">
+          {STARS.slice(0, Math.round(STARS_PER_UNIT * stars)).map((star) => (
+            <circle
+              key={`${star.x}-${star.y}`}
+              cx={`${(star.x * 100).toFixed(2)}%`}
+              cy={`${(star.y * 100).toFixed(2)}%`}
+              r={star.bright ? 1.5 : 1}
+              style={{
+                fill: colorField
+                  ? (inks[Math.floor(star.pick * inks.length)] ?? ink)
+                  : ink,
+              }}
+              opacity={star.bright ? 1 : 0.7}
+            />
+          ))}
+        </svg>
+      )}
+      <svg
+        aria-hidden="true"
+        className="absolute overflow-visible"
+        viewBox={`${-EXTENT} ${-EXTENT} ${2 * EXTENT} ${2 * EXTENT}`}
         style={{
-          ...disc,
-          backgroundImage: `repeating-conic-gradient(from ${angle}deg, ${mixed(arm, 28)} 0%, transparent ${(slice * 0.5).toFixed(2)}%, ${mixed(arm, 28)} ${slice.toFixed(2)}%)`,
-          maskImage:
-            "radial-gradient(closest-side, transparent 12%, #000 30%, transparent 92%)",
+          height: width,
+          left: `${(center[0] * 100).toFixed(1)}%`,
+          top: `${(center[1] * 100).toFixed(1)}%`,
+          transform: "translate(-50%, -50%)",
+          width,
         }}
-      />
-      <div
-        className="absolute"
-        style={{
-          ...disc,
-          backgroundImage: `radial-gradient(closest-side, ${ink} 0%, ${mixed(ink, 80)} 7%, ${mixed(arm, 40)} 22%, ${mixed(arm, 14)} 55%, transparent 100%)`,
-        }}
-      />
+      >
+        <defs>
+          {ARM_LAYERS.map((layer, index) => (
+            <radialGradient
+              key={layer.width}
+              id={`${id}-arm-${index}`}
+              gradientUnits="userSpaceOnUse"
+              cx="0"
+              cy="0"
+              r={ARM_OUTER}
+            >
+              {scale(ARM_OUTER, armTone, layer.level)}
+            </radialGradient>
+          ))}
+          <radialGradient
+            id={`${id}-disc`}
+            gradientUnits="userSpaceOnUse"
+            cx="0"
+            cy="0"
+            r={ARM_OUTER}
+          >
+            {scale(ARM_OUTER, discTone)}
+          </radialGradient>
+          <filter
+            id={`${id}-soft`}
+            x="-1.5"
+            y="-1.5"
+            width="3"
+            height="3"
+            filterUnits="userSpaceOnUse"
+          >
+            <feGaussianBlur stdDeviation="0.025" />
+          </filter>
+          <radialGradient
+            id={`${id}-lane`}
+            gradientUnits="userSpaceOnUse"
+            cx="0"
+            cy="0"
+            r={ARM_OUTER}
+          >
+            {paperScale(ARM_OUTER, laneTone)}
+          </radialGradient>
+          <radialGradient
+            id={`${id}-ring`}
+            gradientUnits="userSpaceOnUse"
+            cx="0"
+            cy="0"
+            r="1"
+          >
+            {paperScale(1, ringTone)}
+          </radialGradient>
+          <radialGradient
+            id={`${id}-bulge`}
+            gradientUnits="userSpaceOnUse"
+            cx="0"
+            cy="0"
+            r="1"
+          >
+            {scale(1, bulgeTone)}
+          </radialGradient>
+          <linearGradient
+            id={`${id}-near`}
+            gradientUnits="userSpaceOnUse"
+            x1="0"
+            x2="0"
+            y1="-0.02"
+            y2="0.2"
+          >
+            <stop offset="0" stopColor="#000" />
+            <stop offset="1" stopColor="#fff" />
+          </linearGradient>
+          <mask
+            id={`${id}-near-half`}
+            maskUnits="userSpaceOnUse"
+            x="-1.1"
+            y="-1.1"
+            width="2.2"
+            height="2.2"
+          >
+            <rect
+              x="-1.1"
+              y="-1.1"
+              width="2.2"
+              height="2.2"
+              fill={`url(#${id}-near)`}
+            />
+          </mask>
+          <linearGradient
+            id={`${id}-band`}
+            gradientUnits="userSpaceOnUse"
+            x1={-LANE_REACH}
+            x2={LANE_REACH}
+            y1="0"
+            y2="0"
+          >
+            {[0, 0.15, 0.3, 0.5, 0.7, 0.85, 1].map((offset) => (
+              <stop
+                key={offset}
+                offset={offset}
+                style={{
+                  stopColor: paper,
+                  stopOpacity: fixed(
+                    1 -
+                      smooth(
+                        0.12,
+                        0.32,
+                        Math.abs((2 * offset - 1) * LANE_REACH)
+                      )
+                  ),
+                }}
+              />
+            ))}
+          </linearGradient>
+        </defs>
+        <g transform={`rotate(${angle - 90})`}>
+          <g transform={`scale(1 ${fixed(squash)})`}>
+            <circle r={ARM_OUTER} fill={`url(#${id}-disc)`} />
+            <g filter={`url(#${id}-soft)`}>
+              {ARM_LAYERS.map((layer, index) =>
+                phases.map((phase) => (
+                  <path
+                    key={`${layer.width}-${phase}`}
+                    d={armPath({
+                      phase,
+                      spin,
+                      twist,
+                      width: layer.width / arms,
+                    })}
+                    fill={`url(#${id}-arm-${index})`}
+                    opacity={layer.alpha}
+                  />
+                ))
+              )}
+              {lanes > 0 &&
+                phases.map((phase) => (
+                  <path
+                    key={`lane-${phase}`}
+                    d={armPath({
+                      phase: phase + 0.45 / arms,
+                      spin,
+                      twist,
+                      width: 0.3 / arms,
+                    })}
+                    fill={`url(#${id}-lane)`}
+                    opacity={fixed(lanes)}
+                  />
+                ))}
+            </g>
+            {/* The near half of the dusty ring, softened at the long axis
+                so it doesn't cut a hard line through the arms. */}
+            {veil > 0.01 && (
+              <circle
+                r="1"
+                fill={`url(#${id}-ring)`}
+                mask={`url(#${id}-near-half)`}
+                opacity={fixed(veil)}
+              />
+            )}
+          </g>
+          <circle
+            r="1"
+            fill={`url(#${id}-bulge)`}
+            transform={`scale(1 ${fixed(0.6 + 0.4 * squash)})`}
+          />
+          {band > 0.01 && (
+            <path
+              d={lanePath(squash)}
+              fill="none"
+              stroke={`url(#${id}-band)`}
+              strokeWidth={fixed(0.6 * (0.022 + 0.07 * squash))}
+              opacity={fixed(band)}
+            />
+          )}
+        </g>
+      </svg>
     </div>
   );
 };
@@ -314,6 +675,10 @@ export const Galaxy = ({
 }: GalaxyProps) => {
   const armCount = Math.round(clamp(arms, 2, 5));
   const leaning = clamp(tilt, 0, 80);
+  const spin = direction === "counterclockwise" ? -1 : 1;
+  const winding = clamp(twist, 0.3, 2);
+  const disc = Math.max(0.05, size);
+  const dustiness = clamp(dust, 0, 1);
   return (
     <DitherShader
       {...props}
@@ -328,23 +693,27 @@ export const Galaxy = ({
         galaxyArms: armCount,
         galaxyCenter: center,
         galaxyCos: Math.max(0.17, Math.cos((leaning * Math.PI) / 180)),
-        galaxyDust: clamp(dust, 0, 1),
+        galaxyDust: dustiness,
         galaxyInks: palette.length - 2,
-        galaxySize: Math.max(0.05, size),
-        galaxySpin: direction === "counterclockwise" ? -1 : 1,
+        galaxySize: disc,
+        galaxySpin: spin,
         galaxyStars: clamp(stars, 0, 3),
-        galaxyTwist: clamp(twist, 0.3, 2),
+        galaxyTwist: winding,
       }}
       fallback={
         <GalaxyFallback
           palette={palette}
           center={center}
-          size={size}
+          size={disc}
           tilt={leaning}
           angle={angle}
           arms={armCount}
+          twist={winding}
+          spin={spin}
+          turn={0.045 * stillTime}
+          dust={dustiness}
           colorField={colorField}
-          stars={stars}
+          stars={clamp(stars, 0, 3)}
         />
       }
     />
