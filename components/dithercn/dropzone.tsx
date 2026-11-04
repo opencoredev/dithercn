@@ -1644,7 +1644,6 @@ export const DropzoneFileList = ({
         <li
           key={file.id}
           data-status={file.status}
-          title={file.name}
           className="flex min-w-0 items-center gap-3"
         >
           <svg
@@ -1656,8 +1655,22 @@ export const DropzoneFileList = ({
             <path d={PAGE_GLYPH} style={{ fill: cssColor(progress.color) }} />
           </svg>
           <div className="flex min-w-0 flex-1 flex-col gap-1">
+            {/* The full name, wrapped, so it reads on touch screens too; the
+                bar keeps it as its accessible label. */}
+            <div
+              aria-hidden="true"
+              className="flex items-baseline justify-between gap-4 text-sm"
+            >
+              <span className="text-foreground min-w-0 [overflow-wrap:anywhere]">
+                {file.name}
+              </span>
+              <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
+                {progress.valueText}
+              </span>
+            </div>
             <ProgressBar
               label={file.name}
+              hideLabel
               value={progress.value}
               valueText={progress.valueText}
               color={progress.color}

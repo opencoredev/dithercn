@@ -30,7 +30,7 @@ export default function GalaxyHero() {
   return (
     <section
       ref={ref}
-      className="relative isolate flex size-full flex-col justify-end p-8 sm:justify-center sm:p-12"
+      className={`relative isolate flex size-full flex-col ${narrow ? "justify-end p-8" : "justify-center p-12"}`}
     >
       <Galaxy
         center={layout.center}
