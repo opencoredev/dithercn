@@ -1146,8 +1146,15 @@ const useDropTarget = ({
   // Drag events fire on every child; count enters and leaves to know when the drag is gone.
   const depth = useRef(0);
   const timer = useRef(0);
+  const speak = useRef(0);
 
-  useEffect(() => () => window.clearTimeout(timer.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(timer.current);
+      cancelAnimationFrame(speak.current);
+    },
+    []
+  );
 
   const show = useCallback((next: Status, ms?: number) => {
     window.clearTimeout(timer.current);
@@ -1160,7 +1167,13 @@ const useDropTarget = ({
   const take = useCallback(
     (files: readonly File[]) => {
       const result = sortFiles(files, rules);
-      setMessage(announce(result));
+      // Empty the live region, then fill it on the next frame, so a result
+      // worded the same as the last one is still read out.
+      setMessage("");
+      cancelAnimationFrame(speak.current);
+      speak.current = requestAnimationFrame(() => {
+        setMessage(announce(result));
+      });
       const input = inputRef.current;
       if (input && name !== undefined) {
         // Keep the accepted files on the input, so a form posts them.
@@ -1386,7 +1399,7 @@ export const Dropzone = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const { pointer, pointerHandlers } = usePointer();
   const reducedMotion = usePrefersReducedMotion();
-  const moving = animate && !reducedMotion;
+  const moving = animate && !reducedMotion && !disabled;
   const rules = useRules({ accept, maxFiles, maxSize, multiple });
   const target = useDropTarget({
     disabled,

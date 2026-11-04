@@ -50,13 +50,13 @@ The indicator is drawn on one canvas behind the triggers, a canvas pixel per cel
 
 `pill` is lit like [Dither button](/docs/interface/dither-button): the full colour, a highlight dithered down from the top and a shade dithered up from the bottom, with the label's band left plain. `underline` is a bar whose ends fade through the levels, under a sparse glow that rises towards the label. Inactive tabs show a light dot lattice in the same colour on hover.
 
-When the tab changes, the new panel dissolves in over eight Bayer steps.
+Panels change at once, so their text is readable the moment it appears; the indicator carries the motion. A tab chosen with the arrow keys jumps there without a glide, so stepping through tabs never lags behind the keys.
 
 ## Examples
 
 ### Pricing toggle
 
-Two triggers as a monthly and yearly switch, in green. Each panel holds both plans, so switching dissolves the prices in at once.
+Two triggers as a monthly and yearly switch, in green. Each panel holds both plans, so switching swaps both prices at once.
 
 <ComponentPreview src="examples/dither-tabs-pricing.tsx" size="md">
   <DitherTabsPricing />
@@ -94,8 +94,7 @@ The `underline` variant across the top of a card, switching between three metric
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description:
-        "The order cells switch on and off as the indicator moves. Panels use bayer8 when this is blue-noise.",
+      description: "The order cells switch on and off as the indicator moves.",
     },
     {
       name: "bloom",
@@ -143,7 +142,6 @@ These take the props of Radix `Tabs.List`, `Tabs.Trigger` and `Tabs.Content`. Gi
 
 - The indicator, the hover dots and the glow are hidden from assistive technology. Screen readers hear the Radix roles and the selected state.
 - Focus shows a 2 pixel outline with `:focus-visible` on triggers and panels.
-- With reduced motion, the indicator jumps to the new tab, labels change colour without a fade, and panels appear without dissolving.
+- With reduced motion, the indicator jumps to the new tab and labels change colour without a fade.
 - Before the canvas first draws, and without JavaScript, the active trigger gets a flat version of the indicator in CSS, so the selection never goes missing.
-- Panels only dissolve once the tab has changed, so the first panel shows at once on page load.
 - The list does not wrap. For many tabs on a narrow screen, give it `overflow-x-auto`: the canvas covers the whole scroll width.

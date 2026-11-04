@@ -10,14 +10,12 @@ import {
   useRef,
   useState,
 } from "react";
-import type { ComponentProps, CSSProperties, Ref } from "react";
+import type { ComponentProps, CSSProperties, Ref, RefObject } from "react";
 
 import {
   bloomStyle,
   cssColor,
-  ditherMask,
   fillStyle,
-  getThresholdMap,
   isInked,
   useDitherColors,
   usePrefersReducedMotion,
@@ -62,8 +60,8 @@ interface TabsLook {
   orientation: Orientation;
   /** The selected value, or undefined when nothing is selected. */
   value: string | undefined;
-  /** The selection has changed since mount, so panels may dissolve in. */
-  changed: boolean;
+  /** True when the last change of tab came from the keyboard. */
+  keyboard: RefObject<boolean>;
 }
 
 const TabsLookContext = createContext<TabsLook | null>(null);
@@ -83,10 +81,6 @@ const PILL_RADIUS = 8;
 const BAR_CELLS = 2;
 const GLOW_SHARE = 0.32;
 const GLOW_PEAK = 0.36;
-
-// The content dissolve: steps from sparse to whole, and its length.
-const PANEL_STEPS = 8;
-const PANEL_DURATION = 300;
 
 /** A trigger's box in CSS pixels, relative to the list's padding edge. */
 interface Box {
@@ -444,28 +438,6 @@ const sameBox = (a: Box | undefined, b: Box | undefined) =>
   a.w === b.w &&
   a.h === b.h;
 
-// The panel dissolve: one keyframe per Bayer step. Blue noise's tile is
-// too large to inline eight times, so panels use bayer8 for it.
-const panelMatrix = (matrix: DitherMatrix): DitherMatrix =>
-  matrix === "blue-noise" ? "bayer8" : matrix;
-
-const panelKeyframes = (matrix: DitherMatrix) => {
-  const frames = Array.from({ length: PANEL_STEPS + 1 }, (_, index) => {
-    const at = (index / PANEL_STEPS) * 100;
-    const level = Math.max(1, index) / PANEL_STEPS;
-    const image = ditherMask(level, { matrix });
-    return `${at}%{-webkit-mask-image:${image};mask-image:${image}}`;
-  });
-  return `@keyframes dcn-tabs-in-${matrix}{${frames.join("")}}`;
-};
-
-const panelStyles = (matrix: DitherMatrix) =>
-  [
-    panelKeyframes(matrix),
-    `.dcn-tabs-panel[data-dissolve="${matrix}"][data-state="active"]{-webkit-mask-size:var(--dcn-tabs-tile);mask-size:var(--dcn-tabs-tile);-webkit-mask-repeat:repeat;mask-repeat:repeat;animation:dcn-tabs-in-${matrix} ${PANEL_DURATION}ms linear}`,
-    "@media (prefers-reduced-motion:reduce){.dcn-tabs-panel{animation:none!important}}",
-  ].join("");
-
 /** Merge an outside ref with our own. */
 const useMergedRef = <T,>(
   own: { current: T | null },
@@ -519,22 +491,20 @@ export const DitherTabs = ({
   ...props
 }: DitherTabsProps) => {
   const [uncontrolled, setUncontrolled] = useState(defaultValue);
-  const [changed, setChanged] = useState(false);
-  // Arrow keys step through tabs quickly, so a panel chosen from the
-  // keyboard shows at once; only a click or tap dissolves it in.
+  // Arrow keys step through tabs quickly, so a tab chosen from the
+  // keyboard jumps there; only a click or tap glides.
   const fromKeyboard = useRef(false);
   const value = valueProp ?? uncontrolled;
   const look: TabsLook = {
     bloom,
     cell: Math.max(1, Math.round(cell)),
-    changed,
     color,
+    keyboard: fromKeyboard,
     matrix,
     orientation,
     value,
     variant,
   };
-  const panels = panelMatrix(matrix);
 
   return (
     <TabsLookContext value={look}>
@@ -552,7 +522,6 @@ export const DitherTabs = ({
           onPointerDownCapture?.(event);
         }}
         onValueChange={(next) => {
-          setChanged(!fromKeyboard.current);
           if (valueProp === undefined) {
             setUncontrolled(next);
           }
@@ -565,9 +534,6 @@ export const DitherTabs = ({
         )}
         {...props}
       >
-        <style href={`dithercn-dither-tabs-${panels}`} precedence="dithercn">
-          {panelStyles(panels)}
-        </style>
         {children}
       </TabsPrimitive.Root>
     </TabsLookContext>
@@ -704,6 +670,7 @@ export const DitherTabsList = ({
     const to = value === undefined ? undefined : boxes?.get(value);
     if (
       reducedMotion ||
+      look.keyboard.current ||
       previous === null ||
       value === undefined ||
       from === undefined ||
@@ -719,7 +686,7 @@ export const DitherTabsList = ({
     if (rafRef.current === 0) {
       rafRef.current = requestAnimationFrame(frame);
     }
-  }, [value, reducedMotion, frame, redraw]);
+  }, [value, reducedMotion, frame, redraw, look.keyboard]);
 
   // Measure on mount, whenever the list or a trigger resizes, and once web fonts load.
   useLayoutEffect(() => {
@@ -873,28 +840,21 @@ export type DitherTabsContentProps = ComponentProps<
 >;
 
 /**
- * One panel. After the first change of tab, a newly shown panel dissolves
- * in through the Bayer levels.
+ * One panel. It shows at once: the indicator carries the motion, and the
+ * panel's text stays readable the moment it appears.
  */
 export const DitherTabsContent = ({
   className,
-  style,
   ...props
 }: DitherTabsContentProps) => {
-  const look = useTabsLook("DitherTabsContent");
-  const matrix = panelMatrix(look.matrix);
-  const tile: CSSProperties & Record<`--${string}`, string> = {
-    "--dcn-tabs-tile": `${look.cell * getThresholdMap(matrix).size}px`,
-  };
+  useTabsLook("DitherTabsContent");
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
-      data-dissolve={look.changed ? matrix : undefined}
       className={cn(
-        "dcn-tabs-panel flex-1 rounded-md outline-hidden focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring focus-visible:outline-solid",
+        "flex-1 rounded-md outline-hidden focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring focus-visible:outline-solid",
         className
       )}
-      style={{ ...tile, ...style }}
       {...props}
     />
   );

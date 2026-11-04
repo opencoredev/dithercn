@@ -193,19 +193,18 @@ export const FlowField = ({
       fallback={
         <div
           className="absolute inset-0"
-          style={{
-            backgroundColor: cssColor(palette[0]),
-            backgroundImage: variant === "lines" ? layers.lines : undefined,
-          }}
+          style={{ backgroundColor: cssColor(palette[0]) }}
         >
           <div
             className="absolute inset-0"
-            style={{ ...layers.dashes[0], opacity: clamp(intensity, 0, 1) }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{ ...layers.dashes[1], opacity: clamp(intensity, 0, 1) }}
-          />
+            style={{
+              backgroundImage: variant === "lines" ? layers.lines : undefined,
+              opacity: clamp(intensity, 0, 1),
+            }}
+          >
+            <div className="absolute inset-0" style={layers.dashes[0]} />
+            <div className="absolute inset-0" style={layers.dashes[1]} />
+          </div>
         </div>
       }
     />

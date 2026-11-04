@@ -334,6 +334,10 @@ const Knob = ({ cell, rows }: { cell: number; rows: number }) => {
       />
       <span className={LAYER} style={highlight(paint, "white", 0.3, 1)} />
       <span
+        className={cn(LAYER, "dcn-switch-hover")}
+        style={highlight(paint, "white", 0.6, 1)}
+      />
+      <span
         className={cn(LAYER, "dcn-switch-press")}
         style={fillStyle("gradient", {
           cell,
