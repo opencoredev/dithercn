@@ -12,6 +12,7 @@
     "skeleton",
     "loader",
     "empty-state",
+    "dropzone",
     "not-found"
   ]
 }

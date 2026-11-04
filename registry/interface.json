@@ -84,6 +84,24 @@
     ]
   },
   {
+    "name": "dropzone",
+    "type": "registry:component",
+    "title": "Dropzone",
+    "description": "A file drop area with a dithered dashed border that marches round its edge, thickens and pulls a glow in on drag-over and turns red for a rejected file, with a file list showing dithered progress.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/dither-button.json",
+      "{{REGISTRY_URL}}/progress-bar.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/dropzone.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dropzone.tsx"
+      }
+    ]
+  },
+  {
     "name": "not-found",
     "type": "registry:component",
     "title": "Not found",

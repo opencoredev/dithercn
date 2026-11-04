@@ -1,0 +1,212 @@
+---
+title: "Dropzone"
+description: "A file drop area with a dithered dashed border that marches round its edge, thickens and pulls a glow in on drag-over, and turns red for files it can't take."
+---
+
+import DropzoneAvatar from "@/examples/dropzone-avatar";
+import { controls as dropzoneControls } from "@/examples/dropzone-controls";
+import DropzoneDemo from "@/examples/dropzone-demo";
+import DropzoneUploads from "@/examples/dropzone-uploads";
+
+<ComponentPreview
+  src="examples/dropzone-demo.tsx"
+  size="lg"
+  controls={dropzoneControls}
+>
+  <DropzoneDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dropzone" />
+
+## Usage
+
+```tsx
+import { Dropzone } from "@/components/dithercn/dropzone";
+
+export function Attachments() {
+  return (
+    <Dropzone
+      accept="image/*,application/pdf"
+      maxSize={10 * 1024 * 1024}
+      maxFiles={5}
+      onFilesChange={({ accepted }) => upload(accepted)}
+    />
+  );
+}
+```
+
+Drag files over the zone, click it, or focus it and press Enter or Space to open the file picker. Each drop or pick is checked against `accept`, `maxSize` and `maxFiles`, and `onFilesChange` gets both lists: the accepted `File` objects, and the rejected ones with a `reason` (`"file-type"`, `"file-too-large"` or `"too-many-files"`) and a short `message`. The zone keeps no list of its own, so you decide what to keep, upload or show.
+
+The border is a row of dithered dashes, each a solid head with a tail that thins through the Bayer levels, marching slowly clockwise round the edge. With files over the zone the dashes lengthen and speed up, a second ring of cells fills in, and a glow is pulled in from the edges, its front moving inward. The sheet in the illustration drops into the tray in whole-cell steps. While a drag is over it, the zone can see how many files it carries and their types, so a drag it would refuse turns red, stops marching and shakes the sheet. Sizes are only known on drop, so a file that is too large turns the zone red for a moment after the drop and names the file.
+
+Without a `description`, the line under the title is written from the rules, such as "Images or PDF, up to 10 MB each, 5 files at most". Hover and keyboard focus light the border a little, so the zone reads as something you can act on.
+
+### File list
+
+`DropzoneFileList` shows files with a [progress bar](/docs/charts/progress-bar) each: the zone's colour while uploading, solid green when done, hatched red with the message when it failed. Leave `progress` as `null` for an upload whose size you can't measure, and the bar becomes indeterminate.
+
+```tsx
+import { DropzoneFileList } from "@/components/dithercn/dropzone";
+
+<DropzoneFileList
+  files={[
+    { id: "1", name: "brand-guide.pdf", size: 3_870_000, status: "done" },
+    {
+      id: "2",
+      name: "reel.mp4",
+      size: 41_200_000,
+      status: "uploading",
+      progress: 38,
+    },
+  ]}
+  onRemove={(id) => remove(id)}
+/>;
+```
+
+## Examples
+
+### Profile photo
+
+One image at a time (`multiple={false}`), PNG, JPG or WEBP up to 2 MB. `preview` replaces the illustration: a generative [avatar](/docs/interface/avatar) until a photo is chosen, then the photo itself, with its name as the title.
+
+<ComponentPreview src="examples/dropzone-avatar.tsx" size="lg">
+  <DropzoneAvatar />
+</ComponentPreview>
+
+### Uploads with progress
+
+Up to 8 files of 50 MB each, in blue. Accepted files join the list and upload on a timer; rejected ones join it too, in red, with the reason. Drop a few files to watch them fill.
+
+<ComponentPreview src="examples/dropzone-uploads.tsx" size="lg">
+  <DropzoneUploads />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "accept",
+      type: "string",
+      description:
+        'File types, as the accept attribute of a file input: MIME types, wildcards and extensions, such as "image/*,.pdf". Default: any.',
+    },
+    {
+      name: "maxSize",
+      type: "number",
+      description: "Largest file in bytes. Default: no limit.",
+    },
+    {
+      name: "maxFiles",
+      type: "number",
+      description:
+        "Most files per drop or pick. A drop with more is turned away whole, each file with too-many-files. Default: no limit.",
+    },
+    {
+      name: "multiple",
+      type: "boolean",
+      default: "true",
+      description: "Take more than one file at a time. False means one.",
+    },
+    {
+      name: "disabled",
+      type: "boolean",
+      default: "false",
+      description:
+        "Turn the zone off: no picker, no drops, out of the tab order and greyed out.",
+    },
+    {
+      name: "onFilesChange",
+      type: "(files: { accepted: File[]; rejected: DropzoneRejection[] }) => void",
+      description:
+        "Called after every drop or pick. A rejection is { file, reason, message }.",
+    },
+    {
+      name: "title",
+      type: "ReactNode",
+      default: '"Drop files here"',
+      description:
+        'The heading at rest. "Drop a file here" when the zone takes one.',
+    },
+    {
+      name: "description",
+      type: "ReactNode",
+      default: "From the rules",
+      description:
+        "The line under the title. Replaced by the reason while a drag is refused.",
+    },
+    {
+      name: "browseLabel",
+      type: "string",
+      default: '"Browse files"',
+      description: "Text of the browse button.",
+    },
+    {
+      name: "preview",
+      type: "ReactNode",
+      description:
+        "Shown in place of the illustration, such as the chosen image.",
+    },
+    {
+      name: "name",
+      type: "string",
+      description:
+        "Name of the file input, so a surrounding form submits the accepted files, dropped or picked.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        "Colour of the border, glow and illustration. Rejects are always red.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description: "Size of one dither cell of the border in CSS pixels.",
+    },
+    {
+      name: "radius",
+      type: "number",
+      default: "16",
+      description: "Corner radius in pixels. The border follows it.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"low"',
+      description: "Soft glow round the border in its colour.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description:
+        "March the border and bob the illustration. Drag-over still changes the look when off.",
+    },
+    {
+      name: "forceState",
+      type: '"active" | "reject"',
+      description:
+        "Show the drag-over or refused look without a drag, for docs and design reviews.",
+    },
+  ]}
+/>
+
+`DropzoneFileList` takes `files` (each `{ id, name, size }` plus `status: "uploading"` with `progress` from 0 to 100 or `null`, `status: "done"`, or `status: "error"` with a `message`), `onRemove`, `color` and `fill`.
+
+## Notes
+
+- The zone is one control: `role="button"` in the tab order, named by its title and the browse label and described by the hint. Enter and Space open the picker. The real `<input type="file">` sits next to it, hidden from view and from assistive technology.
+- A polite live region announces every result, such as "Added 3 files: a.png, b.png, c.pdf." or "Did not add report.exe: only images or PDF."
+- The border is a canvas drawn one pixel per cell and scaled up without smoothing, with no WebGL. It pauses offscreen and in hidden tabs. With reduced motion the dashes hold still, the drag-over and reject looks switch in one step, and the illustration stops bobbing and shaking. Before the first frame it shows a plain dashed edge.
+- The file list is a list of progress bars, each with `role="progressbar"`, and every remove button is labelled with the file's name.
