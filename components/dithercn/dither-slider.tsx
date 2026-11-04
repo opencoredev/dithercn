@@ -632,10 +632,11 @@ const TrackFill = ({
 type RootPointerEvent = Parameters<NonNullable<RootProps["onPointerDown"]>>[0];
 
 type RootKeyboardEvent = Parameters<NonNullable<RootProps["onKeyDown"]>>[0];
+type RootFocusEvent = Parameters<NonNullable<RootProps["onBlur"]>>[0];
 
 /**
  * `data-dragging` while a pointer holds the slider, and `data-pointer`
- * from a press until the next key, so the focus ring and the keyboard
+ * from a press until the next key or until focus leaves the slider, so the focus ring and the keyboard
  * ramp only show for keyboard users (Radix focuses the thumb on press,
  * which Chrome counts as `:focus-visible`). Chained after the caller's
  * handlers.
@@ -646,6 +647,7 @@ const useDragging = ({
   onPointerUp,
   onLostPointerCapture,
   onKeyDown,
+  onBlur,
 }: Pick<
   RootProps,
   | "disabled"
@@ -653,10 +655,19 @@ const useDragging = ({
   | "onPointerUp"
   | "onLostPointerCapture"
   | "onKeyDown"
+  | "onBlur"
 >) => {
   const [dragging, setDragging] = useState(false);
   const [pointer, setPointer] = useState(false);
   const handlers = {
+    onBlur: (event: RootFocusEvent) => {
+      onBlur?.(event);
+      // Tabbing back in later is a keyboard visit: show the focus ring.
+      const next = event.relatedTarget;
+      if (!(next instanceof Node && event.currentTarget.contains(next))) {
+        setPointer(false);
+      }
+    },
     onKeyDown: (event: RootKeyboardEvent) => {
       onKeyDown?.(event);
       setPointer(false);
@@ -770,6 +781,7 @@ export const DitherSlider = ({
   onPointerUp,
   onLostPointerCapture,
   onKeyDown,
+  onBlur,
   ...props
 }: DitherSliderProps) => {
   const labelId = useId();
@@ -778,6 +790,7 @@ export const DitherSlider = ({
   const [inner, setInner] = useState<number[]>(() => defaultValue ?? [min]);
   const drag = useDragging({
     disabled,
+    onBlur,
     onKeyDown,
     onLostPointerCapture,
     onPointerDown,

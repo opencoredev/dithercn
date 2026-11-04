@@ -515,10 +515,12 @@ export const DitherTabs = ({
         orientation={orientation}
         onKeyDownCapture={(event) => {
           fromKeyboard.current = true;
+          event.currentTarget.dataset.input = "keyboard";
           onKeyDownCapture?.(event);
         }}
         onPointerDownCapture={(event) => {
           fromKeyboard.current = false;
+          event.currentTarget.dataset.input = "pointer";
           onPointerDownCapture?.(event);
         }}
         onValueChange={(next) => {
@@ -528,7 +530,7 @@ export const DitherTabs = ({
           onValueChange?.(next);
         }}
         className={cn(
-          "flex gap-4",
+          "group/tabs flex gap-4",
           orientation === "vertical" ? "flex-row" : "flex-col",
           className
         )}
@@ -811,7 +813,9 @@ export const DitherTabsTrigger = ({
         "group/tab relative isolate inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 text-sm font-medium whitespace-nowrap select-none",
         "text-muted-foreground transition-[color] duration-200 ease-(--ease-out) hover:text-foreground motion-reduce:transition-none",
         // The label changes colour as the indicator arrives, not before.
+        // From the keyboard the indicator jumps, so the label does too.
         "data-[state=active]:delay-100 motion-reduce:data-[state=active]:delay-0",
+        "group-data-[input=keyboard]/tabs:transition-none group-data-[input=keyboard]/tabs:delay-0",
         "outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid",
         "disabled:cursor-not-allowed disabled:opacity-45",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
