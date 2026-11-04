@@ -2,11 +2,11 @@ import { Aurora } from "@/components/dithercn/aurora";
 
 export default function AuroraBorealis() {
   return (
-    <div className="absolute inset-0 bg-[oklch(0.14_0.03_250)]">
+    <div className="absolute inset-0 bg-(--sky) [--edge:oklch(0.62_0.17_155)] [--sky:oklch(0.975_0.012_290)] [--tip:oklch(0.58_0.19_300)] dark:[--edge:oklch(0.8_0.18_150)] dark:[--sky:oklch(0.14_0.03_250)] dark:[--tip:oklch(0.55_0.16_300)]">
       <Aurora
-        background="oklch(0.14 0.03 250)"
-        color="oklch(0.8 0.18 150)"
-        tipColor="oklch(0.55 0.16 300)"
+        background="--sky"
+        color="--edge"
+        tipColor="--tip"
         curtains={4}
         height={0.28}
         spread={0.08}
