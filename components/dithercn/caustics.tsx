@@ -14,7 +14,7 @@ export type CausticsProps = Omit<
   scale?: number;
   /** How tightly the light is focused, 0 to 1: soft wide bands at 0, thin bright filaments at 1. Default 0.7. */
   focus?: number;
-  /** Direction the net drifts, in degrees as in CSS: 90 moves it right, 180 down. Default 160. */
+  /** Direction the light drifts, in degrees as in CSS: 90 moves it right, 180 down. Default 160. */
   angle?: number;
   /** The brightest tone, 0 to 1. Lower it to sit text on top. Default 1. */
   intensity?: number;
@@ -43,49 +43,51 @@ vec2 causticsHash(vec2 p) {
   return fract((q.xx + q.yz) * q.zy);
 }
 
-// One net of light. Each lattice square holds a seed that circles slowly;
-// light gathers along the borders between neighbouring seeds. Returns the
-// distance to the nearest border (x) and how close the cell is to a point
-// where three borders meet (y, 1 at the junction).
-vec2 causticsNet(vec2 p, float t) {
+// One sheet of focused light. Seeds circle slowly in a lattice, and light
+// gathers along the borders between neighbours, which the warps in field()
+// bend into wobbling curves. Returns the distance to the
+// nearest border (x), the distance to the nearest seed (y, largest where
+// borders meet), and the direction across the border toward this point's
+// seed (zw).
+vec4 causticsSheet(vec2 p, float t) {
   vec2 g = floor(p);
   vec2 f = fract(p);
   vec2 r1 = vec2(8.0);
   vec2 r2 = vec2(8.0);
   float d1 = 64.0;
   float d2 = 64.0;
-  float d3 = 64.0;
   for (int y = -1; y <= 1; y++) {
     for (int x = -1; x <= 1; x++) {
       vec2 o = vec2(float(x), float(y));
       vec2 h = causticsHash(g + o);
-      vec2 r = o + 0.5 + 0.38 * sin(t * (0.22 + 0.2 * h.yx) + 6.2831853 * h) - f;
+      vec2 r = o + 0.5 + 0.42 * sin(t * (0.14 + 0.12 * h.yx) + 6.2831853 * h) - f;
       float d = dot(r, r);
       if (d < d1) {
-        d3 = d2; d2 = d1; r2 = r1; d1 = d; r1 = r;
+        d2 = d1; r2 = r1;
+        d1 = d; r1 = r;
       } else if (d < d2) {
-        d3 = d2; d2 = d; r2 = r;
-      } else if (d < d3) {
-        d3 = d;
+        d2 = d; r2 = r;
       }
     }
   }
-  // Distance to the bisector of the two nearest seeds: the same width
-  // along the whole border, unlike the gap between the two distances.
-  float edge = dot(0.5 * (r1 + r2), normalize(r2 - r1));
-  float junction = exp(-(sqrt(d3) - sqrt(d1)) * 9.0);
-  return vec2(edge, junction);
+  vec2 across = normalize(r2 - r1);
+  return vec4(dot(0.5 * (r1 + r2), across), sqrt(d1), -across);
 }
 
-// The light a net throws: a crisp core about causticsWidth cells wide,
-// thicker and hotter where borders meet, dimmer along long runs, pinched
-// thin in places by pinch, and a narrow glow that the sunlight brightens.
-float causticsLight(vec2 net, float perCell, float glow, float sun, float pinch) {
-  float d = net.x / perCell;
-  float w = causticsWidth * (0.75 + 0.9 * net.y * net.y) * pinch;
-  float core = 1.0 - smoothstep(w * 0.5 - 0.5, w * 0.5 + 0.5, d);
-  float halo = exp(-net.x * glow);
-  return core * mix(0.7, 1.0, max(net.y, sun * 0.6)) + (halo * 0.26 + net.y * net.y * 0.14) * sun;
+// The light a sheet throws: a sharp crest about width dither cells across,
+// brighter and wider far from the seeds, so it is hottest where borders meet
+// and faint along short ones, plus a soft spill on the side facing spread
+// only, as focused light fans out past the crest. gate dims whole stretches,
+// so some borders fade out and leave cells open.
+float causticsLight(vec4 sheet, float perCell, float width, float glow, float gate, vec2 spread) {
+  float reach = clamp((sheet.y - 0.25) / 0.45, 0.0, 1.0);
+  float strength = (0.35 + 0.65 * reach * sqrt(reach)) * (0.15 + 0.85 * gate);
+  float w = width * (0.75 + 0.45 * reach * (0.3 + 0.7 * gate));
+  float d = sheet.x / (perCell * w);
+  float crest = exp(-d * d);
+  float side = smoothstep(0.0, 1.0, (dot(sheet.zw, spread) + 0.2) / 0.9);
+  float spill = side * exp(-sheet.x * glow) * 0.35;
+  return (crest + spill) * strength;
 }
 
 float field(vec2 uv, vec2 res, float t) {
@@ -95,31 +97,40 @@ float field(vec2 uv, vec2 res, float t) {
   // One pattern unit is res.y / scale cells.
   float perCell = causticsScale / res.y;
 
-  // A slow swell bends the borders into curves, as a real surface would.
+  // A slow swell bends the borders into curves, and quicker ripples make
+  // them wobble along their length, the way waves above bend the light.
   vec2 bend = vec2(
-    snoise(p * 0.55 + vec2(t * 0.06, 1.7)),
-    snoise(p * 0.55 + vec2(4.3, -t * 0.05))
+    snoise(p * 0.5 + vec2(t * 0.06, 1.7)),
+    snoise(p * 0.5 + vec2(4.3, -t * 0.05))
   );
-  // Smaller, quicker ripples on top make each border wobble along its length.
   vec2 ripple = vec2(
-    snoise(p * 1.5 + vec2(-t * 0.09, 8.2)),
-    snoise(p * 1.5 + vec2(2.6, t * 0.08))
+    snoise(p * 1.1 + vec2(-t * 0.16, 8.2)),
+    snoise(p * 1.1 + vec2(2.6, t * 0.15))
   );
-  vec2 q = p + flow + bend * 0.32 + ripple * 0.08;
-  // Sunlight comes through in broad patches, never evenly.
-  float sun = 0.5 + 0.5 * snoise(p * 0.18 + flow * 0.4 + vec2(t * 0.012, 2.1));
-  float glow = mix(5.0, 18.0, causticsFocus);
-  // The surface focuses some stretches of each filament harder than others.
-  float pinch = 0.7 + 0.45 * (0.5 + 0.5 * bend.x);
-  float near = causticsLight(causticsNet(q, t), perCell, glow, sun, pinch);
+  float width = 2.3 - 1.3 * causticsFocus;
+  float glow = 8.0 + 10.0 * causticsFocus;
+  // The side each crest spills toward turns slowly with the swell.
+  vec2 spread = vec2(cos(1.0 + bend.x * 1.5), sin(1.0 + bend.x * 1.5));
 
-  // A larger, fainter net lower down, turned and drifting more slowly.
-  // Where the two cross, the light adds up into hot spots.
-  vec2 s = mat2(0.82, -0.57, 0.57, 0.82) * (p * 0.7) + flow * 0.55 - bend.yx * 0.28 + vec2(13.1, 7.9);
-  float far = causticsLight(causticsNet(s, t * 0.7 + 3.0), perCell * 0.7, glow * 0.8, sun, 1.0);
+  // The bright upper sheet, drifting with angle.
+  vec2 q = p + flow + bend * 0.36 + ripple * 0.14;
+  float gateA = clamp((snoise(p * 0.7 + vec2(t * 0.05 + 3.0, -1.0)) + 0.45) / 0.8, 0.0, 1.0);
+  float a = causticsLight(causticsSheet(q, t), perCell, width, glow, gateA, spread);
 
-  // The mask clears the light, never the water, so masked areas still
-  // read as the pool floor.
+  // A finer, fainter sheet below it, turned, wobbling to its own ripples and
+  // drifting at a third of the speed, about 35 degrees off angle, so the
+  // places where the two sheets cross keep sliding.
+  vec2 s = mat2(0.82, -0.57, 0.57, 0.82) * p * 1.35 + flow * 0.5
+    - bend.yx * 0.3 + vec2(-ripple.y, ripple.x) * 0.3 + vec2(13.1, 7.9);
+  float gateB = clamp((snoise(p * 0.6 + vec2(-t * 0.04, 5.0)) + 0.5) / 0.9, 0.0, 1.0);
+  float b = causticsLight(causticsSheet(s, t * 0.75 + 3.0), perCell * 1.35, width * 0.8, glow * 1.2, gateB, spread);
+
+  // Sunlight comes through in broad patches, never evenly: it dapples the
+  // floor and brightens the light in some areas more than others.
+  float sun = 0.5 + 0.5 * snoise(p * 0.2 + flow * 0.4 + vec2(t * 0.012, 2.1));
+  // Where the sheets cross, the light adds up into hot knots.
+  float light = a + 0.45 * b + 1.6 * a * b;
+
   float keep = 1.0;
   if (causticsMask > 2.5) {
     keep = smoothstep(0.04, 0.5, uv.y);
@@ -130,8 +141,10 @@ float field(vec2 uv, vec2 res, float t) {
     keep = smoothstep(0.8, 1.45, length(c));
   }
 
-  float water = 0.01 + 0.04 * sun;
-  float tone = water + (near + far * 0.4) * keep;
+  // The mask clears the light, never the water, so masked areas still
+  // read as the pool floor.
+  float water = 0.01 + 0.11 * sun * sun;
+  float tone = water + 1.5 * light * (0.5 + 0.5 * sun) * keep;
   return clamp(tone, 0.0, 1.0) * causticsIntensity;
 }
 `;
@@ -140,7 +153,7 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 /**
- * The field samples at `p + flow`, so the net moves against this vector:
+ * The bright sheet samples at `p + flow`, so it moves against this vector:
  * it points opposite the CSS direction, in field space where y points up.
  */
 const flowVector = (angle: number) => {
@@ -206,9 +219,10 @@ const CausticsFallback = ({
 };
 
 /**
- * The shifting net of light on the floor of a sunlit pool: thin, bright
- * filaments that pinch into hot spots where they meet, wobbling over dim
- * water. Decorative and full-bleed: size it with `className`, usually
+ * The shifting light on the floor of a sunlit pool: sharp filaments of
+ * uneven strength that spill softly to one side, break off, and pinch into
+ * hot knots where two rippling sheets of light cross, over dappled water.
+ * Decorative and full-bleed: size it with `className`, usually
  * `absolute inset-0`.
  */
 export const Caustics = ({

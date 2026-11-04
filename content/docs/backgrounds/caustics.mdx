@@ -1,6 +1,6 @@
 ---
 title: "Caustics"
-description: "The shifting net of light on the floor of a sunlit pool: thin filaments that meet in hot spots and wobble over dim water, drawn as a dither."
+description: "The shifting light on the floor of a sunlit pool: sharp, uneven filaments that pinch into hot knots, break off and wobble over dappled water, drawn as a dither."
 ---
 
 import CausticsDemo from "@/examples/caustics-demo";
@@ -36,7 +36,7 @@ export function Hero() {
 }
 ```
 
-Light gathers along the borders of slowly circling cells, and a slow swell bends those borders into curves, the way waves on a surface bend the light below. Each filament keeps the same width in dither cells at any box size, so the lines stay crisp. Where three borders meet, the filament thickens into a hot spot. A second, larger and fainter net drifts more slowly underneath and crosses the first, and broad patches of sunlight brighten some areas more than others. It defaults to the 8×8 matrix, which keeps the glow around each filament smooth.
+Light gathers in sharp crests that a slow swell bends into curves and quicker ripples set wobbling, the way waves on the surface bend the light below. Each crest is brightest where it meets others and fades along the way, and whole stretches dim out, so the light breaks and leaves gaps instead of closing into cells. Past each crest the light spills softly to one side only, as focused light spreads out again. A second, finer and fainter sheet drifts at a third of the speed, about 35 degrees off `angle`, so the places where the two cross slide along, flaring into hot knots and fading. Under it all, broad patches of sunlight dapple the floor. Crests keep their width in dither cells at any box size, so they stay crisp. It defaults to the 8×8 matrix, which keeps the spill smooth.
 
 ## Examples
 
@@ -83,7 +83,7 @@ Four blues from deep water to a pale aqua highlight, a tighter `focus` and a dri
       type: "number",
       default: "160",
       description:
-        "Direction the net drifts, in degrees as in CSS: 90 moves it right, 180 down.",
+        "Direction the light drifts, in degrees as in CSS: 90 moves it right, 180 down.",
     },
     {
       name: "intensity",
@@ -122,7 +122,7 @@ Four blues from deep water to a pale aqua highlight, a tighter `focus` and a dri
       name: "speed",
       type: "number",
       default: "1",
-      description: "How fast the net wobbles and drifts.",
+      description: "How fast the light wobbles and drifts.",
     },
     {
       name: "animate",
