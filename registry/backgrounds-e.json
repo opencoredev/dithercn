@@ -1,0 +1,16 @@
+[
+  {
+    "name": "flow-field",
+    "type": "registry:component",
+    "title": "Flow field",
+    "description": "A wind map: streamlines of a slowly turning, swirling flow, with bright streaks that travel along them and leave fading tails.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/flow-field.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/flow-field.tsx"
+      }
+    ]
+  }
+]
