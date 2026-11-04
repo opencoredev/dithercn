@@ -329,6 +329,10 @@ const fillSettings = (props: DitherTextFill & { ghost?: number }) => {
  * line-height the ascenders and descenders reach past it. So the image is
  * painted on an inner span that bleeds 0.3em past the text on every side
  * (padding, cancelled by an equal negative margin, so layout is unchanged).
+ * The span ignores the pointer so the bleed can't take clicks from
+ * neighbours, and elements nested in it take pointer events again. They
+ * don't inherit `pointer-events: none` from an ancestor through the span:
+ * disable nested links with `inert`, or set `pointer-events` on them.
  */
 export const DitherText = (props: DitherTextProps) => {
   const {
