@@ -1,5 +1,19 @@
 [
   {
+    "name": "galaxy",
+    "type": "registry:component",
+    "title": "Galaxy",
+    "description": "A tilted spiral galaxy turning slowly, with a bright core, arms with knots of stars, dust lanes and fixed stars behind.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/galaxy.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/galaxy.tsx"
+      }
+    ]
+  },
+  {
     "name": "caustics",
     "type": "registry:component",
     "title": "Caustics",

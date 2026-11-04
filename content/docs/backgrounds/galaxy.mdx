@@ -1,0 +1,179 @@
+---
+title: "Galaxy"
+description: "A tilted spiral galaxy turning slowly, with a bright core, arms with knots of stars, dust lanes and fixed stars behind."
+---
+
+import GalaxyDemo from "@/examples/galaxy-demo";
+import { controls as galaxyControls } from "@/examples/galaxy-controls";
+import GalaxyEdgeOn from "@/examples/galaxy-edge-on";
+import GalaxyHero from "@/examples/galaxy-hero";
+
+<ComponentPreview
+  src="examples/galaxy-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={galaxyControls}
+>
+  <GalaxyDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="galaxy" />
+
+## Usage
+
+```tsx
+import { Galaxy } from "@/components/dithercn/galaxy";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Galaxy className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+The galaxy is a flat disc seen at an angle: `tilt` leans it away from you and `angle` turns its long axis on the screen. A round bulge glows at the centre, and logarithmic arms wind out of it, with knots of bright stars along them and dark dust lanes on their inner edges. A faint halo surrounds the disc, and sparse stars sit fixed behind it.
+
+The arms turn slowly as one piece, the way a real spiral pattern does, while the stars and dust stream through them, faster near the core than at the rim. That shear is reset out of sight every few seconds, so the spiral keeps its shape however long the page stays open.
+
+By default the palette maps brightness to colour, from paper to the last colour. Set `colorField` to colour the dots by place instead: the last colour at the core, the first ink colour on the arms, and a random palette colour for each background star.
+
+## Examples
+
+### Nearly edge-on
+
+`tilt={76}` lays the disc almost flat, so the dust on the near side cuts a dark band across the bulge. Three arms, a tighter `twist` and `colorField` with a four-colour palette give a warm core that passes through purple into cool arms.
+
+<ComponentPreview src="examples/galaxy-edge-on.tsx" size="full" align="stretch">
+  <GalaxyEdgeOn />
+</ComponentPreview>
+
+### Beside a headline
+
+The galaxy sits high on the right and turns counterclockwise, and the text sits in the clear space on the left, or below it on a phone. `size` is a share of the shorter side, so the disc stays in frame on narrow screens.
+
+<ComponentPreview src="examples/galaxy-hero.tsx" size="lg" align="stretch">
+  <GalaxyHero />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "arms",
+      type: "number",
+      default: "2",
+      description: "How many spiral arms, from 2 to 5.",
+    },
+    {
+      name: "twist",
+      type: "number",
+      default: "1",
+      description: "How tightly the arms wind, from 0.3 (open) to 2 (tight).",
+    },
+    {
+      name: "tilt",
+      type: "number",
+      default: "55",
+      description:
+        "How far the disc leans away, in degrees: 0 is face-on, 80 nearly edge-on.",
+    },
+    {
+      name: "angle",
+      type: "number",
+      default: "70",
+      description:
+        "Direction of the disc's long axis, in degrees as in CSS: 0 is up, 90 right.",
+    },
+    {
+      name: "direction",
+      type: '"clockwise" | "counterclockwise"',
+      default: '"clockwise"',
+      description:
+        "Which way the disc turns on screen. The arms always trail behind the turn.",
+    },
+    {
+      name: "center",
+      type: "[x: number, y: number]",
+      default: "[0.5, 0.5]",
+      description:
+        "Centre of the galaxy, as fractions of the box from the top left.",
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "0.42",
+      description: "Radius of the disc as a share of the box's shorter side.",
+    },
+    {
+      name: "dust",
+      type: "number",
+      default: "0.8",
+      description: "Strength of the dark dust lanes, from 0 to 1.",
+    },
+    {
+      name: "stars",
+      type: "number",
+      default: "1",
+      description: "How many background stars, from 0 to 3. They never move.",
+    },
+    {
+      name: "colorField",
+      type: "boolean",
+      default: "false",
+      description:
+        "Colour the dots by place: the last palette colour at the core, the first ink colour on the arms. Give the palette three or more colours.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description:
+        "How fast it turns. At 1 the arms take about 140 seconds for a full turn.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description:
+        "false stops the motion: a still frame if it starts off, the current frame if it was moving.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The galaxy fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The galaxy is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a tilted CSS glow with faint arms and a few stars, in the same colours.
+- On a light theme the paper is light and the galaxy is drawn in ink, so the dust lanes read as pale gaps, like a printed negative. Pass a dark first palette colour for a dark sky on any theme.
