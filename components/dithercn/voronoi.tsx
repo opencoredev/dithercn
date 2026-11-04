@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cssColor, DitherShader } from "@/lib/dither";
 import type {
@@ -222,9 +222,14 @@ const clip = (polygon: readonly Point[], mid: Point, normal: Point) => {
   });
 };
 
-/** A still Voronoi diagram, `rows` squares tall and 16:9 wide, for the SVG fallback. */
-const fallbackCells = (rows: number): FallbackCell[] => {
-  const columns = Math.ceil((rows * 16) / 9);
+/** A still Voronoi diagram covering `columns` by `rows` grid squares, for the SVG fallback. */
+const fallbackCells = ({
+  columns,
+  rows,
+}: {
+  columns: number;
+  rows: number;
+}): FallbackCell[] => {
   const seed = (x: number, y: number): Point => [
     x + 0.5 + 0.42 * Math.sin(6.283 * fallbackHash(x, y, 1)),
     y + 0.5 + 0.42 * Math.sin(6.283 * fallbackHash(x, y, 2)),
@@ -262,13 +267,52 @@ const fallbackCells = (rows: number): FallbackCell[] => {
   return cells;
 };
 
+interface BoxSize {
+  readonly width: number;
+  readonly height: number;
+}
+
+// Server and first client frame assume 16:9, so hydration matches; the
+// measured box replaces it straight after.
+const FIRST_BOX: BoxSize = { height: 9, width: 16 };
+
+// Keeps a very long, thin box at large `scale` from drawing thousands of polygons.
+const MAX_SQUARES = 2400;
+
+const useBoxSize = (ref: { current: HTMLElement | null }) => {
+  const [size, setSize] = useState<BoxSize | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) {
+      return;
+    }
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) {
+        return;
+      }
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      if (width > 0 && height > 0) {
+        setSize((last) =>
+          last?.width === width && last.height === height
+            ? last
+            : { height, width }
+        );
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return size;
+};
+
 const share = (color: DitherColor, percent: number) =>
   `color-mix(in oklab, ${cssColor(color)} ${percent.toFixed(0)}%, transparent)`;
 
 /** The same cells drawn as SVG polygons, shown without WebGL. */
 const Fallback = ({
   variant,
-  scale,
+  cells,
   wall,
   fade,
   cell,
@@ -276,18 +320,38 @@ const Fallback = ({
   colors,
 }: {
   variant: VoronoiVariant;
-  scale: number;
+  /** Grid squares across the box's shorter side, as in the shader. */
+  cells: number;
   wall: number;
   fade: number;
   cell: number;
   palette: DitherPalette;
   colors: readonly DitherColor[] | undefined;
 }) => {
-  const rows = Math.min(14, Math.max(2, Math.round(5 * scale)));
-  const cells = useMemo(() => fallbackCells(rows), [rows]);
+  const ref = useRef<HTMLDivElement>(null);
+  const box = useBoxSize(ref) ?? FIRST_BOX;
+  // Like the shader, a grid square is the shorter side over `cells`.
+  const fit = Math.max(
+    1,
+    Math.sqrt(
+      (box.width * box.height * cells * cells) /
+        (Math.min(box.width, box.height) ** 2 * MAX_SQUARES)
+    )
+  );
+  const square = (Math.min(box.width, box.height) / cells) * fit;
+  const viewWidth = box.width / square;
+  const viewHeight = box.height / square;
+  const columns = Math.ceil(viewWidth);
+  const rows = Math.ceil(viewHeight);
+  const polygons = useMemo(
+    () => fallbackCells({ columns, rows }),
+    [columns, rows]
+  );
   const [paper, second] = palette;
   const ink = palette.at(-1) ?? second;
-  const columns = Math.ceil((rows * 16) / 9);
+  // Capped at a fifth of a grid square, as in the shader. Only exact once
+  // the box is measured, since the first frame's square is a guess.
+  const wallPx = Math.min(wall * cell, square * 0.2);
   const fillOf = (grain: number) => {
     const color =
       colors === undefined
@@ -303,13 +367,14 @@ const Fallback = ({
   };
   return (
     <div
+      ref={ref}
       className="absolute inset-0"
       style={{ backgroundColor: cssColor(paper) }}
     >
       <svg
         aria-hidden="true"
         className="absolute inset-0 size-full"
-        viewBox={`0 0 ${columns} ${rows}`}
+        viewBox={`0 0 ${viewWidth.toFixed(3)} ${viewHeight.toFixed(3)}`}
         preserveAspectRatio="xMidYMid slice"
         style={{
           // The same oval the shader clears, as a mask.
@@ -319,13 +384,13 @@ const Fallback = ({
               : undefined,
         }}
       >
-        {cells.map(({ points, grain }) => (
+        {polygons.map(({ points, grain }) => (
           <polygon
             key={points}
             points={points}
             fill={fillOf(grain)}
             stroke={cssColor(variant === "foam" ? ink : paper)}
-            strokeWidth={variant === "stone" ? wall * cell * 1.6 : wall * cell}
+            strokeWidth={variant === "stone" ? wallPx * 1.6 : wallPx}
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
           />
@@ -379,7 +444,7 @@ export const Voronoi = ({
       fallback={
         <Fallback
           variant={variant}
-          scale={scale}
+          cells={cells}
           wall={wallWidth}
           fade={clear}
           cell={props.cell ?? 3}
