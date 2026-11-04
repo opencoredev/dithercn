@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs as TabsPrimitive } from "radix-ui";
+import { Direction, Tabs as TabsPrimitive } from "radix-ui";
 import {
   createContext,
   use,
@@ -45,11 +45,19 @@ import { cn } from "@/lib/utils";
  * in the list resizes or a web font finishes loading. Before the first
  * draw (and without JavaScript) the active trigger gets a flat CSS
  * version of the indicator.
+ *
+ * The start edge follows the direction Radix resolves (the `dir` prop,
+ * else a `DirectionProvider`, else left to right), which is also the `dir`
+ * attribute the list carries. Right to left, the vertical
+ * underline, its hairline, the hover strip and the trigger padding sit on
+ * the right; a list that overflows to the left keeps the canvas under it.
  */
 
 export type DitherTabsVariant = "pill" | "underline";
 
 type Orientation = "horizontal" | "vertical";
+
+type TextDirection = "ltr" | "rtl";
 
 interface TabsLook {
   variant: DitherTabsVariant;
@@ -58,6 +66,8 @@ interface TabsLook {
   bloom: Bloom;
   matrix: DitherMatrix;
   orientation: Orientation;
+  /** The direction Radix resolved for the tabs, which sets the start edge. */
+  direction: TextDirection;
   /** The selected value, or undefined when nothing is selected. */
   value: string | undefined;
   /** True when the last change of tab came from the keyboard. */
@@ -82,7 +92,7 @@ const BAR_CELLS = 2;
 const GLOW_SHARE = 0.32;
 const GLOW_PEAK = 0.36;
 
-/** A trigger's box in CSS pixels, relative to the list's padding edge. */
+/** A trigger's box in CSS pixels, relative to the canvas's top left. */
 interface Box {
   x: number;
   y: number;
@@ -109,6 +119,11 @@ interface Scene {
 
 interface Geometry {
   boxes: Map<string, Box>;
+  /**
+   * Where the canvas starts, from the list's left padding edge: 0, or
+   * negative when right-to-left triggers overflow to the left.
+   */
+  left: number;
   width: number;
   height: number;
 }
@@ -231,6 +246,8 @@ interface ShapeContext {
   size: number;
   matrix: DitherMatrix;
   vertical: boolean;
+  /** Right to left: the vertical underline's start edge is the right. */
+  rtl: boolean;
 }
 
 /**
@@ -267,18 +284,20 @@ const pillSample = (
 };
 
 /**
- * The underline: a bar along the bottom (or the start edge, when vertical)
- * that fades towards both ends, under a sparse glow towards the label.
+ * The underline: a bar along the bottom (or the start edge, when vertical:
+ * left, or right when right to left) that fades towards both ends, under a
+ * sparse glow towards the label.
  */
 const underlineSample = (
   box: Box,
   px: number,
   py: number,
-  { size, vertical }: ShapeContext
+  { size, vertical, rtl }: ShapeContext
 ): Sample => {
   // Along the bar and across it, measured from the bar's outer edge.
   const along = vertical ? (py - box.y) / box.h : (px - box.x) / box.w;
-  const across = vertical ? px - box.x : box.y + box.h - py;
+  const fromStart = rtl ? box.x + box.w - px : px - box.x;
+  const across = vertical ? fromStart : box.y + box.h - py;
   const depth = vertical ? box.w : box.h;
   if (along < 0 || along > 1 || across < 0 || across > depth) {
     return NONE;
@@ -323,6 +342,7 @@ interface PaintOptions {
   variant: DitherTabsVariant;
   matrix: DitherMatrix;
   vertical: boolean;
+  rtl: boolean;
 }
 
 const toByte = (value: number) => Math.round(clamp01(value) * 255);
@@ -336,6 +356,7 @@ const paint = ({
   variant,
   matrix,
   vertical,
+  rtl,
 }: PaintOptions) => {
   const context = canvas.getContext("2d");
   if (!context) {
@@ -352,7 +373,7 @@ const paint = ({
     for (let cx = 0; cx < cols; cx += 1) {
       const px = (cx + 0.5) * size;
       const py = (cy + 0.5) * size;
-      const shape: ShapeContext = { cx, cy, matrix, size, vertical };
+      const shape: ShapeContext = { cx, cy, matrix, rtl, size, vertical };
       let best = sample(scene.body, px, py, shape);
       if (best.tone > 0 && scene.trail < 1) {
         const s = alongBody(scene, px, py);
@@ -407,27 +428,35 @@ const offsetWithin = (el: HTMLElement, list: HTMLElement): Box => {
 };
 
 const measureList = (list: HTMLElement): Geometry => {
-  const boxes = new Map<string, Box>();
+  const found = new Map<string, Box>();
   for (const el of list.querySelectorAll<HTMLElement>(
     "[data-slot='tabs-trigger'][data-value]"
   )) {
     const { value } = el.dataset;
     if (value !== undefined && el.closest("[data-slot='tabs-list']") === list) {
-      boxes.set(value, offsetWithin(el, list));
+      found.set(value, offsetWithin(el, list));
     }
   }
   // The triggers' extent, not scrollWidth: the canvas layer itself counts
   // towards scrollWidth, so a list that shrank would keep its old width.
+  // Right to left, triggers that overflow sit at negative offsets.
   const style = getComputedStyle(list);
+  const padLeft = Number.parseFloat(style.paddingLeft) || 0;
   const padRight = Number.parseFloat(style.paddingRight) || 0;
   const padBottom = Number.parseFloat(style.paddingBottom) || 0;
-  let width = list.clientWidth;
+  let left = 0;
+  let right = list.clientWidth;
   let height = list.clientHeight;
-  for (const box of boxes.values()) {
-    width = Math.max(width, box.x + box.w + padRight);
+  for (const box of found.values()) {
+    left = Math.min(left, box.x - padLeft);
+    right = Math.max(right, box.x + box.w + padRight);
     height = Math.max(height, box.y + box.h + padBottom);
   }
-  return { boxes, height, width };
+  const boxes = new Map<string, Box>();
+  for (const [value, box] of found) {
+    boxes.set(value, { ...box, x: box.x - left });
+  }
+  return { boxes, height, left, width: right - left };
 };
 
 const sameBox = (a: Box | undefined, b: Box | undefined) =>
@@ -480,6 +509,7 @@ export const DitherTabs = ({
   cell = 2,
   bloom = "off",
   matrix = "bayer4",
+  dir,
   value: valueProp,
   defaultValue,
   onValueChange,
@@ -495,10 +525,13 @@ export const DitherTabs = ({
   // keyboard jumps there; only a click or tap glides.
   const fromKeyboard = useRef(false);
   const value = valueProp ?? uncontrolled;
+  // The same direction Radix resolves and writes on the root and the list.
+  const direction = Direction.useDirection(dir);
   const look: TabsLook = {
     bloom,
     cell: Math.max(1, Math.round(cell)),
     color,
+    direction,
     keyboard: fromKeyboard,
     matrix,
     orientation,
@@ -513,6 +546,7 @@ export const DitherTabs = ({
         data-variant={variant}
         value={value}
         orientation={orientation}
+        dir={direction}
         onKeyDownCapture={(event) => {
           fromKeyboard.current = true;
           event.currentTarget.dataset.input = "keyboard";
@@ -547,7 +581,7 @@ export type DitherTabsListProps = ComponentProps<typeof TabsPrimitive.List>;
 const LIST = {
   pill: "bg-muted h-10 items-center gap-1 rounded-[12px] p-1 data-[orientation=vertical]:h-auto data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch",
   underline:
-    "items-end gap-1 shadow-[inset_0_-1px_0_var(--border)] data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:shadow-[inset_1px_0_0_var(--border)]",
+    "items-end gap-1 shadow-[inset_0_-1px_0_var(--border)] data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch data-[orientation=vertical]:shadow-[inset_1px_0_0_var(--border)] data-[orientation=vertical]:[&[dir=rtl]]:shadow-[inset_-1px_0_0_var(--border)]",
 } as const satisfies Record<DitherTabsVariant, string>;
 
 /**
@@ -561,8 +595,9 @@ export const DitherTabsList = ({
   ...props
 }: DitherTabsListProps) => {
   const look = useTabsLook("DitherTabsList");
-  const { variant, matrix, color, bloom, value, orientation } = look;
+  const { variant, matrix, color, bloom, value, orientation, direction } = look;
   const vertical = orientation === "vertical";
+  const rtl = direction === "rtl";
   const listRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<ImageData | null>(null);
@@ -578,9 +613,9 @@ export const DitherTabsList = ({
   const setRef = useMergedRef(listRef, ref);
 
   // Everything a frame needs, read by the loop without restarting it.
-  const live = useRef({ inks, matrix, variant, vertical });
+  const live = useRef({ inks, matrix, rtl, variant, vertical });
   useLayoutEffect(() => {
-    live.current = { inks, matrix, variant, vertical };
+    live.current = { inks, matrix, rtl, variant, vertical };
   });
 
   const draw = useCallback((scene: Scene) => {
@@ -651,11 +686,12 @@ export const DitherTabsList = ({
       canvas.height = rows;
       canvas.style.width = `${cols * size}px`;
       canvas.style.height = `${rows * size}px`;
-      const clip = canvas.parentElement;
-      if (clip) {
-        clip.style.width = `${geometry.width}px`;
-        clip.style.height = `${geometry.height}px`;
-      }
+    }
+    const clip = canvas.parentElement;
+    if (clip) {
+      clip.style.left = `${geometry.left}px`;
+      clip.style.width = `${geometry.width}px`;
+      clip.style.height = `${geometry.height}px`;
     }
     redraw();
   }, [look.cell, redraw]);
@@ -719,13 +755,13 @@ export const DitherTabsList = ({
     };
   }, [measure, children]);
 
-  // Redraw when the colours, matrix or variant change (a theme switch, a knob).
+  // Redraw when the colours, matrix, variant or direction change (a theme switch, a knob).
   useEffect(() => {
     if (glideRef.current) {
       return;
     }
     redraw();
-  }, [inks, matrix, variant, vertical, redraw]);
+  }, [inks, matrix, variant, vertical, rtl, redraw]);
 
   useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
@@ -746,6 +782,8 @@ export const DitherTabsList = ({
       )}
       style={{ ...fallback, ...style }}
       {...props}
+      // Radix only writes `dir` on the root; the start-edge styles key on the list's own.
+      dir={direction}
     >
       <span
         aria-hidden="true"
@@ -778,14 +816,17 @@ const TRIGGER = {
   underline: cn(
     "h-10 px-3 data-[state=active]:text-foreground",
     "group-data-pending/dither-tabs:data-[state=active]:shadow-[inset_0_-4px_0_var(--dcn-tabs-ink)]",
-    "group-data-[orientation=vertical]/dither-tabs:justify-start group-data-[orientation=vertical]/dither-tabs:pl-4"
+    // Vertical: the bar and the label's indent are on the start edge.
+    "group-data-[orientation=vertical]/dither-tabs:group-data-pending/dither-tabs:data-[state=active]:shadow-[inset_4px_0_0_var(--dcn-tabs-ink)]",
+    "group-data-[orientation=vertical]/dither-tabs:group-data-pending/dither-tabs:group-[[dir=rtl]]/dither-tabs:data-[state=active]:shadow-[inset_-4px_0_0_var(--dcn-tabs-ink)]",
+    "group-data-[orientation=vertical]/dither-tabs:justify-start group-data-[orientation=vertical]/dither-tabs:ps-4"
   ),
 } as const satisfies Record<DitherTabsVariant, string>;
 
 const HOVER = {
   pill: "inset-0 rounded-[inherit]",
   underline:
-    "inset-x-0 bottom-0 h-(--dcn-tabs-bar) group-data-[orientation=vertical]/dither-tabs:inset-y-0 group-data-[orientation=vertical]/dither-tabs:right-auto group-data-[orientation=vertical]/dither-tabs:h-auto group-data-[orientation=vertical]/dither-tabs:w-(--dcn-tabs-bar)",
+    "inset-x-0 bottom-0 h-(--dcn-tabs-bar) group-data-[orientation=vertical]/dither-tabs:inset-y-0 group-data-[orientation=vertical]/dither-tabs:end-auto group-data-[orientation=vertical]/dither-tabs:h-auto group-data-[orientation=vertical]/dither-tabs:w-(--dcn-tabs-bar)",
 } as const satisfies Record<DitherTabsVariant, string>;
 
 /**

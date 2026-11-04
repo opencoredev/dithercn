@@ -127,7 +127,7 @@ The `underline` variant across the top of a card, switching between three metric
       type: '"horizontal" | "vertical"',
       default: '"horizontal"',
       description:
-        "Vertical stacks the triggers, moves the indicator up and down, and puts the underline on the start edge.",
+        "Vertical stacks the triggers, moves the indicator up and down, and puts the underline on the start edge: the left, or the right in a right-to-left context.",
     },
   ]}
 />
@@ -144,4 +144,5 @@ These take the props of Radix `Tabs.List`, `Tabs.Trigger` and `Tabs.Content`. Gi
 - Focus shows a 2 pixel outline with `:focus-visible` on triggers and panels.
 - With reduced motion, the indicator jumps to the new tab and labels change colour without a fade.
 - Before the canvas first draws, and without JavaScript, the active trigger gets a flat version of the indicator in CSS, so the selection never goes missing.
-- The list does not wrap. For many tabs on a narrow screen, give it `overflow-x-auto`: the canvas covers the whole scroll width.
+- Right to left works through Radix: pass `dir="rtl"` to `DitherTabs` or wrap it in a Radix `DirectionProvider`. Arrow keys follow the direction, the indicator follows the measured triggers, and the vertical underline, its hairline, the hover dots and the label indent move to the right. Radix does not read the page's `dir` attribute, so an RTL page needs one of the two.
+- The list does not wrap. For many tabs on a narrow screen, give it `overflow-x-auto`: the canvas covers the whole scroll width, in either direction.
