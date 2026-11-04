@@ -834,7 +834,7 @@ export type DropzoneProps = Omit<
   browseLabel?: string;
   /** Shown in place of the illustration, such as a preview of the chosen image. No links or buttons: the zone is a button. */
   preview?: ReactNode;
-  /** Name for the file input, so a surrounding form submits the accepted files. */
+  /** Name for a hidden file input that holds the accepted files, so a surrounding form submits them. */
   name?: string;
   /** Colour of the border, glow and illustration: a palette name or any CSS colour. Default `"ink"`. */
   color?: DitherColor;
@@ -1128,8 +1128,8 @@ const useBorder = ({
 interface DropTargetOptions {
   rules: Rules;
   disabled: boolean;
-  name: string | undefined;
-  inputRef: RefObject<HTMLInputElement | null>;
+  /** The hidden named input that carries the accepted files into a form, when `name` is set. */
+  fieldRef: RefObject<HTMLInputElement | null>;
   onFilesChange: ((files: DropzoneFiles) => void) | undefined;
 }
 
@@ -1137,8 +1137,7 @@ interface DropTargetOptions {
 const useDropTarget = ({
   rules,
   disabled,
-  name,
-  inputRef,
+  fieldRef,
   onFilesChange,
 }: DropTargetOptions) => {
   const [status, setStatus] = useState<Status>(IDLE);
@@ -1174,20 +1173,20 @@ const useDropTarget = ({
       speak.current = requestAnimationFrame(() => {
         setMessage(announce(result));
       });
-      const input = inputRef.current;
-      if (input && name !== undefined) {
-        // Keep the accepted files on the input, so a form posts them.
+      const field = fieldRef.current;
+      if (field) {
+        // Keep the accepted files on the named input, so a form posts them.
         const transfer = new DataTransfer();
         for (const file of result.accepted) {
           transfer.items.add(file);
         }
-        input.files = transfer.files;
+        field.files = transfer.files;
       }
       const held = resultStatus(result);
       show(held?.status ?? IDLE, held?.ms);
       onFilesChange?.(result);
     },
-    [inputRef, name, onFilesChange, rules, show]
+    [fieldRef, onFilesChange, rules, show]
   );
 
   const carriesFiles = (event: DragEvent) =>
@@ -1340,13 +1339,13 @@ const Copy = ({
   <>
     <span
       id={`${id}-title`}
-      className="mt-4 block text-[15px] font-semibold tracking-tight text-balance"
+      className="mt-4 block max-w-full text-[15px] font-semibold tracking-tight text-balance [overflow-wrap:anywhere]"
     >
       {title}
     </span>
     <span
       id={`${id}-hint`}
-      className="text-muted-foreground mt-1 block max-w-xs text-sm text-pretty"
+      className="text-muted-foreground mt-1 block max-w-xs text-sm text-pretty [overflow-wrap:anywhere]"
     >
       {hint}
     </span>
@@ -1397,14 +1396,14 @@ export const Dropzone = ({
   const zoneRef = useRef<HTMLButtonElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fieldRef = useRef<HTMLInputElement>(null);
   const { pointer, pointerHandlers } = usePointer();
   const reducedMotion = usePrefersReducedMotion();
   const moving = animate && !reducedMotion && !disabled;
   const rules = useRules({ accept, maxFiles, maxSize, multiple });
   const target = useDropTarget({
     disabled,
-    inputRef,
-    name,
+    fieldRef,
     onFilesChange,
     rules,
   });
@@ -1484,24 +1483,34 @@ export const Dropzone = ({
           tone={look.ink}
         />
       </button>
+      {/* The picker: opened by the zone, emptied after every pick so the same file can be picked again. */}
       <input
         ref={inputRef}
         type="file"
         tabIndex={-1}
         aria-hidden="true"
         className="sr-only"
-        name={name}
         accept={accept}
         multiple={rules.limit > 1}
         disabled={disabled}
         onChange={(event) => {
-          target.take([...(event.currentTarget.files ?? [])]);
-          if (name === undefined) {
-            // Let the same file be picked again.
-            event.currentTarget.value = "";
-          }
+          const picked = [...(event.currentTarget.files ?? [])];
+          event.currentTarget.value = "";
+          target.take(picked);
         }}
       />
+      {name === undefined ? null : (
+        // What a surrounding form submits: the accepted files from the last drop or pick.
+        <input
+          ref={fieldRef}
+          type="file"
+          name={name}
+          hidden
+          tabIndex={-1}
+          aria-hidden="true"
+          disabled={disabled}
+        />
+      )}
       <p role="status" className="sr-only">
         {target.message}
       </p>
@@ -1631,7 +1640,8 @@ export const DropzoneFileList = ({
         <li
           key={file.id}
           data-status={file.status}
-          className="flex items-center gap-3"
+          title={file.name}
+          className="flex min-w-0 items-center gap-3"
         >
           <svg
             aria-hidden="true"

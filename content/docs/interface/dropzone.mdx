@@ -153,7 +153,7 @@ Up to 8 files of 50 MB each, in blue. Accepted files join the list and upload on
       name: "name",
       type: "string",
       description:
-        "Name of the file input, so a surrounding form submits the accepted files, dropped or picked.",
+        "Name of a hidden file input that holds the accepted files from the last drop or pick, so a surrounding form submits them.",
     },
     {
       name: "color",
@@ -206,7 +206,7 @@ Up to 8 files of 50 MB each, in blue. Accepted files join the list and upload on
 
 ## Notes
 
-- The zone is one control: `role="button"` in the tab order, named by its title and the browse label and described by the hint. Enter and Space open the picker. The real `<input type="file">` sits next to it, hidden from view and from assistive technology.
+- The zone is one control: `role="button"` in the tab order, named by its title and the browse label and described by the hint. Enter and Space open the picker. The real `<input type="file">` sits next to it, hidden from view and from assistive technology, and is emptied after every pick so choosing the same file again still counts. With `name`, a second hidden input holds the accepted files from the last drop or pick for the form.
 - A polite live region announces every result, such as "Added 3 files: a.png, b.png, c.pdf." or "Did not add report.exe: only images or PDF."
 - The border is a canvas drawn one pixel per cell and scaled up without smoothing, with no WebGL. It pauses offscreen and in hidden tabs. With reduced motion the dashes hold still, the drag-over and reject looks switch in one step, and the illustration stops bobbing and shaking. Before the first frame it shows a plain dashed edge.
 - The file list is a list of progress bars, each with `role="progressbar"`, and every remove button is labelled with the file's name.
