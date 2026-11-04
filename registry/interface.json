@@ -113,6 +113,21 @@
     "dependencies": ["radix-ui"]
   },
   {
+    "name": "dither-tabs",
+    "type": "registry:component",
+    "title": "Dither tabs",
+    "description": "Tabs whose dithered pill or underline indicator glides to the chosen tab, dissolving out of the old one and in at the new one through the Bayer levels.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-tabs.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-tabs.tsx"
+      }
+    ],
+    "dependencies": ["radix-ui"]
+  },
+  {
     "name": "dither-slider",
     "type": "registry:component",
     "title": "Dither slider",
