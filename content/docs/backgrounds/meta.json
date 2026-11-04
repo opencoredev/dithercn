@@ -16,6 +16,7 @@
     "flow-field",
     "contours",
     "ripples",
+    "rain",
     "ridgelines",
     "metaballs",
     "voronoi",

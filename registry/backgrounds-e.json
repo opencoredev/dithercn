@@ -42,6 +42,20 @@
     ]
   },
   {
+    "name": "rain",
+    "type": "registry:component",
+    "title": "Rain",
+    "description": "Rain on a window at night: soft out-of-focus city lights behind the glass, beads that show them brighter like tiny lenses, and bigger drops that slide down in jerky runs and leave wet trails.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/rain.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/rain.tsx"
+      }
+    ]
+  },
+  {
     "name": "black-hole",
     "type": "registry:component",
     "title": "Black Hole",
