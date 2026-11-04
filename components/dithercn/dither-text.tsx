@@ -360,19 +360,6 @@ export const DitherText = (props: DitherTextProps) => {
     ref.current = node;
   }, []);
   const paintRef = useRef<HTMLSpanElement>(null);
-  // The paint span ignores the pointer, so nested elements take the root's
-  // own pointer-events, as they would inherit without the span between them.
-  // A caller's or an ancestor's `pointer-events-none` still disables them.
-  useEffect(() => {
-    const root = ref.current;
-    const el = paintRef.current;
-    if (root && el) {
-      el.style.setProperty(
-        "--dither-text-events",
-        getComputedStyle(root).pointerEvents
-      );
-    }
-  });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // The paint span's padding box and its bleed, in CSS pixels.
   const sizeRef = useRef({
@@ -512,9 +499,9 @@ export const DitherText = (props: DitherTextProps) => {
         ref={paintRef}
         className={cn(
           // The bleed lets ascenders and descenders take the fill. It must not
-          // take clicks meant for neighbours. Nested elements get the root's
-          // pointer-events back, at zero specificity so their own utility wins.
-          "pointer-events-none -m-(--dither-text-bleed) block p-(--dither-text-bleed) [--dither-text-bleed:0.3em] [:where(&)_*]:[pointer-events:var(--dither-text-events,auto)]",
+          // take clicks meant for neighbours; nested links still get theirs, at
+          // zero specificity so a child's own pointer-events utility wins.
+          "pointer-events-none -m-(--dither-text-bleed) block p-(--dither-text-bleed) [--dither-text-bleed:0.3em] [:where(&)_*]:pointer-events-auto",
           "bg-no-repeat [image-rendering:pixelated]",
           "group-data-[state=ready]/dither-text:bg-clip-text group-data-[state=ready]/dither-text:text-transparent",
           "forced-colors:bg-none forced-colors:text-[CanvasText]"
