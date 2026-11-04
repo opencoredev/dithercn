@@ -750,7 +750,12 @@ const Legend = ({
   </div>
 );
 
-/** Every value, for screen readers. */
+/**
+ * Every value, for screen readers.
+ * Hidden through a wrapping div, not the table itself: a table ignores the
+ * 1px size, and Safari clips only the table box, which leaves the caption
+ * painted across the chart.
+ */
 const DataTable = ({
   summary,
   axes,
@@ -762,30 +767,32 @@ const DataTable = ({
   shapes: readonly Shape[];
   format: (value: number) => string;
 }) => (
-  <table className="sr-only">
-    <caption>{summary}</caption>
-    <thead>
-      <tr>
-        <th scope="col">Axis</th>
-        {shapes.map((shape) => (
-          <th key={shape.index} scope="col">
-            {shape.label}
-          </th>
-        ))}
-      </tr>
-    </thead>
-    <tbody>
-      {axes.map((axis, index) => (
-        // oxlint-disable-next-line react/no-array-index-key -- labels can repeat; position is the identity.
-        <tr key={index}>
-          <th scope="row">{axis}</th>
+  <div className="sr-only">
+    <table>
+      <caption>{summary}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Axis</th>
           {shapes.map((shape) => (
-            <td key={shape.index}>{format(shape.values[index] ?? 0)}</td>
+            <th key={shape.index} scope="col">
+              {shape.label}
+            </th>
           ))}
         </tr>
-      ))}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {axes.map((axis, index) => (
+          // oxlint-disable-next-line react/no-array-index-key -- labels can repeat; position is the identity.
+          <tr key={index}>
+            <th scope="row">{axis}</th>
+            {shapes.map((shape) => (
+              <td key={shape.index}>{format(shape.values[index] ?? 0)}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
 );
 
 const toShapes = ({

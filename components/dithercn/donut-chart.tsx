@@ -761,7 +761,12 @@ const Legend = ({
   </div>
 );
 
-/** Every slice, for screen readers. */
+/**
+ * Every slice, for screen readers.
+ * Hidden through a wrapping div, not the table itself: a table ignores the
+ * 1px size, and Safari clips only the table box, which leaves the caption
+ * painted across the chart.
+ */
 const DataTable = ({
   summary,
   slices,
@@ -771,25 +776,27 @@ const DataTable = ({
   slices: readonly SliceGeometry[];
   format: (value: number) => string;
 }) => (
-  <table className="sr-only">
-    <caption>{summary}</caption>
-    <thead>
-      <tr>
-        <th scope="col">Slice</th>
-        <th scope="col">Value</th>
-        <th scope="col">Share</th>
-      </tr>
-    </thead>
-    <tbody>
-      {slices.map((slice) => (
-        <tr key={slice.index}>
-          <th scope="row">{slice.label}</th>
-          <td>{format(slice.value)}</td>
-          <td>{percent.format(slice.share)}</td>
+  <div className="sr-only">
+    <table>
+      <caption>{summary}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Slice</th>
+          <th scope="col">Value</th>
+          <th scope="col">Share</th>
         </tr>
-      ))}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {slices.map((slice) => (
+          <tr key={slice.index}>
+            <th scope="row">{slice.label}</th>
+            <td>{format(slice.value)}</td>
+            <td>{percent.format(slice.share)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
 );
 
 /** Root props: a focusable, labelled group when interactive, else an image. */
