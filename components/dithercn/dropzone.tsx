@@ -1602,7 +1602,7 @@ const progressOf = (
       return {
         ...FILE_STATE.done,
         value: 100,
-        valueText: formatBytes(file.size),
+        valueText: `Uploaded · ${formatBytes(file.size)}`,
       };
     }
     case "error": {

@@ -174,11 +174,21 @@ const fallbackNet = (frequency: number, seed: number, slope: number) =>
     `<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='1600'><filter id='n' x='0' y='0' width='100%' height='100%'><feTurbulence type='turbulence' baseFrequency='${frequency}' numOctaves='1' seed='${seed}' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ${slope} 0 0 0 1.6'/></filter><rect width='1600' height='1600' filter='url(#n)'/></svg>`
   )}")`;
 
-/** The bright sheet and a fainter, larger one under it, as in the shader. */
-const FALLBACK_SHEETS = [
-  { image: fallbackNet(0.0064, 7, -110), opacity: 0.9, tile: 4800 },
-  { image: fallbackNet(0.0051, 3, -180), opacity: 0.35, tile: 7000 },
-] as const;
+/**
+ * The fallback's layers, as in the shader: a soft spill around the bright
+ * sheet (the same noise with a gentle falloff), the bright sheet itself,
+ * whose creases narrow as `focus` rises, and a fainter, larger sheet.
+ */
+const fallbackSheets = (focus: number) => [
+  { id: "spill", image: fallbackNet(0.0064, 7, -18), opacity: 0.2, tile: 4800 },
+  {
+    id: "bright",
+    image: fallbackNet(0.0064, 7, -Math.round(50 + 90 * focus)),
+    opacity: 0.9,
+    tile: 4800,
+  },
+  { id: "far", image: fallbackNet(0.0051, 3, -180), opacity: 0.35, tile: 7000 },
+];
 
 /** Where the fallback net fades out, matching the shader's `mask`. */
 const FALLBACK_MASKS = {
@@ -193,11 +203,13 @@ const FALLBACK_MASKS = {
 const CausticsFallback = ({
   palette,
   scale,
+  focus,
   intensity,
   mask,
 }: {
   palette: DitherPalette;
   scale: number;
+  focus: number;
   intensity: number;
   mask: CausticsMask;
 }) => {
@@ -211,11 +223,11 @@ const CausticsFallback = ({
         backgroundImage: `radial-gradient(ellipse at 30% 25%, color-mix(in oklab, ${mid} ${(40 * intensity).toFixed(1)}%, transparent), transparent 70%)`,
       }}
     >
-      {FALLBACK_SHEETS.map((sheet) => {
+      {fallbackSheets(focus).map((sheet) => {
         const tile = `${Math.round(sheet.tile / scale)}px`;
         return (
           <div
-            key={sheet.tile}
+            key={sheet.id}
             className="absolute inset-0"
             style={{
               backgroundColor: ink,
@@ -273,6 +285,7 @@ export const Caustics = ({
         <CausticsFallback
           palette={palette}
           scale={causticsScale}
+          focus={sharp}
           intensity={causticsIntensity}
           mask={mask}
         />
