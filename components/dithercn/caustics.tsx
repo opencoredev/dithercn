@@ -139,10 +139,13 @@ float field(vec2 uv, vec2 res, float t) {
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
-/** The drift as a unit vector in field space, where y points up. */
+/**
+ * The field samples at `p + flow`, so the net moves against this vector:
+ * it points opposite the CSS direction, in field space where y points up.
+ */
 const flowVector = (angle: number) => {
   const radians = (angle * Math.PI) / 180;
-  return [Math.sin(radians), -Math.cos(radians)] as const;
+  return [-Math.sin(radians), -Math.cos(radians)] as const;
 };
 
 /**

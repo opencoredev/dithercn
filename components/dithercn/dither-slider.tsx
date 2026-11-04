@@ -801,6 +801,9 @@ export const DitherSlider = ({
         className
       )}
       aria-disabled={disabled || undefined}
+      // The fill and ticks are drawn left to right, so pin the direction
+      // even inside an RTL page or a Radix DirectionProvider.
+      dir="ltr"
       style={style}
     >
       <style href="dithercn-dither-slider" precedence="dithercn">
@@ -815,6 +818,7 @@ export const DitherSlider = ({
       <div>
         <Slider.Root
           data-slot="slider"
+          dir="ltr"
           role="group"
           aria-labelledby={labelId}
           min={min}

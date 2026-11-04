@@ -54,7 +54,7 @@ By default the palette maps brightness to colour, from paper to the last colour.
 
 ### Beside a headline
 
-The galaxy sits high on the right and turns counterclockwise, and the text sits in the clear space on the left, or below it on a phone. `size` is a share of the shorter side, so the disc stays in frame on narrow screens.
+The galaxy sits high on the right and turns counterclockwise, and the text sits in the clear space on the left. Below 560px wide, the example moves the `center` to the top middle and the text to the bottom, so the disc stays in frame and clear of the copy.
 
 <ComponentPreview src="examples/galaxy-hero.tsx" size="lg" align="stretch">
   <GalaxyHero />
@@ -107,7 +107,7 @@ The galaxy sits high on the right and turns counterclockwise, and the text sits 
     {
       name: "size",
       type: "number",
-      default: "0.42",
+      default: "0.46",
       description: "Radius of the disc as a share of the box's shorter side.",
     },
     {

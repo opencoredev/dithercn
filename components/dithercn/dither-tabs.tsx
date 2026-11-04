@@ -77,7 +77,7 @@ const useTabsLook = (part: string): TabsLook => {
 };
 
 // How long a move takes, in milliseconds.
-const DURATION = 520;
+const DURATION = 260;
 // Pill corner radius and the underline's bar thickness and glow height.
 const PILL_RADIUS = 8;
 const BAR_CELLS = 2;
@@ -514,10 +514,15 @@ export const DitherTabs = ({
   orientation = "horizontal",
   className,
   children,
+  onKeyDownCapture,
+  onPointerDownCapture,
   ...props
 }: DitherTabsProps) => {
   const [uncontrolled, setUncontrolled] = useState(defaultValue);
   const [changed, setChanged] = useState(false);
+  // Arrow keys step through tabs quickly, so a panel chosen from the
+  // keyboard shows at once; only a click or tap dissolves it in.
+  const fromKeyboard = useRef(false);
   const value = valueProp ?? uncontrolled;
   const look: TabsLook = {
     bloom,
@@ -538,8 +543,16 @@ export const DitherTabs = ({
         data-variant={variant}
         value={value}
         orientation={orientation}
+        onKeyDownCapture={(event) => {
+          fromKeyboard.current = true;
+          onKeyDownCapture?.(event);
+        }}
+        onPointerDownCapture={(event) => {
+          fromKeyboard.current = false;
+          onPointerDownCapture?.(event);
+        }}
         onValueChange={(next) => {
-          setChanged(true);
+          setChanged(!fromKeyboard.current);
           if (valueProp === undefined) {
             setUncontrolled(next);
           }

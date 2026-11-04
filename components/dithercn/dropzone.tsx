@@ -1385,7 +1385,8 @@ export const Dropzone = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { pointer, pointerHandlers } = usePointer();
-  const moving = animate && !usePrefersReducedMotion();
+  const reducedMotion = usePrefersReducedMotion();
+  const moving = animate && !reducedMotion;
   const rules = useRules({ accept, maxFiles, maxSize, multiple });
   const target = useDropTarget({
     disabled,

@@ -65,9 +65,9 @@ const geometryOf = (size: DitherSwitchSize, cell: number): Geometry => {
 
 // The house ease-out, MOTION.ease: cubic-bezier(0.23, 1, 0.32, 1).
 const EASE = [0.23, 1, 0.32, 1] as const;
-const DURATION_MS = 300;
+const DURATION_MS = 180;
 /** Delay between one wave layer and the next. */
-const STAGGER_MS = 36;
+const STAGGER_MS = 20;
 
 const bezier = (p1: number, p2: number, s: number) =>
   3 * p1 * s * (1 - s) ** 2 + 3 * p2 * s * s * (1 - s) + s ** 3;

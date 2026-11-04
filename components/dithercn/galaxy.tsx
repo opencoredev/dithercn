@@ -199,6 +199,7 @@ const GalaxyFallback = ({
   angle,
   arms,
   colorField,
+  stars,
 }: {
   palette: DitherPalette;
   center: GalaxyPoint;
@@ -207,6 +208,7 @@ const GalaxyFallback = ({
   angle: number;
   arms: number;
   colorField: boolean;
+  stars: number;
 }) => {
   const paper = cssColor(palette[0]);
   const ink = cssColor(palette.at(-1) ?? palette[1]);
@@ -226,17 +228,20 @@ const GalaxyFallback = ({
       className="absolute inset-0"
       style={{
         backgroundColor: paper,
-        backgroundImage: [
-          [ink, 17, 23],
-          [arm, 61, 131],
-          [ink, 139, 71],
-          [arm, 101, 13],
-        ]
-          .map(
-            ([color, x, y]) =>
-              `radial-gradient(circle at ${x}px ${y}px, ${color} 1px, transparent 1.5px)`
-          )
-          .join(", "),
+        backgroundImage:
+          stars <= 0
+            ? undefined
+            : [
+                [ink, 17, 23],
+                [arm, 61, 131],
+                [ink, 139, 71],
+                [arm, 101, 13],
+              ]
+                .map(
+                  ([color, x, y]) =>
+                    `radial-gradient(circle at ${x}px ${y}px, ${color} 1px, transparent 1.5px)`
+                )
+                .join(", "),
         backgroundSize: "157px 149px",
       }}
     >
@@ -317,6 +322,7 @@ export const Galaxy = ({
           angle={angle}
           arms={armCount}
           colorField={colorField}
+          stars={stars}
         />
       }
     />
