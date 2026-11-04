@@ -1,5 +1,19 @@
 [
   {
+    "name": "voronoi",
+    "type": "registry:component",
+    "title": "Voronoi Cells",
+    "description": "A cellular surface like soap foam, crackle glaze or raised stone tiles, with walls of one width and seeds that drift so cells swell, shrink and trade edges.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/voronoi.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/voronoi.tsx"
+      }
+    ]
+  },
+  {
     "name": "flow-field",
     "type": "registry:component",
     "title": "Flow field",

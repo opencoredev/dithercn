@@ -17,6 +17,7 @@
     "ripples",
     "ridgelines",
     "metaballs",
+    "voronoi",
     "tunnel",
     "retro-grid",
     "eclipse",
