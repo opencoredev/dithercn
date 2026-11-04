@@ -76,6 +76,28 @@ vec2 rainLights(vec2 p, float t, float dice) {
   return vec2(sum * rainGlow, pick);
 }
 
+// Which way the lights near p lie, and how strongly they shine there: the sum
+// of a pull towards each light, weighted by its brightness and fading over
+// about a grid square. A bead turns its highlight along it.
+vec2 rainLightPull(vec2 p) {
+  vec2 q = p * rainScale / 0.3;
+  vec2 base = floor(q);
+  vec2 pull = vec2(0.0);
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 sq = base + vec2(float(i), float(j));
+      float seed = hash21(sq + vec2(0.37, 4.1));
+      vec2 jitter = vec2(hash21(sq + vec2(7.1, 3.3)), hash21(sq + vec2(1.9, 8.4)));
+      vec2 to = sq + 0.2 + 0.6 * jitter - q;
+      float height = (sq.y + 0.2 + 0.6 * jitter.y) * 0.3 / rainScale;
+      float chance = mix(0.85, 0.3, smoothstep(0.1, 0.85, height));
+      float lit = step(seed, chance) * (0.45 + 0.55 * hash21(sq + vec2(2.2, 6.6)));
+      pull += to / max(length(to), 0.05) * lit * exp(-dot(to, to) * 1.2);
+    }
+  }
+  return pull * rainGlow;
+}
+
 // 1 across the box, dropping towards an oval in the middle as fade grows.
 float rainClear(vec2 uv) {
   vec2 q = (uv - 0.5) * vec2(2.0, 2.4);
@@ -171,18 +193,23 @@ float rainWiped(vec2 bc, float br, float seed, vec4 drop, vec4 path) {
   return near * under * step(0.5, drop.z) * step(seed, fresh * 1.3);
 }
 
-// The wet line a drop leaves, and the few droplets left along it.
-float rainTrailLine(vec2 c, vec4 drop, vec4 path, out vec4 bead) {
+// The wet trail a drop leaves, and the few droplets left along it. Returns
+// its core line (x) and the soft shoulders either side of it (y), where the
+// film of water still bends the lights. Both are widest just behind the drop
+// and taper to a thin, dim thread higher up, where the trail is drier.
+vec2 rainTrailLine(vec2 c, vec4 drop, vec4 path, out vec4 bead) {
   float fade = rainTrailFade(c.y, drop, path);
-  float x = rainPathX(c.y, path.x, path.z);
-  float halfWidth = 0.4 + 0.08 * drop.z;
-  float line = 1.0 - smoothstep(halfWidth - 0.5, halfWidth + 0.5, abs(c.x - x));
+  float dx = abs(c.x - rainPathX(c.y, path.x, path.z));
+  float halfWidth = mix(0.3, 0.4 + 0.08 * drop.z, fade * fade);
+  float line = 1.0 - smoothstep(halfWidth - 0.5, halfWidth + 0.5, dx);
+  float fresh = smoothstep(0.25, 1.0, fade);
+  float shoulder = (1.0 - smoothstep(0.0, 1.0 + 0.5 * drop.z * fresh, dx)) * fresh;
   float slot = floor(c.y / 16.0);
   float by = (slot + 0.3 + 0.4 * hash21(vec2(slot, path.z * 37.0))) * 16.0;
   float br = mix(2.0, 3.4, hash21(vec2(path.z * 11.0, slot)));
   float kept = step(hash21(vec2(slot, path.z * 71.0)), 0.4) * step(0.1, rainTrailFade(by, drop, path));
-  bead = vec4((c - vec2(rainPathX(by, path.x, path.z), by)) / br, br * kept, 0.0);
-  return line * sqrt(fade) * step(0.03, fade);
+  bead = vec4((c - vec2(rainPathX(by, path.x, path.z), by)) / br, br * kept, hash21(vec2(slot, path.z * 53.0)));
+  return vec2(line * sqrt(fade) * step(0.03, fade), shoulder);
 }
 
 // The offset from a sliding drop's centre in radii. Running drops stretch
@@ -195,22 +222,39 @@ vec2 rainSliderOffset(vec2 c, vec4 drop) {
 
 // A drop is a tiny lens: inside, it shows the lights behind it upside down,
 // shrunk and brighter, and its edge bends the light away into a dark rim
-// about a cell and a half wide. Just inside the rim it gathers a thin
-// crescent of light along its bottom and a short glint at its top left. So a
-// drop over a light glows, ringed in dark, and a drop over the dark sky is
-// only that crescent and glint. thick is 1 for the big sliding drops,
+// about a cell and a half wide. Just inside the rim it gathers a thin arc of
+// light on the side facing toward (a unit vector), reaching reach round it
+// (the cosine of the arc's half angle, lower for a longer arc), and a short
+// glint across from it. So a drop over a light glows, ringed in dark, and a
+// drop over the dark sky is only that arc and glint. ring is how bright a
+// faint line round the rest of it is. thick is 1 for the big sliding drops,
 // which gather a little more.
-float rainDropTone(vec2 off, float r, float light, float thick) {
+float rainDropTone(vec2 off, float r, float light, float thick, vec2 toward, float reach, float ring) {
   float d = length(off);
+  vec2 dir = off / max(d, 1e-3);
   float inset = (1.0 - d) * r;
   float rim = 1.0 - smoothstep(1.0, 1.6, inset);
   float body = light * mix(2.2, 1.6, d);
-  float down = smoothstep(0.45, 0.7, -off.y / max(d, 1e-3));
-  float crescent = down * (1.0 - smoothstep(2.4, 2.8, inset - thick));
-  body = max(body, crescent * (0.8 + light));
-  float up = smoothstep(0.88, 0.95, dot(off / max(d, 1e-3), vec2(-0.6, 0.8)));
-  float glint = up * (1.0 - smoothstep(2.2, 2.6, inset - thick));
+  float band = 1.0 - smoothstep(2.4, 2.8, inset - thick);
+  float facing = dot(dir, toward);
+  float arc = smoothstep(reach, reach + 0.25, facing) * band;
+  body = max(body, max(arc * (0.8 + light), band * ring));
+  float across = smoothstep(0.88, 0.95, dot(dir, vec2(toward.y, -toward.x) * 0.6 - toward * 0.8));
+  float glint = across * (1.0 - smoothstep(2.2, 2.6, inset - thick));
   return max(body, glint * (0.8 + light)) * (1.0 - rim);
+}
+
+// A bead's highlight turns towards the brightest light near it and reaches
+// further round the brighter that light is; over the dark sky, each bead
+// faces its own way with a short arc. Returns the direction (xy) and the arc's
+// reach (z) for rainDropTone.
+vec3 rainBeadFacing(vec2 centre, float seed) {
+  vec2 pull = rainLightPull(centre);
+  float strength = smoothstep(0.05, 0.6, length(pull));
+  float a = seed * 6.2831853;
+  vec2 toward = normalize(pull + vec2(cos(a), sin(a)) * 0.15 + vec2(0.0, 1e-4));
+  float reach = mix(0.6, -0.1, strength) + 0.3 * (fract(seed * 7.13) - 0.5);
+  return vec3(toward, reach);
 }
 
 // The whole scene: x is the tone, y which ink colours it.
@@ -231,6 +275,7 @@ vec2 rainScene(vec2 uv, vec2 res, float t) {
   float radius = 0.0;
   float thick = 0.0;
   float dropClear = 1.0;
+  float seed = 0.0;
   vec2 offA = rainSliderOffset(c, dropA);
   vec2 offB = rainSliderOffset(c, dropB);
   if (dropA.z > 0.5 && length(offA) < 1.0) {
@@ -249,7 +294,8 @@ vec2 rainScene(vec2 uv, vec2 res, float t) {
 
   vec4 trailBeadA;
   vec4 trailBeadB;
-  float trail = max(rainTrailLine(c, dropA, pathA, trailBeadA), rainTrailLine(c, dropB, pathB, trailBeadB));
+  vec2 trails = max(rainTrailLine(c, dropA, pathA, trailBeadA), rainTrailLine(c, dropB, pathB, trailBeadB));
+  float trail = trails.x;
   // Droplets along a trail clear with the rest where the glass is wiped.
   trailBeadA.z *= step(0.6, clear);
   trailBeadB.z *= step(0.6, clear);
@@ -276,6 +322,7 @@ vec2 rainScene(vec2 uv, vec2 res, float t) {
           inDrop = 1.0;
           off = bead.xy;
           radius = bead.z;
+          seed = bead.w;
         }
       }
     }
@@ -288,11 +335,16 @@ vec2 rainScene(vec2 uv, vec2 res, float t) {
   vec2 light = rainLights(q, t, dice);
   light.x *= clear;
   if (inDrop > 0.5) {
-    return vec2(rainDropTone(off, radius, light.x, thick) * dropClear, light.y);
+    // Sliding drops hang their arc at the bottom, where the water gathers.
+    vec3 facing = thick > 0.5 ? vec3(0.0, -1.0, 0.45) : rainBeadFacing((c - off * radius) / res.y, seed);
+    float tone = rainDropTone(off, radius, light.x, thick, facing.xy, facing.z, 0.16 * (1.0 - thick));
+    return vec2(tone * dropClear, light.y);
   }
-  // A trail is a clean streak: the light behind shows clearer along it.
+  // A trail is a clean streak: the light behind shows clearer along it, and
+  // the film either side of it near the drop bends a little more light in.
   float wet = trail * (0.9 + light.x) * clear;
-  return vec2(max(light.x, wet), light.y);
+  float film = trails.y * (0.35 + 0.9 * light.x) * clear;
+  return vec2(max(light.x, max(wet, film)), light.y);
 }
 `;
 
@@ -319,6 +371,26 @@ const DEFAULT_PALETTE = [
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
+
+const smoothstep = (from: number, to: number, value: number) => {
+  const t = clamp((value - from) / (to - from), 0, 1);
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * The cell size the fallback lays its drops out in, resolved as the engine
+ * resolves `cell`: below one pixel it clamps to one, so a `cell` of 0 can't
+ * shrink the grid to nothing, and a value that isn't a number falls back to
+ * the engine's default of 3.
+ */
+const fallbackCell = (cell: number) =>
+  Number.isFinite(cell) ? Math.max(1, cell) : 3;
+
+/**
+ * No loop in the fallback runs more than this many times along an axis,
+ * whatever the box or cell size, so no input can stall a render.
+ */
+const MAX_STEPS = 512;
 
 // A stable value in [0, 1) per grid square, so the server and client agree.
 const fallbackHash = (x: number, y: number, salt: number) => {
@@ -371,6 +443,9 @@ interface Light {
   readonly ink: number;
 }
 
+/** The side of the grid square that holds at most one light, in CSS pixels. */
+const lightSquare = (box: BoxSize, scale: number) => (box.height * 0.3) / scale;
+
 /**
  * The lights as the shader lays them out: one per grid square at most, more
  * of them low down along the street than up in the sky.
@@ -386,23 +461,19 @@ const fallbackLights = ({
   glow: number;
   inks: number;
 }): Light[] => {
-  const square = (box.height * 0.3) / scale;
-  const columns = Math.ceil(box.width / square);
-  const rows = Math.ceil(box.height / square);
-  const smooth = (from: number, to: number, value: number) => {
-    const t = clamp((value - from) / (to - from), 0, 1);
-    return t * t * (3 - 2 * t);
-  };
+  const square = lightSquare(box, scale);
+  const columns = Math.min(MAX_STEPS, Math.ceil(box.width / square));
+  const rows = Math.min(MAX_STEPS, Math.ceil(box.height / square));
   const lights: Light[] = [];
   for (let gy = -1; gy <= rows; gy += 1) {
     for (let gx = -1; gx <= columns; gx += 1) {
       const x = (gx + 0.2 + 0.6 * fallbackHash(gx, gy, 2)) * square;
       const up = (gy + 0.2 + 0.6 * fallbackHash(gx, gy, 3)) * square;
       const height = up / box.height;
-      const chance = 0.85 - 0.55 * smooth(0.1, 0.85, height);
+      const chance = 0.85 - 0.55 * smoothstep(0.1, 0.85, height);
       if (fallbackHash(gx, gy, 1) < chance) {
         // Dimmer high up, as in the shader's sky.
-        const sky = 1 - 0.45 * smooth(0.3, 1, height);
+        const sky = 1 - 0.45 * smoothstep(0.3, 1, height);
         lights.push({
           ink: Math.floor(fallbackHash(gx, gy, 5) * inks),
           r: (0.3 + 0.25 * fallbackHash(gx, gy, 4)) * square,
@@ -434,6 +505,36 @@ const lightAt = (lights: readonly Light[], x: number, y: number) => {
   return { ink, tone };
 };
 
+/**
+ * Which way the lights near a point lie and how strongly they shine there,
+ * as the shader's `rainLightPull`: a pull towards each light, weighted by its
+ * brightness and fading over about a grid square. y points down.
+ */
+const lightPull = ({
+  lights,
+  x,
+  y,
+  square,
+}: {
+  lights: readonly Light[];
+  x: number;
+  y: number;
+  square: number;
+}) => {
+  let px = 0;
+  let py = 0;
+  for (const light of lights) {
+    const dx = (light.x - x) / square;
+    const dy = (light.y - y) / square;
+    const dist = Math.hypot(dx, dy);
+    const weight =
+      (light.tone * Math.exp(-dist * dist * 1.2)) / Math.max(dist, 0.05);
+    px += dx * weight;
+    py += dy * weight;
+  }
+  return { x: px, y: py };
+};
+
 /** A drop sliding down the glass in the still frame, with its trail above it. */
 interface Slider {
   readonly x: number;
@@ -450,7 +551,26 @@ interface Bead {
   readonly x: number;
   readonly y: number;
   readonly r: number;
+  /** A fixed random value, which turns its highlight when no light is near. */
+  readonly seed: number;
 }
+
+/**
+ * A drop as the still frame draws it: where its highlight arc sits, centred
+ * on an angle in degrees (SVG's: 90 is straight down) and spreading either
+ * side of it. Beads also carry a faint ring round the rest of their edge.
+ */
+interface Lens {
+  readonly kind: "bead" | "slider";
+  readonly x: number;
+  readonly y: number;
+  readonly r: number;
+  readonly angle: number;
+  readonly spread: number;
+}
+
+/** How far round from the highlight the short glint sits, in degrees. */
+const GLINT_TURN = 143;
 
 /** How far the wavering line a sliding drop follows sits off its lane, in cells. */
 const waver = (y: number, seed: number) =>
@@ -473,7 +593,11 @@ const fallbackDrops = ({
     [0, 20],
     [55, 40],
   ] as const) {
-    for (let index = -1; index * lane < box.width + lane; index += 1) {
+    for (
+      let index = -1;
+      index * lane < box.width + lane && index < MAX_STEPS;
+      index += 1
+    ) {
       if (fallbackHash(index, salt, 1) < 0.45 * drops) {
         const y = box.height * (0.3 + 0.65 * fallbackHash(index, salt, 3));
         const seed = fallbackHash(index, salt, 6);
@@ -513,15 +637,15 @@ const fallbackDrops = ({
     salt: number;
   }) => {
     const square = size * cell;
-    for (let gy = 0; gy * square < box.height; gy += 1) {
-      for (let gx = 0; gx * square < box.width; gx += 1) {
+    for (let gy = 0; gy * square < box.height && gy < MAX_STEPS; gy += 1) {
+      for (let gx = 0; gx * square < box.width && gx < MAX_STEPS; gx += 1) {
         if (fallbackHash(gx, gy, salt) < chance) {
           const x = (gx + fallbackHash(gx, gy, salt + 1)) * square;
           const y = (gy + fallbackHash(gx, gy, salt + 2)) * square;
           const r =
             (rMin + (rMax - rMin) * fallbackHash(gx, gy, salt + 3) ** 2) * cell;
           if (!wiped(x, y, r)) {
-            beads.push({ r, x, y });
+            beads.push({ r, seed: fallbackHash(gx, gy, salt + 4), x, y });
           }
         }
       }
@@ -538,7 +662,7 @@ const bucket = (tone: number) => Math.round(clamp(tone, 0, 1) * 10) / 10;
 const num = (value: number) => value.toFixed(1);
 
 /** Circles as one path, so many beads cost a few elements. */
-const circles = (list: readonly Bead[], inset = 0) =>
+const circles = (list: readonly Lens[], inset = 0) =>
   list
     .map(({ x, y, r }) => {
       const radius = Math.max(0.5, r - inset);
@@ -547,43 +671,56 @@ const circles = (list: readonly Bead[], inset = 0) =>
     .join("");
 
 /**
- * An arc inside each drop, inset from its edge, centred on an angle in
- * degrees (SVG's: 90 is straight down) and spreading either side of it.
+ * An arc inside each drop, inset from its edge: its highlight, or with
+ * `glint` the short glint across from it.
  */
-const arcs = (
-  list: readonly Bead[],
-  inset: number,
-  angle: number,
-  spread: number
-) =>
+const arcs = (list: readonly Lens[], inset: number, glint: boolean) =>
   list
-    .map(({ x, y, r }) => {
+    .map(({ x, y, r, angle, spread }) => {
       const radius = Math.max(0.5, r - inset);
-      const from = ((angle - spread) * Math.PI) / 180;
-      const to = ((angle + spread) * Math.PI) / 180;
-      return `M${num(x + radius * Math.cos(from))} ${num(y + radius * Math.sin(from))}A${num(radius)} ${num(radius)} 0 0 1 ${num(x + radius * Math.cos(to))} ${num(y + radius * Math.sin(to))}`;
+      const centre = glint ? angle + GLINT_TURN : angle;
+      const half = glint ? 20 : spread;
+      const from = ((centre - half) * Math.PI) / 180;
+      const to = ((centre + half) * Math.PI) / 180;
+      return `M${num(x + radius * Math.cos(from))} ${num(y + radius * Math.sin(from))}A${num(radius)} ${num(radius)} 0 ${half > 90 ? 1 : 0} 1 ${num(x + radius * Math.cos(to))} ${num(y + radius * Math.sin(to))}`;
     })
     .join("");
 
-/** The wavering line of a slider's trail, from its top down to the drop. */
-const trailPath = (slider: Slider, cell: number) => {
+/**
+ * The outline of a slider's trail as one closed shape, from its top down to
+ * the drop. `halfWidth` gives its half width in CSS pixels at each point,
+ * from 0 at the top to 1 at the drop, so it can taper.
+ */
+const trailShape = (
+  slider: Slider,
+  cell: number,
+  halfWidth: (along: number) => number
+) => {
   const x0 = slider.x - waver(slider.y / cell, slider.seed) * cell;
-  const points: string[] = [];
   // It runs into the drop's top edge, not on through the drop.
   const end = slider.y - 0.75 * slider.r;
-  for (let y = slider.top; y < end; y += 3 * cell) {
-    points.push(`${num(x0 + waver(y / cell, slider.seed) * cell)} ${num(y)}`);
+  const length = Math.max(end - slider.top, 1);
+  const steps = Math.min(MAX_STEPS, Math.ceil(length / (3 * cell)));
+  const left: string[] = [];
+  const right: string[] = [];
+  for (let step = 0; step <= steps; step += 1) {
+    const along = step / steps;
+    const y = slider.top + along * length;
+    const x = x0 + waver(y / cell, slider.seed) * cell;
+    const half = halfWidth(along);
+    left.push(`${num(x - half)} ${num(y)}`);
+    right.push(`${num(x + half)} ${num(y)}`);
   }
-  points.push(`${num(x0 + waver(end / cell, slider.seed) * cell)} ${num(end)}`);
-  return `M${points.join("L")}`;
+  return `M${[...left, ...right.toReversed()].join("L")}Z`;
 };
 
 /**
  * A still SVG of the same window, shown without WebGL: a few soft discs of
  * light over a faint glow from the street, beads that show the light behind
- * them brighter inside a dark rim, with a thin crescent along the bottom
- * and a glint at the top left, and a few big drops with the wet trails they
- * left.
+ * them brighter inside a dark rim, each with an arc of light on the side
+ * facing the nearest bright light, a glint across from it and a faint ring
+ * round the rest, and a few big drops with the wet trails they left, which
+ * taper from soft and wide at the drop to a thin thread higher up.
  */
 const RainFallback = ({
   palette,
@@ -611,7 +748,7 @@ const RainFallback = ({
       setInherited(readDitherCell(ref.current));
     }
   }, [cell]);
-  const ditherCell = cell ?? inherited;
+  const ditherCell = fallbackCell(cell ?? inherited);
   const paper = cssColor(palette[0]);
   const inks = palette.slice(1).map(cssColor);
   const lights = useMemo(
@@ -624,26 +761,51 @@ const RainFallback = ({
   );
   // Drops grouped by colour and brightness, a few paths each.
   const groups = useMemo(() => {
+    const square = lightSquare(box, scale);
     const byKey = new Map<
       string,
-      { ink: number; tone: number; beads: Bead[] }
+      { ink: number; tone: number; lenses: Lens[] }
     >();
-    const add = (bead: Bead) => {
-      const seen = lightAt(lights, bead.x, bead.y);
+    const add = (lens: Lens) => {
+      const seen = lightAt(lights, lens.x, lens.y);
       const tone = bucket(1.9 * seen.tone);
       const key = `${seen.ink}-${tone}`;
-      const group = byKey.get(key) ?? { beads: [], ink: seen.ink, tone };
-      group.beads.push(bead);
+      const group = byKey.get(key) ?? { ink: seen.ink, lenses: [], tone };
+      group.lenses.push(lens);
       byKey.set(key, group);
     };
     for (const bead of scene.beads) {
-      add(bead);
+      // As the shader's rainBeadFacing: the highlight turns towards the
+      // lights near it and reaches further round the brighter they are.
+      const pull = lightPull({ lights, square, x: bead.x, y: bead.y });
+      const strength = smoothstep(0.05, 0.6, Math.hypot(pull.x, pull.y));
+      const turn = bead.seed * Math.PI * 2;
+      const towardX = pull.x + 0.15 * Math.cos(turn);
+      const towardY = pull.y - 0.15 * Math.sin(turn);
+      const reach =
+        0.6 - 0.7 * strength + 0.3 * ((bead.seed * 7.13) % 1) - 0.15;
+      add({
+        angle: (Math.atan2(towardY, towardX) * 180) / Math.PI,
+        kind: "bead",
+        r: bead.r,
+        spread: (Math.acos(clamp(reach + 0.125, -1, 1)) * 180) / Math.PI,
+        x: bead.x,
+        y: bead.y,
+      });
     }
     for (const slider of scene.sliders) {
-      add(slider);
+      // Sliding drops hang their arc at the bottom, where the water gathers.
+      add({
+        angle: 90,
+        kind: "slider",
+        r: slider.r,
+        spread: 48,
+        x: slider.x,
+        y: slider.y,
+      });
     }
     return [...byKey.values()];
-  }, [lights, scene]);
+  }, [box, lights, scale, scene]);
   const ink = (index: number) => inks[index] ?? inks[0] ?? paper;
   // The same oval clears the drops and dims the lights, as in the shader.
   const mask =
@@ -719,42 +881,90 @@ const RainFallback = ({
               </linearGradient>
             );
           })}
+          {scene.sliders.map((slider, index) => {
+            const color = ink(lightAt(lights, slider.x, slider.y).ink);
+            return (
+              <linearGradient
+                key={`film-${num(slider.x)}-${num(slider.y)}`}
+                id={`${id}-film-${index}`}
+                gradientUnits="userSpaceOnUse"
+                x1="0"
+                x2="0"
+                y1={num(slider.top)}
+                y2={num(slider.y)}
+              >
+                <stop offset="0.4" stopColor={color} stopOpacity="0" />
+                <stop offset="1" stopColor={color} stopOpacity="0.4" />
+              </linearGradient>
+            );
+          })}
+          <filter id={`${id}-soft`} x="-1" y="-0.1" width="3" height="1.2">
+            <feGaussianBlur stdDeviation={num(1.5 * ditherCell)} />
+          </filter>
         </defs>
+        {/* The film either side of each trail near its drop, soft and wide. */}
+        <g filter={`url(#${id}-soft)`}>
+          {scene.sliders.map((slider, index) => (
+            <path
+              key={`${num(slider.x)}-${num(slider.y)}`}
+              d={trailShape(
+                slider,
+                ditherCell,
+                (along) =>
+                  (1 +
+                    0.5 * (slider.r / ditherCell) * smoothstep(0.4, 1, along)) *
+                  ditherCell
+              )}
+              fill={`url(#${id}-film-${index})`}
+            />
+          ))}
+        </g>
+        {/* Each trail's core, a thin thread up high that widens at the drop. */}
         {scene.sliders.map((slider, index) => (
           <path
             key={`${num(slider.x)}-${num(slider.y)}`}
-            d={trailPath(slider, ditherCell)}
-            fill="none"
-            stroke={`url(#${id}-trail-${index})`}
-            strokeWidth={num(
-              (0.8 + 0.16 * (slider.r / ditherCell)) * ditherCell
+            d={trailShape(
+              slider,
+              ditherCell,
+              (along) =>
+                (0.5 + (0.1 + 0.08 * (slider.r / ditherCell)) * along * along) *
+                ditherCell
             )}
-            strokeLinecap="round"
+            fill={`url(#${id}-trail-${index})`}
           />
         ))}
-        {groups.map((group) => (
-          <g key={`${group.ink}-${group.tone}`} fill="none">
-            <path
-              d={circles(group.beads)}
-              fill={ink(group.ink)}
-              fillOpacity={group.tone}
-            />
-            <path
-              d={circles(group.beads, ditherCell * 0.65)}
-              stroke={paper}
-              strokeWidth={num(ditherCell * 1.3)}
-            />
-            <g
-              stroke={ink(group.ink)}
-              strokeOpacity={clamp(0.8 + group.tone, 0, 1).toFixed(2)}
-              strokeWidth={num(ditherCell * 1.2)}
-              strokeLinecap="round"
-            >
-              <path d={arcs(group.beads, ditherCell * 2, 90, 48)} />
-              <path d={arcs(group.beads, ditherCell * 2, -127, 20)} />
+        {groups.map((group) => {
+          const beads = group.lenses.filter((lens) => lens.kind === "bead");
+          return (
+            <g key={`${group.ink}-${group.tone}`} fill="none">
+              <path
+                d={circles(group.lenses)}
+                fill={ink(group.ink)}
+                fillOpacity={group.tone}
+              />
+              <path
+                d={circles(group.lenses, ditherCell * 0.65)}
+                stroke={paper}
+                strokeWidth={num(ditherCell * 1.3)}
+              />
+              <path
+                d={circles(beads, ditherCell * 2)}
+                stroke={ink(group.ink)}
+                strokeOpacity="0.3"
+                strokeWidth={num(ditherCell)}
+              />
+              <g
+                stroke={ink(group.ink)}
+                strokeOpacity={clamp(0.8 + group.tone, 0, 1).toFixed(2)}
+                strokeWidth={num(ditherCell * 1.2)}
+                strokeLinecap="round"
+              >
+                <path d={arcs(group.lenses, ditherCell * 2, false)} />
+                <path d={arcs(group.lenses, ditherCell * 2, true)} />
+              </g>
             </g>
-          </g>
-        ))}
+          );
+        })}
       </svg>
     </div>
   );
