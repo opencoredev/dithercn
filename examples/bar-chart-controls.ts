@@ -27,7 +27,7 @@ export const bloom = segmented({
 export const highlight = segmented({
   default: "last",
   id: "highlight",
-  label: "Solid bar",
+  label: "Highlight",
   options: ["last", "max", "none"],
 });
 
