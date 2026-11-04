@@ -113,16 +113,16 @@
     "dependencies": ["radix-ui"]
   },
   {
-    "name": "dither-tabs",
+    "name": "dither-switch",
     "type": "registry:component",
-    "title": "Dither tabs",
-    "description": "Tabs whose dithered pill or underline indicator glides to the chosen tab, dissolving out of the old one and in at the new one through the Bayer levels.",
+    "title": "Dither switch",
+    "description": "A Radix toggle switch whose track fills with dither behind the thumb, stepping through the Bayer levels, with a lit dithered knob, four fills and any palette colour.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
-        "path": "components/dithercn/dither-tabs.tsx",
+        "path": "components/dithercn/dither-switch.tsx",
         "type": "registry:component",
-        "target": "components/dithercn/dither-tabs.tsx"
+        "target": "components/dithercn/dither-switch.tsx"
       }
     ],
     "dependencies": ["radix-ui"]
@@ -143,16 +143,16 @@
     "dependencies": ["radix-ui"]
   },
   {
-    "name": "dither-switch",
+    "name": "dither-tabs",
     "type": "registry:component",
-    "title": "Dither switch",
-    "description": "A Radix toggle switch whose track fills with dither behind the thumb, stepping through the Bayer levels, with a lit dithered knob, four fills and any palette colour.",
+    "title": "Dither tabs",
+    "description": "Tabs whose dithered pill or underline indicator glides to the chosen tab, dissolving out of the old one and in at the new one through the Bayer levels.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
-        "path": "components/dithercn/dither-switch.tsx",
+        "path": "components/dithercn/dither-tabs.tsx",
         "type": "registry:component",
-        "target": "components/dithercn/dither-switch.tsx"
+        "target": "components/dithercn/dither-tabs.tsx"
       }
     ],
     "dependencies": ["radix-ui"]

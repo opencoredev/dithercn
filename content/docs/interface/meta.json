@@ -3,9 +3,9 @@
   "description": "Everyday interface pieces with a dithered finish.",
   "pages": [
     "dither-button",
-    "dither-tabs",
-    "dither-slider",
     "dither-switch",
+    "dither-slider",
+    "dither-tabs",
     "avatar",
     "dither-card",
     "divider",

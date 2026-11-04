@@ -1,19 +1,5 @@
 [
   {
-    "name": "galaxy",
-    "type": "registry:component",
-    "title": "Galaxy",
-    "description": "A tilted spiral galaxy turning slowly, with a bright core, arms with knots of stars, dust lanes and fixed stars behind.",
-    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
-    "files": [
-      {
-        "path": "components/dithercn/galaxy.tsx",
-        "type": "registry:component",
-        "target": "components/dithercn/galaxy.tsx"
-      }
-    ]
-  },
-  {
     "name": "caustics",
     "type": "registry:component",
     "title": "Caustics",
@@ -24,6 +10,20 @@
         "path": "components/dithercn/caustics.tsx",
         "type": "registry:component",
         "target": "components/dithercn/caustics.tsx"
+      }
+    ]
+  },
+  {
+    "name": "flow-field",
+    "type": "registry:component",
+    "title": "Flow field",
+    "description": "A wind map: streamlines of a slowly turning, swirling flow, with bright streaks that travel along them and leave fading tails.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/flow-field.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/flow-field.tsx"
       }
     ]
   },
@@ -42,16 +42,16 @@
     ]
   },
   {
-    "name": "flow-field",
+    "name": "galaxy",
     "type": "registry:component",
-    "title": "Flow field",
-    "description": "A wind map: streamlines of a slowly turning, swirling flow, with bright streaks that travel along them and leave fading tails.",
+    "title": "Galaxy",
+    "description": "A tilted spiral galaxy turning slowly, with a bright core, arms with knots of stars, dust lanes and fixed stars behind.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {
-        "path": "components/dithercn/flow-field.tsx",
+        "path": "components/dithercn/galaxy.tsx",
         "type": "registry:component",
-        "target": "components/dithercn/flow-field.tsx"
+        "target": "components/dithercn/galaxy.tsx"
       }
     ]
   }
