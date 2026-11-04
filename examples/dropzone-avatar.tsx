@@ -32,7 +32,7 @@ export default function DropzoneAvatar() {
           Profile photo
         </span>
         <span className="text-muted-foreground font-mono text-xs whitespace-nowrap">
-          256px or larger
+          Up to 2 MB
         </span>
       </div>
       <Dropzone

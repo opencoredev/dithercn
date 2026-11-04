@@ -1606,7 +1606,8 @@ const progressOf = (
       };
     }
     case "error": {
-      return { ...FILE_STATE.error, value: 100, valueText: file.message };
+      // The reason can be long, so it goes on its own line under the bar.
+      return { ...FILE_STATE.error, value: 100, valueText: "Failed" };
     }
     default: {
       const exhaustive: never = file;
@@ -1654,15 +1655,22 @@ export const DropzoneFileList = ({
           >
             <path d={PAGE_GLYPH} style={{ fill: cssColor(progress.color) }} />
           </svg>
-          <ProgressBar
-            label={file.name}
-            value={progress.value}
-            valueText={progress.valueText}
-            color={progress.color}
-            fill={progress.fill}
-            size="sm"
-            className="min-w-0 flex-1"
-          />
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <ProgressBar
+              label={file.name}
+              value={progress.value}
+              valueText={progress.valueText}
+              color={progress.color}
+              fill={progress.fill}
+              size="sm"
+              className="min-w-0"
+            />
+            {file.status === "error" ? (
+              <p className="text-destructive text-xs [overflow-wrap:anywhere]">
+                {file.message}
+              </p>
+            ) : null}
+          </div>
           {onRemove === undefined ? null : (
             <button
               type="button"
