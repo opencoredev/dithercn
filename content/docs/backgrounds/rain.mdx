@@ -1,6 +1,6 @@
 ---
 title: "Rain"
-description: "Rain on a window at night: soft city lights out of focus behind the glass, beads of water that show them brighter, and bigger drops that slide down and leave wet trails."
+description: "Rain on a window at night: a few big, soft city lights out of focus behind the glass, drops that show them flipped and brighter like tiny lenses, and bigger drops that slide down and leave wet trails."
 ---
 
 import RainDemo from "@/examples/rain-demo";
@@ -36,9 +36,9 @@ export function Hero() {
 }
 ```
 
-The scene has two layers. Behind the glass, the city is a few soft discs of out-of-focus light, each in one of the palette's colours after the paper, dimmer towards the sky and over a low haze. They sway very slightly, as if the camera breathed.
+The scene has two layers. Behind the glass, the city is a few big, soft discs of out-of-focus light, each in one of the palette's colours after the paper. Each is full in the middle and thins out to its edge. There are more of them low down along the street than up in the sky, over a faint glow that rises from the street, and they sway very slightly, as if the camera breathed.
 
-On the glass, small beads sit still, and every so often a new one lands. Each bead is a tiny lens: it shows the light behind it flipped, shrunk and brighter than the glass around it, so a bead over a light glows in that light's colour and a bead over the dark sky is barely there. Bigger drops gather water for a moment, then slide down in short runs with pauses between, stretching as they run. Each leaves a wet trail that fades as it dries, and wipes the beads off its path; the beads come back one by one as the trail dries.
+On the glass, a scatter of beads sit still, and every so often a new one lands. Each bead is a tiny lens: it shows the light behind it upside down, shrunk and brighter, inside a dark rim, with a thin crescent of light along its bottom and a glint at its top left. So a bead over a light glows in that light's colour, ringed in dark, and a bead over the dark sky is only its crescent and glint. A few bigger drops gather water for a moment, then slide down at an easy, uneven pace, slowing almost to a stop now and then and running on, stretching as they run. Each leaves a wavering wet trail that fades as it dries, and wipes the beads off its path; the beads come back one by one as the trail dries.
 
 The lights scale with the box. The drops are measured in dither cells, so they keep their size on a phone and a wide screen shows more of them.
 
@@ -117,7 +117,7 @@ Red tail lights and orange street lamps, a brighter `glow`, a slightly higher `s
       type: "number",
       default: "1",
       description:
-        "How fast the drops slide and land. At 1 a big drop takes about a second per run and pause.",
+        "How fast the drops slide and land. At 1 a big drop slides about 10 cells a second on average, slowing and speeding up as it goes.",
     },
     {
       name: "animate",
@@ -139,6 +139,6 @@ Red tail lights and orange street lamps, a brighter `glow`, a slightly higher `s
 
 - It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
 - With reduced motion turned on, it draws one still frame, with drops caught mid-slide and their trails behind them, and stops.
-- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a still SVG of the same window: blurred discs of light, beads in the colour of the light behind them, and a few big drops with their trails, in the same colours.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a still SVG of the same window: soft discs of light over the street's glow, beads ringed in dark with their crescents and glints, and a few big drops with their trails, in the same colours.
 - On a light theme the paper is light and the lights are drawn in ink, like a printed negative. Pass a dark first palette colour, or set `className="dark"` on a wrapper, for night on any theme.
 - Every cell checks the nine nearest lights once, its own two bead squares and two sliding drops, with no loop over every drop. The colour pass repeats that work. See [Performance](/docs/engine/performance).
