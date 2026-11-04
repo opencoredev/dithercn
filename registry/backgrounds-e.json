@@ -1,5 +1,19 @@
 [
   {
+    "name": "caustics",
+    "type": "registry:component",
+    "title": "Caustics",
+    "description": "The shifting net of light on the floor of a sunlit pool: thin filaments that meet in hot spots and wobble over dim water.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/caustics.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/caustics.tsx"
+      }
+    ]
+  },
+  {
     "name": "voronoi",
     "type": "registry:component",
     "title": "Voronoi Cells",

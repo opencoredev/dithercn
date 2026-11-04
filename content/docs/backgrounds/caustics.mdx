@@ -1,0 +1,147 @@
+---
+title: "Caustics"
+description: "The shifting net of light on the floor of a sunlit pool: thin filaments that meet in hot spots and wobble over dim water, drawn as a dither."
+---
+
+import CausticsDemo from "@/examples/caustics-demo";
+import { controls as causticsControls } from "@/examples/caustics-controls";
+import CausticsHeadline from "@/examples/caustics-headline";
+import CausticsPool from "@/examples/caustics-pool";
+
+<ComponentPreview
+  src="examples/caustics-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={causticsControls}
+>
+  <CausticsDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="caustics" />
+
+## Usage
+
+```tsx
+import { Caustics } from "@/components/dithercn/caustics";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Caustics className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+Light gathers along the borders of slowly circling cells, and a slow swell bends those borders into curves, the way waves on a surface bend the light below. Each filament keeps the same width in dither cells at any box size, so the lines stay crisp. Where three borders meet, the filament thickens into a hot spot. A second, larger and fainter net drifts more slowly underneath and crosses the first, and broad patches of sunlight brighten some areas more than others. It defaults to the 8×8 matrix, which keeps the glow around each filament smooth.
+
+## Examples
+
+### Behind a headline
+
+`mask="center"` fades the light out in an oval behind the text and leaves the dim water, so no filament crosses the words. A lower `scale` makes each cell of light larger and a sharper `focus` thins the filaments around it.
+
+<ComponentPreview
+  src="examples/caustics-headline.tsx"
+  size="lg"
+  align="stretch"
+>
+  <CausticsHeadline />
+</ComponentPreview>
+
+### Pool
+
+Four blues from deep water to a pale aqua highlight, a tighter `focus` and a drift to the lower right. The palette is literal, so it stays a pool in light and dark mode.
+
+<ComponentPreview src="examples/caustics-pool.tsx" size="full" align="stretch">
+  <CausticsPool />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "scale",
+      type: "number",
+      default: "4",
+      description:
+        "How many cells of light fit in the height of the box, from 1 to 16.",
+    },
+    {
+      name: "focus",
+      type: "number",
+      default: "0.7",
+      description:
+        "How tightly the light is focused, from 0 to 1: soft wide bands at 0, thin bright filaments at 1.",
+    },
+    {
+      name: "angle",
+      type: "number",
+      default: "160",
+      description:
+        "Direction the net drifts, in degrees as in CSS: 90 moves it right, 180 down.",
+    },
+    {
+      name: "intensity",
+      type: "number",
+      default: "1",
+      description:
+        "The brightest tone, from 0 to 1. Lower it to put text on top.",
+    },
+    {
+      name: "mask",
+      type: '"none" | "center" | "top" | "bottom"',
+      default: '"none"',
+      description:
+        "Fades the light out where text sits and leaves the dim water: an oval in the middle, or the top or bottom half.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: "Paper, two tints of --dither-ink, then --dither-ink",
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer8"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the net wobbles and drifts.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description:
+        "false stops the motion: a still frame if it starts off, the current frame if it was moving.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The light fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a still CSS net in the same colours, drawn from SVG turbulence, with the same `mask`.
