@@ -42,6 +42,20 @@
     ]
   },
   {
+    "name": "black-hole",
+    "type": "registry:component",
+    "title": "Black Hole",
+    "description": "A black hole with a thin photon ring and a hot accretion disk seen at a slant, its far side lensed over the top and under the bottom, streaming round with one side brighter.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/black-hole.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/black-hole.tsx"
+      }
+    ]
+  },
+  {
     "name": "fire",
     "type": "registry:component",
     "title": "Fire",
