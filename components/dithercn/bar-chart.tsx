@@ -330,7 +330,8 @@ export const BarChart = <T,>({
               color={colorOf(seriesIndex)}
               cell={px}
               level={DENSE_TOP}
-              floor={level}
+              // Never thinner than a plain bar's floor, even with a low `level`.
+              floor={Math.max(level, FLOOR)}
               matrix={matrix}
               ramp={ramp}
             />
