@@ -138,23 +138,45 @@ float field(vec2 uv, vec2 res, float t) {
   float clumps = smoothstep(0.25, 0.65, tex.x);
   float absorb = lane * clumps * smoothstep(0.06, 0.2, r) * outer * galaxyDust;
   // It only shows once the disc leans well over, past about 50 degrees.
-  float near = smoothstep(0.0, -0.04, g.y) * smoothstep(0.35, 0.8, 1.0 - galaxyCos);
+  // (smoothstep needs ascending edges, so the near half is 1 minus it.)
+  float slant = 1.0 - galaxyCos;
+  float near = (1.0 - smoothstep(-0.04, 0.0, g.y)) * smoothstep(0.35, 0.8, slant);
   float ring = smoothstep(0.1, 0.28, r) * (1.0 - smoothstep(0.6, 0.95, r));
   ring *= (0.75 + 0.25 * clumps) * galaxyDust;
   float veil = clamp(absorb + near * ring, 0.0, 0.95);
-  tone *= 1.0 - veil;
+
+  // Nearly edge-on, the line of sight runs through far more dust, and the
+  // dense inner ring on the near side reads as one crisp dark lane across
+  // the core, as in the Sombrero galaxy, with bulge light on both sides of
+  // it. It fades in from about 60 degrees, so the default tilt and anything
+  // flatter look as before. The lane follows the near half of a dust ring
+  // of radius 0.18: an arc through the lower core that meets the long axis
+  // past the bulge. Its width is set on screen, at least a few dots, so it
+  // stays crisp however flat the disc or small the box.
+  float edgeOn = smoothstep(0.5, 0.85, slant);
+  float across = abs(v.x);
+  float laneY = -galaxyCos * sqrt(max(0.0324 - across * across, 0.0));
+  float cellSize = 1.0 / (galaxySize * min(res.x, res.y));
+  float laneD = abs(v.y - laneY) / max(0.022 + 0.07 * galaxyCos, 1.75 * cellSize);
+  float midplane = 1.0 - smoothstep(0.55, 1.0, laneD);
+  midplane *= (1.0 - smoothstep(0.34, 0.7, across)) * (0.9 + 0.1 * clumps);
+  float band = clamp(edgeOn * midplane * galaxyDust * 1.2, 0.0, 0.97);
+  tone *= (1.0 - veil) * (1.0 - band);
 
   // The bulge, crossed by the lanes that spiral into it. Seen at a slant,
-  // the near half of the dusty disc also cuts a band across it.
+  // the near half of the dusty disc also cuts a band across it. Edge-on,
+  // that broad veil gives way to the thin lane, so the bulge still glows
+  // below it.
   float rb = galaxyBulgeRadius(v);
   float bulge = 0.7 * exp(-rb * rb * 70.0) + 0.45 * exp(-rb * rb * 11.0);
-  bulge *= 1.0 - veil;
+  bulge *= (1.0 - veil * (1.0 - edgeOn)) * (1.0 - band);
 
   // A faint round halo.
   float halo = 0.05 * exp(-rb * 3.0) * (1.0 - smoothstep(0.8, 1.6, rb));
   float glow = tone + bulge + halo;
 
-  float star = galaxyStar(uv, res) * (1.0 - smoothstep(0.04, 0.2, glow));
+  // No background stars show through the dark lane either.
+  float star = galaxyStar(uv, res) * (1.0 - smoothstep(0.04, 0.2, glow)) * (1.0 - band);
   return max(clamp(glow, 0.0, 1.0), star);
 }
 `;
