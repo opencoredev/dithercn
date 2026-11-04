@@ -11,15 +11,15 @@ import {
 const PLANS = [
   {
     blurb: "For side projects and small teams.",
-    monthly: 12,
+    monthly: 15,
     name: "Team",
-    yearly: 10,
+    yearly: 12,
   },
   {
     blurb: "Audit logs, SSO and priority support.",
-    monthly: 39,
+    monthly: 40,
     name: "Business",
-    yearly: 31,
+    yearly: 32,
   },
 ] as const;
 

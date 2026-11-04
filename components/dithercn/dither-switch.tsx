@@ -47,10 +47,12 @@ const snap = (px: number, cell: number) =>
 
 const geometryOf = (size: DitherSwitchSize, cell: number): Geometry => {
   const target = GEOMETRY[size];
-  const height = snap(target.height, cell);
+  // At large cells the snapped sizes can collapse, so keep at least a
+  // two-cell thumb inside the pads and two cells of travel.
   const pad = snap(target.pad, cell);
-  const width = snap(target.width, cell);
+  const height = Math.max(snap(target.height, cell), pad * 2 + cell * 2);
   const thumb = height - pad * 2;
+  const width = Math.max(snap(target.width, cell), thumb + pad * 2 + cell * 2);
   const radius = Math.round(height * 0.32);
   return {
     height,

@@ -48,7 +48,7 @@ export default function DropzoneDemo() {
               })
             ),
           ];
-          setFiles((now) => [...added, ...now].slice(0, 4));
+          setFiles((now) => [...added, ...now]);
         }}
       />
       {files.length > 0 ? (
