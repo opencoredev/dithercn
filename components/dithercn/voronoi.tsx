@@ -189,12 +189,15 @@ vec4 colorField(vec2 uv, vec2 res, float t) {
 
 const MODES = { foam: 0, glaze: 1, stone: 2 } as const;
 
+type Point = readonly [number, number];
+
 interface FallbackCell {
-  readonly points: string;
+  /** Grid square the cell's seed sits in, which seeds everything else about it. */
+  readonly x: number;
+  readonly y: number;
+  readonly polygon: readonly Point[];
   readonly grain: number;
 }
-
-type Point = readonly [number, number];
 
 // A stable value in [0, 1) per grid square, so the server and client agree.
 const fallbackHash = (x: number, y: number, salt: number) => {
@@ -256,15 +259,172 @@ const fallbackCells = ({
           }
         }
       }
-      cells.push({
-        grain: fallbackHash(x, y, 3),
-        points: polygon
-          .map(([px, py]) => `${px.toFixed(3)},${py.toFixed(3)}`)
-          .join(" "),
-      });
+      cells.push({ grain: fallbackHash(x, y, 3), polygon, x, y });
     }
   }
   return cells;
+};
+
+const pointList = (polygon: readonly Point[]) =>
+  polygon.map(([px, py]) => `${px.toFixed(3)},${py.toFixed(3)}`).join(" ");
+
+const pathOf = (line: readonly Point[]) =>
+  line
+    .map(
+      ([px, py], index) =>
+        `${index === 0 ? "M" : "L"}${px.toFixed(3)} ${py.toFixed(3)}`
+    )
+    .join("");
+
+interface Edge {
+  readonly from: Point;
+  readonly to: Point;
+  /** Unit normal pointing out of the polygon. */
+  readonly normal: Point;
+}
+
+// The edges of a convex polygon, each with its outward normal.
+const edgesOf = (polygon: readonly Point[]): Edge[] => {
+  const count = polygon.length;
+  const cx = polygon.reduce((sum, [px]) => sum + px, 0) / count;
+  const cy = polygon.reduce((sum, [, py]) => sum + py, 0) / count;
+  return polygon.flatMap((from, index): Edge[] => {
+    const to = polygon[(index + 1) % count] ?? from;
+    const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+    if (length < 1e-6) {
+      return [];
+    }
+    let normal: Point = [
+      (to[1] - from[1]) / length,
+      (from[0] - to[0]) / length,
+    ];
+    const outward =
+      ((from[0] + to[0]) / 2 - cx) * normal[0] +
+      ((from[1] + to[1]) / 2 - cy) * normal[1];
+    if (outward < 0) {
+      normal = [-normal[0], -normal[1]];
+    }
+    return [{ from, normal, to }];
+  });
+};
+
+// A convex polygon shrunk by `distance` on every side; empty when it closes up.
+const inset = (polygon: readonly Point[], distance: number) => {
+  let shape = polygon;
+  for (const { from, normal } of edgesOf(polygon)) {
+    if (shape.length === 0) {
+      break;
+    }
+    shape = clip(
+      shape,
+      [from[0] - normal[0] * distance, from[1] - normal[1] * distance],
+      normal
+    );
+  }
+  return shape;
+};
+
+// The point `fraction` of the way round a polygon's outline.
+const alongOutline = (polygon: readonly Point[], fraction: number): Point => {
+  const edges = edgesOf(polygon);
+  const lengths = edges.map(({ from, to }) =>
+    Math.hypot(to[0] - from[0], to[1] - from[1])
+  );
+  let left =
+    (fraction - Math.floor(fraction)) * lengths.reduce((a, b) => a + b, 0);
+  for (const [index, edge] of edges.entries()) {
+    const length = lengths[index] ?? 0;
+    if (left <= length) {
+      const t = length > 0 ? left / length : 0;
+      return [
+        edge.from[0] + (edge.to[0] - edge.from[0]) * t,
+        edge.from[1] + (edge.to[1] - edge.from[1]) * t,
+      ];
+    }
+    left -= length;
+  }
+  return polygon[0] ?? [0, 0];
+};
+
+// The fine crackle in one glaze cell: two or three jagged cracks, each running
+// from the cell's edge part or all of the way across it. Seeded from the grid
+// square, so a cell keeps its cracks between renders.
+const crackle = ({
+  face,
+  x,
+  y,
+}: {
+  face: readonly Point[];
+  x: number;
+  y: number;
+}): string => {
+  const count = 2 + Math.floor(fallbackHash(x, y, 5) * 2);
+  const steps = 5;
+  let path = "";
+  for (let k = 0; k < count; k += 1) {
+    const start = fallbackHash(x, y, 10 + k);
+    const from = alongOutline(face, start);
+    const to = alongOutline(
+      face,
+      start + 0.3 + 0.4 * fallbackHash(x, y, 20 + k)
+    );
+    // The first crack crosses the cell; the rest stop part way.
+    const reach = k === 0 ? 1 : 0.4 + 0.4 * fallbackHash(x, y, 30 + k);
+    const dx = to[0] - from[0];
+    const dy = to[1] - from[1];
+    const length = Math.hypot(dx, dy);
+    if (length < 0.05) {
+      continue;
+    }
+    const line: Point[] = [];
+    for (let i = 0; i <= steps; i += 1) {
+      const t = (i / steps) * reach;
+      // Jagged sideways, most in the middle, so the ends stay on the edge.
+      const jag =
+        (fallbackHash(x + i, y + k, 40) - 0.5) *
+        Math.min(0.14, length * 0.22) *
+        Math.sin(Math.PI * (i / steps));
+      line.push([
+        from[0] + dx * t - (dy / length) * jag,
+        from[1] + dy * t + (dx / length) * jag,
+      ]);
+    }
+    path += pathOf(line);
+  }
+  return path;
+};
+
+// Light falls from the top left, as in the shader; y points down in SVG.
+const LIGHT: Point = [-0.6, -0.8];
+
+// Bevel tones, as in the shader's slope: brighter on edges facing the light.
+// The darkest stays a little above the grout, so tiles keep their shape.
+const BEVEL_STEP = 0.2;
+const BEVEL_FLOOR = 0.1;
+
+/**
+ * The bevel along a stone tile's outline, as runs of edges grouped by tone:
+ * lit edges top and left, shaded ones bottom and right.
+ */
+const bevels = (outline: readonly Point[]) => {
+  const runs = new Map<number, Point[][]>();
+  let last: { tone: number; run: Point[] } | undefined;
+  for (const { from, to, normal } of edgesOf(outline)) {
+    const facing = normal[0] * LIGHT[0] + normal[1] * LIGHT[1];
+    const slope = Math.min(1, Math.max(0, 0.42 + 0.5 * facing));
+    const tone = Math.max(
+      BEVEL_FLOOR,
+      Math.round(slope / BEVEL_STEP) * BEVEL_STEP
+    );
+    if (last?.tone === tone && last.run.at(-1) === from) {
+      last.run.push(to);
+      continue;
+    }
+    const run: Point[] = [from, to];
+    last = { run, tone };
+    runs.set(tone, [...(runs.get(tone) ?? []), run]);
+  }
+  return runs;
 };
 
 interface BoxSize {
@@ -308,6 +468,104 @@ const useBoxSize = (ref: { current: HTMLElement | null }) => {
 
 const share = (color: DitherColor, percent: number) =>
   `color-mix(in oklab, ${cssColor(color)} ${percent.toFixed(0)}%, transparent)`;
+
+// An opaque tone between the paper and `color`, for cells and the lines over them.
+const mixed = (color: DitherColor, tone: number, paper: DitherColor) =>
+  `color-mix(in oklab, ${cssColor(color)} ${(tone * 100).toFixed(0)}%, ${cssColor(paper)})`;
+
+// The shader's four glaze levels and its stone tile tops.
+const glazeLevel = (grain: number) => (3 + 3 * Math.floor(grain * 4)) / 16;
+const stoneTop = (grain: number) => 0.3 + 0.16 * grain;
+
+interface FallbackTile {
+  readonly key: string;
+  readonly points: string;
+  readonly fill: string;
+}
+
+/**
+ * Everything the fallback draws: one polygon per cell, and the bevels or
+ * crackle as one path per stroke colour, so a whole layer costs a few
+ * elements, not a few per cell.
+ *
+ * A stone tile's outline sits `corner` inside its grout. Its bevel is a stroke
+ * twice that wide down every edge of the outline, so the stroke's round caps
+ * and joins round the tile's corners. The tile's top is the same outline
+ * again, drawn over the bevel with a thinner stroke that leaves a rim showing.
+ */
+const fallbackShapes = ({
+  polygons,
+  variant,
+  halfWall,
+  corner,
+  crackWidth,
+  colors,
+  ink,
+  paper,
+}: {
+  polygons: readonly FallbackCell[];
+  variant: VoronoiVariant;
+  /** Half the wall width, in grid squares. */
+  halfWall: number;
+  /** Stone tile corner radius, in grid squares. */
+  corner: number;
+  /** Glaze crackle width, in grid squares. */
+  crackWidth: number;
+  colors: readonly DitherColor[] | undefined;
+  ink: DitherColor;
+  paper: DitherColor;
+}) => {
+  const lines = new Map<string, string>();
+  const addLine = (stroke: string, d: string) => {
+    lines.set(stroke, (lines.get(stroke) ?? "") + d);
+  };
+  const tiles = polygons.flatMap(({ x, y, polygon, grain }): FallbackTile[] => {
+    const key = `${x},${y}`;
+    const color =
+      colors === undefined
+        ? ink
+        : (colors[Math.floor(grain * colors.length)] ?? ink);
+    if (variant === "foam") {
+      return [
+        { fill: share(color, 6 + 10 * grain), key, points: pointList(polygon) },
+      ];
+    }
+    if (variant === "stone") {
+      const outline = inset(polygon, halfWall + corner);
+      if (outline.length < 3) {
+        return [];
+      }
+      for (const [tone, runs] of bevels(outline)) {
+        addLine(mixed(color, tone, paper), runs.map(pathOf).join(""));
+      }
+      return [
+        {
+          fill: mixed(color, stoneTop(grain), paper),
+          key,
+          points: pointList(outline),
+        },
+      ];
+    }
+    // About half the glaze cells are crazed, as in the shader.
+    if (fallbackHash(x, y, 4) >= 0.5) {
+      const face = inset(polygon, halfWall + crackWidth);
+      if (face.length >= 3) {
+        addLine(
+          mixed(color, glazeLevel(grain) * 0.4, paper),
+          crackle({ face, x, y })
+        );
+      }
+    }
+    return [
+      {
+        fill: mixed(color, glazeLevel(grain), paper),
+        key,
+        points: pointList(polygon),
+      },
+    ];
+  });
+  return { lines: [...lines], tiles };
+};
 
 /** The same cells drawn as SVG polygons, shown without WebGL. */
 const Fallback = ({
@@ -358,22 +616,29 @@ const Fallback = ({
   );
   const [paper, second] = palette;
   const ink = palette.at(-1) ?? second;
+  const ditherCell = cell ?? inherited;
   // Capped at a fifth of a grid square, as in the shader. Only exact once
   // the box is measured, since the first frame's square is a guess.
-  const wallPx = Math.min(wall * (cell ?? inherited), square * 0.2);
-  const fillOf = (grain: number) => {
-    const color =
-      colors === undefined
-        ? ink
-        : (colors[Math.floor(grain * colors.length)] ?? ink);
-    if (variant === "foam") {
-      return share(color, 6 + 10 * grain);
-    }
-    if (variant === "glaze") {
-      return share(color, 100 * ((3 + 3 * Math.floor(grain * 4)) / 16));
-    }
-    return share(color, 30 + 16 * grain);
-  };
+  const wallPx = Math.min(wall * ditherCell, square * 0.2);
+  // Stone tile corners are rounded about as much as the shader's, and the
+  // bevel's rim is the outer 40% of the shader's bevel (two dither cells, or
+  // 13% of a square), where its slope shows most. In grid squares, the SVG's
+  // own units.
+  const bevel = Math.max((2 * ditherCell) / square, 0.13);
+  const corner = Math.max(bevel / 2, 0.11);
+  const rim = bevel * 0.4;
+  // Glaze crackle is about one dither cell wide.
+  const crackWidth = Math.max(1, ditherCell) / square;
+  const shapes = fallbackShapes({
+    colors,
+    corner,
+    crackWidth,
+    halfWall: wallPx / 2 / square,
+    ink,
+    paper,
+    polygons,
+    variant,
+  });
   return (
     <div
       ref={ref}
@@ -393,17 +658,44 @@ const Fallback = ({
               : undefined,
         }}
       >
-        {polygons.map(({ points, grain }) => (
-          <polygon
-            key={points}
-            points={points}
-            fill={fillOf(grain)}
-            stroke={cssColor(variant === "foam" ? ink : paper)}
-            strokeWidth={variant === "stone" ? wallPx * 1.6 : wallPx}
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
+        {/* Foam walls round off where they meet; glaze cracks stay sharp.
+            Stone tiles sit inside their grout already and go over the bevels. */}
+        {variant === "stone"
+          ? null
+          : shapes.tiles.map(({ key, points, fill }) => (
+              <polygon
+                key={key}
+                points={points}
+                fill={fill}
+                stroke={cssColor(variant === "foam" ? ink : paper)}
+                strokeWidth={wallPx}
+                strokeLinejoin={variant === "glaze" ? "miter" : "round"}
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+        {shapes.lines.map(([stroke, d]) => (
+          <path
+            key={stroke}
+            d={d}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={variant === "stone" ? corner * 2 : crackWidth}
+            strokeLinecap={variant === "stone" ? "round" : "butt"}
+            strokeLinejoin={variant === "stone" ? "round" : "miter"}
           />
         ))}
+        {variant === "stone"
+          ? shapes.tiles.map(({ key, points, fill }) => (
+              <polygon
+                key={key}
+                points={points}
+                fill={fill}
+                stroke={fill}
+                strokeWidth={(corner - rim) * 2}
+                strokeLinejoin="round"
+              />
+            ))
+          : null}
       </svg>
     </div>
   );
