@@ -40,5 +40,19 @@
         "target": "components/dithercn/galaxy.tsx"
       }
     ]
+  },
+  {
+    "name": "fire",
+    "type": "registry:component",
+    "title": "Fire",
+    "description": "Flames rising from the edge of the box, with a hot base, tapering tongues that lick up and tear off, and embers that drift above them.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/fire.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/fire.tsx"
+      }
+    ]
   }
 ]
