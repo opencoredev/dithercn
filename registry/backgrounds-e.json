@@ -42,6 +42,20 @@
     ]
   },
   {
+    "name": "moire",
+    "type": "registry:component",
+    "title": "Moiré",
+    "description": "Two fine gratings of lines, rings or mesh laid over each other and sliding slowly, so huge interference bands bloom, sweep and turn across the box.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/moire.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/moire.tsx"
+      }
+    ]
+  },
+  {
     "name": "rain",
     "type": "registry:component",
     "title": "Rain",

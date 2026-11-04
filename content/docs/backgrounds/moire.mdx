@@ -1,0 +1,182 @@
+---
+title: "Moiré"
+description: "Two fine gratings laid over each other and sliding slowly, so huge interference bands bloom, sweep and turn across the box, as when two window screens overlap."
+---
+
+import MoireDemo from "@/examples/moire-demo";
+import { controls as moireControls } from "@/examples/moire-controls";
+import MoireRings from "@/examples/moire-rings";
+import MoireHeadline from "@/examples/moire-headline";
+
+<ComponentPreview
+  src="examples/moire-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={moireControls}
+>
+  <MoireDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="moire" />
+
+## Usage
+
+```tsx
+import { Moire } from "@/components/dithercn/moire";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Moire className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+Two gratings of fine lines sit on top of each other. Each line is a whole number of dither cells wide, every `pitch` cells, so the lines stay crisp at any size. A line of one grating is drawn in the second palette colour, and a cell where lines of both gratings cross is drawn in the last. Where the gratings line up, their lines overlap into crisp ink stripes on open paper. Where they fall half a pitch apart, they fill each other's gaps with a flat tint. Between the two, the stripes thicken and soften, and the eye reads the change as broad bands many times larger than the lines themselves.
+
+The bands move far more than the lines do. The gratings slide apart by a fraction of a cell per second, and the bands sweep across the box at dozens of pixels per second. At the same time the angle between the gratings breathes, so the bands swell, narrow and swing. The second grating is never quite flat: `warp` bends it by a cell or two in a few broad swells that change shape slowly. That bend is too small to see in the lines, but it curves the bands by most of their width. There are three variants:
+
+- `"lines"`: two sets of straight lines a few degrees apart. The bands run across the lines.
+- `"rings"`: two sets of concentric rings whose centres drift apart and together. The bands fan out from the middle as a slowly turning starburst.
+- `"mesh"`: two square grids, like a pair of window screens. The bands form a large lattice of their own.
+
+`bands` sets how many bands cross the box, not how far the lines are turned, so a phone shows the same composition as a desktop.
+
+## Examples
+
+### Rings in a palette
+
+`colors` gives each band the next colour from a list in turn. The lines that cross take the band's colour and the rest a tint of it, and the colours change halfway between two bands, inside the flat tint, so no colour edge cuts across the crisp stripes. With `"rings"`, the bands fan out from the middle, so the colours do too.
+
+<ComponentPreview src="examples/moire-rings.tsx" size="lg" align="stretch">
+  <MoireRings />
+</ComponentPreview>
+
+### Behind a headline
+
+`mask="center"` clears an oval in the middle of the box, and the lines dissolve into dots towards it. Two big bands and two soft tints of the ink keep the pattern quiet behind the text.
+
+<ComponentPreview src="examples/moire-headline.tsx" size="lg" align="stretch">
+  <MoireHeadline />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "variant",
+      type: '"lines" | "rings" | "mesh"',
+      default: '"lines"',
+      description:
+        "Two sets of straight lines, two sets of concentric rings, or two square grids.",
+    },
+    {
+      name: "pitch",
+      type: "number",
+      default: "4",
+      description:
+        "Spacing of each grating's lines, in whole dither cells, from 3 to 12 (4 to 12 for mesh). Each line is half a pitch wide.",
+    },
+    {
+      name: "bands",
+      type: "number",
+      default: "3",
+      description:
+        "Roughly how many interference bands cross the box, from 1 to 8. Fewer bands are bigger.",
+    },
+    {
+      name: "angle",
+      type: "number",
+      default: "30",
+      description:
+        "Direction of the lines in degrees, as in CSS: 0 runs up, 90 across. For rings, the direction from one ring centre to the other.",
+    },
+    {
+      name: "center",
+      type: "[x: number, y: number]",
+      default: "[0.5, 0.5]",
+      description:
+        "The point the gratings turn around, or the midpoint between the ring centres, as fractions of the box from the top left.",
+    },
+    {
+      name: "drift",
+      type: "number",
+      default: "1",
+      description:
+        "How fast the gratings slide against each other, so the bands sweep across the box. 0 stops the slide; the bands still turn and breathe.",
+    },
+    {
+      name: "warp",
+      type: "number",
+      default: "0.6",
+      description:
+        "How much the second grating bends, so the bands curve and twist instead of running straight, from 0 (flat) to 2.",
+    },
+    {
+      name: "mask",
+      type: '"none" | "center" | "top" | "bottom" | "edges"',
+      default: '"none"',
+      description: "Fades it to paper where your text sits.",
+    },
+    {
+      name: "colors",
+      type: "[DitherColor, ...DitherColor[]]",
+      default: "–",
+      description:
+        'Colour each band from this list in turn. Palette names such as "blue", CSS variable names, or any CSS colour. The palette then only sets the paper.',
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: "Paper, a tint of --dither-ink, then --dither-ink",
+      description:
+        "Colours from paper to ink. Lines of one grating take the colour halfway along, cells where both cross the last. With two colours, lines that don't cross dither to half.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer8"',
+      description:
+        "The threshold pattern, seen where a mask fades the lines. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description:
+        "Size of one dither cell in CSS pixels, and so of the finest line.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast everything moves.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description:
+        "false stops the motion: a still frame if it starts off, the current frame if it was moving.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The gratings fill this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it draws the same two gratings as CSS repeating gradients, at half strength each and added together with `mix-blend-mode: plus-lighter`, so the moiré still appears where their lines cross.
+- Each line is drawn in whole cells and every cell is either on a line or not, so the fine pattern never blurs into grey and never flickers. No line moves more than a cell every few seconds; only the bands move quickly.
+- It costs a few dot products per cell, at 30 fps and one pixel per dither cell. See [Performance](/docs/engine/performance).
