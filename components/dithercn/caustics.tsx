@@ -118,7 +118,7 @@ float field(vec2 uv, vec2 res, float t) {
   float a = causticsLight(causticsSheet(q, t), perCell, width, glow, gateA, spread);
 
   // A finer, fainter sheet below it, turned, wobbling to its own ripples and
-  // drifting at a third of the speed, about 35 degrees off angle, so the
+  // drifting at half the speed, about 35 degrees off angle, so the
   // places where the two sheets cross keep sliding.
   vec2 s = mat2(0.82, -0.57, 0.57, 0.82) * p * 1.35 + flow * 0.5
     - bend.yx * 0.3 + vec2(-ripple.y, ripple.x) * 0.3 + vec2(13.1, 7.9);

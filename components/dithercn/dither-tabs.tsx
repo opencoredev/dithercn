@@ -357,10 +357,10 @@ const paint = ({
   matrix,
   vertical,
   rtl,
-}: PaintOptions) => {
+}: PaintOptions): boolean => {
   const context = canvas.getContext("2d");
   if (!context) {
-    return;
+    return false;
   }
   const { cols, rows, size } = grid;
   if (frame.current?.width !== cols || frame.current.height !== rows) {
@@ -401,6 +401,7 @@ const paint = ({
     }
   }
   context.putImageData(frame.current, 0, 0);
+  return true;
 };
 
 /** The colours the canvas inks with: the plain colour, then lit and shaded mixes. */
@@ -626,8 +627,15 @@ export const DitherTabsList = ({
     if (!(canvas && grid && colours)) {
       return false;
     }
-    paint({ canvas, frame: frameRef, grid, inks: colours, scene, ...rest });
-    return true;
+    // Only a frame that actually painted lets the CSS fallback go.
+    return paint({
+      canvas,
+      frame: frameRef,
+      grid,
+      inks: colours,
+      scene,
+      ...rest,
+    });
   }, []);
 
   const frame = useCallback(
