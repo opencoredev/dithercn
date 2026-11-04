@@ -49,15 +49,36 @@ const INNER = 0.36;
 /** Radius of the photon ring, just outside the shadow. */
 const RING = SHADOW * 1.02;
 /** Where the lensed far side starts above the shadow, and the thin image below it. */
-const ARC_INNER = SHADOW * 1.08;
+const ARC_INNER = SHADOW * 1.04;
 const LOW_INNER = SHADOW * 1.05;
 /** How tightly the lens packs the far side into the arc over the top, and under the bottom. */
 const ARC_SQUEEZE = 0.46;
 const LOW_SQUEEZE = 0.16;
+/**
+ * How far the lens pulls the inner edge of the far side in towards the
+ * photon ring even at the horizon, as a share of the pull over the top.
+ */
+const ARC_PULL = 0.9;
+/**
+ * The near rim of the disk, the soft band that crosses in front of the
+ * shadow: the disk radius its centre follows, how far either side of the
+ * centre it reaches, and its half-thickness in the middle, in disk radii.
+ */
+const RIM_RADIUS = INNER + 0.05;
+const RIM_SPAN = INNER + 0.2;
+const RIM_WIDTH = 0.06;
+/** How much further the rim sags below the inner edge in the middle, edge-on. */
+const RIM_SAG = 0.035;
 /** Radius of the Einstein ring that bends the stars behind. */
 const EINSTEIN = 0.42;
 /** The disk's brightness turns into dot coverage as 1 - exp(-GAIN * light). */
 const GAIN = 2.4;
+/**
+ * Where the disk's steady heat, before the streaks, starts to hold the dots
+ * solid, and where they are all on.
+ */
+const CORE_FROM = 0.9;
+const CORE_TO = 1.45;
 
 const glsl = (value: number) => value.toFixed(4);
 
@@ -70,6 +91,7 @@ const float holeShadow = ${glsl(SHADOW)};
 const float holeInner = ${glsl(INNER)};
 const float holeRing = ${glsl(RING)};
 const float holeEinstein = ${glsl(EINSTEIN)};
+const float holeRimRadius = ${glsl(RIM_RADIUS)};
 
 // The cell relative to the centre, in disk radii, turned so the disk's long
 // axis runs along x. y points up, towards the far side of the disk.
@@ -108,9 +130,28 @@ vec3 holeRadii(vec2 v) {
   float rho = length(v);
   float rFlat = length(vec2(v.x, v.y / holeCos));
   float rise = smoothstep(0.0, 0.4, v.y / max(rho, 1e-4)) * holeLean;
-  float rArc = holeInner + (rho - mix(holeInner, ${glsl(ARC_INNER)}, rise)) / mix(1.0, ${glsl(ARC_SQUEEZE)}, rise);
+  // Even at the horizon the lens pulls the inner edge in towards the photon
+  // ring, so no dark gap opens beside the shadow.
+  float pull = max(rise, ${glsl(ARC_PULL)} * holeLean);
+  float rArc = holeInner + (rho - mix(holeInner, ${glsl(ARC_INNER)}, pull)) / mix(1.0, ${glsl(ARC_SQUEEZE)}, rise);
   float rLow = holeInner + (rho - ${glsl(LOW_INNER)}) / ${glsl(LOW_SQUEEZE)};
   return vec3(rFlat, rArc, rLow);
+}
+
+// The near rim of the disk, crossing in front of the shadow. The disk has
+// some thickness, so at a slant its near edge reads as a soft band rather
+// than a line: it follows the inner edge a little outside it, is thickest
+// in the middle, nearest the viewer, and tapers to the sides. Returns how
+// far into the band the cell is, 0 at its soft edges to 1 along its centre,
+// and the angle round the disk there.
+vec2 holeRim(vec2 v) {
+  float x = v.x / ${glsl(RIM_SPAN)};
+  float taper = max(1.0 - x * x, 0.0);
+  float centre = -(holeCos * holeRimRadius + ${glsl(RIM_SAG)} * holeSin) * taper;
+  float width = ${glsl(RIM_WIDTH)} * holeSin * taper + 1e-4;
+  float d = (v.y - centre) / width;
+  float across = exp(-1.4 * d * d) * smoothstep(0.0, 0.3, taper) * holeLean;
+  return vec2(across, atan(-holeRimRadius * taper, v.x));
 }
 
 // A star behind the hole, as (brightness, a random number for its colour).
@@ -177,16 +218,32 @@ float field(vec2 uv, vec2 res, float t) {
   vec3 radii = holeRadii(v);
   float facing = v.x / max(rho, 1e-4);
 
+  // Each image of the disk is its steady heat, the profile and the
+  // beaming, times the turbulent streaks.
   // The flat disk seen at a slant, both halves at once.
   vec2 g = vec2(v.x, v.y / holeCos);
   float theta = atan(g.y, g.x);
-  float flatLight = holeProfile(radii.x) * (0.45 + 0.9 * holeBands(radii.x, theta, t, 0.35)) * holeBeam(g.x / max(radii.x, 1e-4));
+  float flatHeat = holeProfile(radii.x) * holeBeam(g.x / max(radii.x, 1e-4));
+  float flatLight = flatHeat * (0.45 + 0.9 * holeBands(radii.x, theta, t, 0.35));
   float near = 1.0 - step(0.0, v.y);
+  // In front of the shadow the near half's crisp inner edge would draw a
+  // hard line along the rim, so there it fades in softly under the rim.
+  float inFront = (1.0 - smoothstep(holeShadow, holeInner + 0.08, abs(v.x))) * holeLean;
+  float nearLight = flatLight * mix(1.0, smoothstep(holeInner, holeInner + 0.3, radii.x), inFront);
+
+  // The near rim, a soft band over the top edge of the near half.
+  vec2 rim = holeRim(v);
+  float rimHeat = 1.15 * rim.x * holeBeam(clamp(v.x / holeRimRadius, -1.0, 1.0));
+  float rimLight = rimHeat * (0.55 + 0.7 * holeBands(clamp(radii.x, holeInner, 1.0), rim.y, t, 0.35));
 
   // The far side, lensed over the top of the shadow, and the thin image of
-  // the underside below it, which fades out towards the horizon.
-  float above = step(0.0, v.y);
-  float arc = holeProfile(radii.y) * (0.45 + 0.9 * holeBands(radii.y, atan(v.y, v.x), t, 0.0)) * holeBeam(facing) * above;
+  // the underside below it, which fades out towards the horizon. Between
+  // the shadow and the inner edge the far side carries on a little below
+  // the horizon, so no dark notch opens beside the shadow.
+  float notch = smoothstep(-0.06, 0.0, v.y) * (1.0 - smoothstep(holeInner, holeInner + 0.1, rho));
+  float above = max(step(0.0, v.y), notch);
+  float arcHeat = holeProfile(radii.y) * holeBeam(facing) * above;
+  float arc = arcHeat * (0.45 + 0.9 * holeBands(radii.y, atan(v.y, v.x), t, 0.0));
   float under = sqrt(max(-v.y, 0.0) / max(rho, 1e-4)) * holeLean;
   float low = holeProfile(radii.z) * 0.6 * under * holeBeam(facing);
 
@@ -201,9 +258,15 @@ float field(vec2 uv, vec2 res, float t) {
   // half of the disk crosses in front of it.
   float outside = smoothstep(holeShadow - 0.5 * cell, holeShadow + 0.5 * cell, rho);
   float behind = (max(max(flatLight * (1.0 - near), arc), low) + halo) * holeDisk * outside;
-  float front = flatLight * near * holeDisk;
+  float front = max(nearLight * near, rimLight) * holeDisk;
   float light = max(behind, front);
   float tone = max(1.0 - exp(-${glsl(GAIN)} * light), ring * outside);
+
+  // The hottest gas, on the side turning towards the viewer, reads as solid
+  // light: there the streaks cannot thin the dots below this floor, so the
+  // dither leaves no dark specks. The cooler disk keeps its sparse dots.
+  float heat = max(max(flatHeat * (1.0 - near), arcHeat) * outside, max(flatHeat * near * (1.0 - inFront), rimHeat)) * holeDisk;
+  tone = max(tone, smoothstep(${glsl(CORE_FROM)}, ${glsl(CORE_TO)}, heat));
 
   // Stars show only on clear sky.
   vec2 star = holeStar(v, cell, t);
@@ -223,6 +286,8 @@ vec3 colorField(vec2 uv, vec2 res, float t) {
   // front, else the hotter of the images behind.
   float behind = min(radii.x, v.y > 0.0 ? radii.y : radii.z);
   float r = v.y < 0.0 && radii.x < 1.0 ? radii.x : behind;
+  // The near rim is hot along its centre.
+  r = mix(r, holeInner, smoothstep(0.2, 0.7, holeRim(v).x));
   // Hottest at the inner edge, on the photon ring, and on the side turning
   // towards the viewer.
   float heat = (1.0 - smoothstep(holeInner, 0.95, r)) * clamp(0.55 + 0.35 * holeBeam(facing), 0.0, 1.2);
@@ -308,8 +373,9 @@ const arcBand = ({
     Array.from({ length: ARC_STEPS + 1 }, (_, step) => {
       const phi = (Math.PI * step) / ARC_STEPS;
       const rise = smooth(0, 0.4, Math.sin(phi)) * lean;
+      const pull = Math.max(rise, ARC_PULL * lean);
       const rho =
-        lerp(INNER, ARC_INNER, rise) + (r - INNER) * lerp(1, ARC_SQUEEZE, rise);
+        lerp(INNER, ARC_INNER, pull) + (r - INNER) * lerp(1, ARC_SQUEEZE, rise);
       return `${fixed(rho * Math.cos(phi))} ${fixed(-rho * Math.sin(phi))}`;
     });
   return `M${edge(to).join("L")}L${edge(from).toReversed().join("L")}Z`;
@@ -332,6 +398,39 @@ const flatBand = ({
   const out = side === 1 ? 0 : 1;
   const back = side === 1 ? 1 : 0;
   return `M${fixed(-to)} 0A${fixed(to)} ${fixed(to)} 0 0 ${out} ${fixed(to)} 0L${fixed(from)} 0A${fixed(from)} ${fixed(from)} 0 0 ${back} ${fixed(-from)} 0Z`;
+};
+
+/** Points along each edge of a layer of the near rim. */
+const RIM_STEPS = 32;
+
+/**
+ * The soft near rim as nested lens shapes, each reaching `reach` half
+ * widths either side of its centre line, as in `holeRim`. Drawn with y down
+ * the screen, so the near side is below the centre.
+ */
+const RIM_LAYERS = [
+  { opacity: 0.35, reach: 1.5 },
+  { opacity: 0.45, reach: 1 },
+  { opacity: 0.6, reach: 0.55 },
+] as const;
+
+const rimLayer = ({
+  reach,
+  squash,
+  sin,
+}: {
+  reach: number;
+  squash: number;
+  sin: number;
+}) => {
+  const edge = (side: 1 | -1) =>
+    Array.from({ length: RIM_STEPS + 1 }, (_, step) => {
+      const x = RIM_SPAN * (2 * (step / RIM_STEPS) - 1) * side;
+      const taper = Math.max(1 - (x / RIM_SPAN) ** 2, 0);
+      const centre = (squash * RIM_RADIUS + RIM_SAG * sin) * taper;
+      return `${fixed(x)} ${fixed(centre + side * reach * RIM_WIDTH * sin * taper)}`;
+    });
+  return `M${edge(1).join("L")}L${edge(-1).join("L")}Z`;
 };
 
 /** The thin image of the underside, under the shadow, as one band. */
@@ -443,6 +542,7 @@ const BlackHoleFallback = ({
     INNER
   );
   const ring = paint(0.85, 0);
+  const rim = paint(coverage(1.15 * 0.85 * disk), INNER);
   // The beaming as a mask across the long axis: full strength on the side
   // turning towards the viewer, dimmer on the other.
   const brightest = beam(1, 1, sin);
@@ -614,7 +714,8 @@ const BlackHoleFallback = ({
               vectorEffect="non-scaling-stroke"
               opacity={fixed(ring.opacity)}
             />
-            {/* The near half of the disk, in front of the shadow. */}
+            {/* The near half of the disk, in front of the shadow, and its
+                soft rim. */}
             <g transform={`scale(1 ${fixed(squash)})`}>
               {bands.map((band) => (
                 <path
@@ -625,6 +726,15 @@ const BlackHoleFallback = ({
                 />
               ))}
             </g>
+            {lean > 0.01 &&
+              RIM_LAYERS.map((layer) => (
+                <path
+                  key={layer.reach}
+                  d={rimLayer({ reach: layer.reach, sin, squash })}
+                  style={{ fill: rim.color }}
+                  opacity={fixed(layer.opacity * rim.opacity * lean)}
+                />
+              ))}
           </g>
         </g>
       </svg>
