@@ -106,9 +106,9 @@ Fewer lines, a low `turbulence` and long trails give a calm, even breeze. Two so
     {
       name: "angle",
       type: "number",
-      default: "20",
+      default: "70",
       description:
-        "Direction the wind blows towards, in degrees. 0 is right, 90 up.",
+        "Direction the wind blows towards, in degrees as in CSS: 0 points up, 90 right.",
     },
     {
       name: "intensity",
@@ -162,5 +162,5 @@ Fewer lines, a low `turbulence` and long trails give a calm, even breeze. Two so
 
 - It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
 - With reduced motion turned on, it draws one still frame and stops.
-- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows straight CSS lines along the wind in the same colours, cut into dashes.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows straight CSS lines along the wind in the same colours, cut into dashes, spaced by `density` and with tails as long as `trail` sets.
 - It samples the stream function three times per cell, at 30 fps and one pixel per dither cell. See [Performance](/docs/engine/performance).

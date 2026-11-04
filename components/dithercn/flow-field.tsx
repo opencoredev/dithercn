@@ -23,7 +23,7 @@ export type FlowFieldProps = Omit<
   turbulence?: number;
   /** Size of the swirls. Higher values pack more, smaller ones in. Default 1. */
   scale?: number;
-  /** Direction the wind blows towards, in degrees. 0 is right, 90 up. Default 20. */
+  /** Direction the wind blows towards, in degrees as in CSS: 0 points up, 90 right. Default 70. */
   angle?: number;
   /** The brightest tone, 0 to 1. Lower it to sit text on top. Default 1. */
   intensity?: number;
@@ -104,21 +104,43 @@ float field(vec2 uv, vec2 res, float t) {
 }
 `;
 
+/** Line spacing in px at density 1, and the trail the dash tails are sized for. */
+const FALLBACK_GAP = 32;
+const DEFAULT_TRAIL = 0.55;
+
+const px = (value: number) => `${Number(value.toFixed(2))}px`;
+
 /**
  * Straight CSS streamlines along the wind, shown without WebGL: faint lines
  * for `lines`, and two interleaved sets of brighter copies cut into fading
  * dashes by masks of different lengths, so the dashes never line up.
+ * `angle` is in the shader's convention, 0 right and 90 up; `density` and
+ * `trail` arrive clamped, and set the line spacing and the tail lengths.
  */
-const fallbackLayers = (palette: DitherPalette, angle: number) => {
+const fallbackLayers = ({
+  palette,
+  angle,
+  density,
+  trail,
+}: {
+  palette: DitherPalette;
+  angle: number;
+  density: number;
+  trail: number;
+}) => {
   const mid = cssColor(palette[1]);
   const ink = cssColor(palette.at(-1) ?? palette[1]);
   const headColor = `color-mix(in oklab, ${ink} 70%, transparent)`;
+  // Like the shader's line count, the spacing shrinks as density grows.
+  const gap = FALLBACK_GAP / density;
   // CSS angles run clockwise from the top. The lines run along the wind,
   // so their gradient runs across it; the dash masks run along it.
-  // Lines every 64px; offset 32 puts the second set between the first.
+  // Each dash set has a line every two gaps; an offset of one gap puts the
+  // second set between the first.
   const across = (color: string, offset: number) =>
-    `repeating-linear-gradient(${-angle}deg, transparent 0 ${offset}px, ${color} ${offset}px ${offset + 2}px, transparent ${offset + 2}px 64px)`;
-  // One fading dash per period: a tail of `tail` px ending in a crisp head.
+    `repeating-linear-gradient(${-angle}deg, transparent 0 ${px(offset)}, ${color} ${px(offset)} ${px(offset + 2)}, transparent ${px(offset + 2)} ${px(gap * 2)})`;
+  // One fading dash per period: a tail ending in a crisp head. `tail` is
+  // its length in px at the default trail, scaled like the shader's tail.
   const dashSet = ({
     offset,
     period,
@@ -130,7 +152,8 @@ const fallbackLayers = (palette: DitherPalette, angle: number) => {
     head: number;
     tail: number;
   }) => {
-    const mask = `repeating-linear-gradient(${90 - angle}deg, transparent 0 ${head - tail}px, black ${head}px, transparent ${head + 1}px ${period}px)`;
+    const length = (tail * trail) / DEFAULT_TRAIL;
+    const mask = `repeating-linear-gradient(${90 - angle}deg, transparent 0 ${px(head - length)}, black ${head}px, transparent ${head + 1}px ${period}px)`;
     return {
       WebkitMaskImage: mask,
       backgroundImage: across(headColor, offset),
@@ -140,9 +163,9 @@ const fallbackLayers = (palette: DitherPalette, angle: number) => {
   return {
     dashes: [
       dashSet({ head: 150, offset: 0, period: 230, tail: 70 }),
-      dashSet({ head: 260, offset: 32, period: 310, tail: 90 }),
+      dashSet({ head: 260, offset: gap, period: 310, tail: 90 }),
     ],
-    lines: `repeating-linear-gradient(${-angle}deg, transparent 0 32px, color-mix(in oklab, ${mid} 45%, transparent) 32px 34px)`,
+    lines: `repeating-linear-gradient(${-angle}deg, transparent 0 ${px(gap)}, color-mix(in oklab, ${mid} 45%, transparent) ${px(gap)} ${px(gap + 2)})`,
   };
 };
 
@@ -161,14 +184,23 @@ export const FlowField = ({
   trail = 0.55,
   turbulence = 1,
   scale = 1,
-  angle = 20,
+  angle = 70,
   intensity = 1,
   palette = FLOW_PALETTE,
   matrix = "bayer8",
   stillTime = 8,
   ...props
 }: FlowFieldProps) => {
-  const layers = fallbackLayers(palette, angle);
+  // The internals work in math degrees, 0 right and 90 up.
+  const windAngle = 90 - angle;
+  const flowDensity = clamp(density, 0.25, 4);
+  const flowTrail = clamp(trail, 0.1, 1);
+  const layers = fallbackLayers({
+    angle: windAngle,
+    density: flowDensity,
+    palette,
+    trail: flowTrail,
+  });
   // Streamlines take the first colour after the paper, exactly, so they
   // come out solid; with only paper and ink they sit at a soft 40%.
   const base = palette.length > 2 ? 1 / (palette.length - 1) : 0.4;
@@ -181,12 +213,12 @@ export const FlowField = ({
       matrix={matrix}
       stillTime={stillTime}
       uniforms={{
-        flowAngle: (angle * Math.PI) / 180,
+        flowAngle: (windAngle * Math.PI) / 180,
         flowBase: base,
-        flowDensity: clamp(density, 0.25, 4),
+        flowDensity,
         flowIntensity: clamp(intensity, 0, 1),
         flowScale: clamp(scale, 0.2, 4),
-        flowTrail: clamp(trail, 0.1, 1),
+        flowTrail,
         flowTurbulence: clamp(turbulence, 0, 2),
         flowVariant: variant === "lines" ? 1 : 0,
       }}

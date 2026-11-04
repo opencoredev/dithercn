@@ -7,7 +7,7 @@ export default function FlowFieldHeadline() {
         density={0.7}
         turbulence={0.5}
         trail={0.8}
-        angle={8}
+        angle={82}
         speed={0.6}
         palette={[
           "--dither-paper",

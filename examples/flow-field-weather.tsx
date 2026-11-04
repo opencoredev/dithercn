@@ -25,7 +25,7 @@ export default function FlowFieldWeather() {
         turbulence={1.15}
         scale={1.15}
         trail={0.7}
-        angle={-15}
+        angle={105}
         cell={2}
         levels={19}
         palette={PALETTE}

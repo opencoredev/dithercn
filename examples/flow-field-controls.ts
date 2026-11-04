@@ -45,7 +45,7 @@ export const turbulence = slider({
 });
 
 export const angle = slider({
-  default: 20,
+  default: 70,
   id: "angle",
   label: "Wind angle",
   max: 360,
