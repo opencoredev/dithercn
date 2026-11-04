@@ -1,19 +1,5 @@
 [
   {
-    "name": "caustics",
-    "type": "registry:component",
-    "title": "Caustics",
-    "description": "The shifting light on the floor of a sunlit pool: sharp filaments of uneven strength that break, fork and flare into hot knots over dappled water.",
-    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
-    "files": [
-      {
-        "path": "components/dithercn/caustics.tsx",
-        "type": "registry:component",
-        "target": "components/dithercn/caustics.tsx"
-      }
-    ]
-  },
-  {
     "name": "flow-field",
     "type": "registry:component",
     "title": "Flow field",
