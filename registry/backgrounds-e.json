@@ -3,7 +3,7 @@
     "name": "caustics",
     "type": "registry:component",
     "title": "Caustics",
-    "description": "The shifting net of light on the floor of a sunlit pool: thin filaments that meet in hot spots and wobble over dim water.",
+    "description": "The shifting light on the floor of a sunlit pool: sharp filaments of uneven strength that break, fork and flare into hot knots over dappled water.",
     "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
     "files": [
       {

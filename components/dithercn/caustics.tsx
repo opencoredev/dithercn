@@ -135,7 +135,7 @@ float field(vec2 uv, vec2 res, float t) {
   if (causticsMask > 2.5) {
     keep = smoothstep(0.04, 0.5, uv.y);
   } else if (causticsMask > 1.5) {
-    keep = smoothstep(0.96, 0.5, uv.y);
+    keep = 1.0 - smoothstep(0.5, 0.96, uv.y);
   } else if (causticsMask > 0.5) {
     vec2 c = (uv - 0.5) * vec2(aspect, 1.0) / vec2(max(0.45, aspect * 0.4), 0.26);
     keep = smoothstep(0.8, 1.45, length(c));
@@ -162,14 +162,23 @@ const flowVector = (angle: number) => {
 };
 
 /**
- * A tileable net of creases from SVG turbulence: alpha is high only where
- * the noise folds back on itself, which draws thin, branching, closed
- * loops much like a caustic net. Used as a CSS mask, so the theme colour
- * paints it.
+ * A tileable sheet of creases from SVG turbulence: alpha is high only where
+ * the noise folds back on itself, which draws thin, branching filaments of
+ * uneven width, like a caustic. Used as a CSS mask, so the theme colour
+ * paints it. Browsers compute turbulence in 8 bits, which caps how thin a
+ * crease can get, so the sheet is drawn large (1600px) and the filaments
+ * stay thinner than a 512px tile stretched up would draw them.
  */
-const FALLBACK_NET = `url("data:image/svg+xml,${encodeURIComponent(
-  "<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512'><filter id='n' x='0' y='0' width='100%' height='100%'><feTurbulence type='turbulence' baseFrequency='0.011' numOctaves='1' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -34 0 0 0 1.6'/></filter><rect width='512' height='512' filter='url(#n)'/></svg>"
-)}")`;
+const fallbackNet = (frequency: number, seed: number, slope: number) =>
+  `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='1600'><filter id='n' x='0' y='0' width='100%' height='100%'><feTurbulence type='turbulence' baseFrequency='${frequency}' numOctaves='1' seed='${seed}' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ${slope} 0 0 0 1.6'/></filter><rect width='1600' height='1600' filter='url(#n)'/></svg>`
+  )}")`;
+
+/** The bright sheet and a fainter, larger one under it, as in the shader. */
+const FALLBACK_SHEETS = [
+  { image: fallbackNet(0.0064, 7, -110), opacity: 0.9, tile: 4800 },
+  { image: fallbackNet(0.0051, 3, -180), opacity: 0.35, tile: 7000 },
+] as const;
 
 /** Where the fallback net fades out, matching the shader's `mask`. */
 const FALLBACK_MASKS = {
@@ -194,7 +203,6 @@ const CausticsFallback = ({
 }) => {
   const ink = cssColor(palette.at(-1) ?? palette[1]);
   const mid = cssColor(palette[1]);
-  const tile = `${Math.round(1800 / scale)}px`;
   return (
     <div
       className="absolute inset-0"
@@ -203,17 +211,23 @@ const CausticsFallback = ({
         backgroundImage: `radial-gradient(ellipse at 30% 25%, color-mix(in oklab, ${mid} 40%, transparent), transparent 70%)`,
       }}
     >
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundColor: ink,
-          maskComposite: "intersect",
-          maskImage: `${FALLBACK_NET}, ${FALLBACK_MASKS[mask]}`,
-          maskRepeat: "repeat, no-repeat",
-          maskSize: `${tile} ${tile}, 100% 100%`,
-          opacity: 0.8 * intensity,
-        }}
-      />
+      {FALLBACK_SHEETS.map((sheet) => {
+        const tile = `${Math.round(sheet.tile / scale)}px`;
+        return (
+          <div
+            key={sheet.tile}
+            className="absolute inset-0"
+            style={{
+              backgroundColor: ink,
+              maskComposite: "intersect",
+              maskImage: `${sheet.image}, ${FALLBACK_MASKS[mask]}`,
+              maskRepeat: "repeat, no-repeat",
+              maskSize: `${tile} ${tile}, 100% 100%`,
+              opacity: sheet.opacity * intensity,
+            }}
+          />
+        );
+      })}
     </div>
   );
 };
