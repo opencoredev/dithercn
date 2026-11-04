@@ -15,7 +15,7 @@ export default function BlackHoleDemo() {
       palette={["--dither-paper", toward(tint, 60), tint, "--foreground"]}
       colorField={usePreviewValue(knobs.colorField)}
       tilt={usePreviewValue(knobs.tilt)}
-      spin={usePreviewValue(knobs.spin)}
+      direction={usePreviewValue(knobs.direction)}
       size={usePreviewValue(knobs.size)}
       disk={usePreviewValue(knobs.disk)}
       stars={usePreviewValue(knobs.stars)}

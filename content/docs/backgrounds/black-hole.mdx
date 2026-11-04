@@ -38,7 +38,7 @@ export function Hero() {
 
 A dark shadow sits at the centre, ringed by a thin, bright photon ring. Around it, a hot accretion disk is seen at a slant: `tilt` sets how edge-on it is. The near half of the disk crosses in front of the shadow, and the lens bends the far half up over the top of the shadow and, as a thinner image, under the bottom, so the disk seems to wrap round the hole. Stars behind the hole bend into arcs round it as the sky drifts past.
 
-The gas streams round in turbulent bands, the inner disk several times faster than the rim. The side turning towards you is brighter, as a real disk's is: the right with `spin="clockwise"`, the left with `"counterclockwise"`.
+The gas streams round in turbulent bands, the inner disk several times faster than the rim. The side turning towards you is brighter, as a real disk's is: the right with `direction="clockwise"`, the left with `"counterclockwise"`.
 
 By default the palette maps brightness to colour, from paper to the last colour. Set `colorField` to colour the dots by temperature instead: the last colour on the photon ring and the hot inner edge, the first ink colour at the cool rim, and a random palette colour for each star. A palette that runs from deep red through orange to white gives the familiar white-hot disk.
 
@@ -85,7 +85,7 @@ The hole sits on the right, canted slightly, and turns clockwise, so its dim sid
         "Direction of the disk's long axis, in degrees as in CSS: 0 is up, 90 right.",
     },
     {
-      name: "spin",
+      name: "direction",
       type: '"clockwise" | "counterclockwise"',
       default: '"clockwise"',
       description:

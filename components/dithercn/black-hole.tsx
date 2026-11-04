@@ -12,7 +12,7 @@ export type BlackHolePoint = readonly [number, number];
  * Which way the disk turns on screen. The side turning towards the viewer
  * is the brighter one: the right with `"clockwise"`, the left otherwise.
  */
-export type BlackHoleSpin = "clockwise" | "counterclockwise";
+export type BlackHoleDirection = "clockwise" | "counterclockwise";
 
 export type BlackHoleProps = Omit<
   DitherShaderProps,
@@ -23,7 +23,7 @@ export type BlackHoleProps = Omit<
   /** Direction of the disk's long axis, in degrees as in CSS: 0 is up, 90 right. Default 90. */
   angle?: number;
   /** Which way the disk turns, and so which side is brighter. Default `"clockwise"`. */
-  spin?: BlackHoleSpin;
+  direction?: BlackHoleDirection;
   /** Centre of the black hole. Default `[0.5, 0.5]`. */
   center?: BlackHolePoint;
   /** Radius of the accretion disk as a share of the box's shorter side. The shadow is about a quarter of it. Default 0.5. */
@@ -645,7 +645,7 @@ const BlackHoleFallback = ({
 export const BlackHole = ({
   tilt = 80,
   angle = 90,
-  spin = "clockwise",
+  direction = "clockwise",
   center = CENTRE,
   size = 0.5,
   disk = 1,
@@ -659,7 +659,7 @@ export const BlackHole = ({
 }: BlackHoleProps) => {
   const leaning = clamp(tilt, 0, 88);
   const radians = (leaning * Math.PI) / 180;
-  const turn = spin === "counterclockwise" ? -1 : 1;
+  const turn = direction === "counterclockwise" ? -1 : 1;
   const radius = Math.max(0.05, size);
   const glow = clamp(disk, 0, 1.5);
   const starCount = clamp(stars, 0, 3);

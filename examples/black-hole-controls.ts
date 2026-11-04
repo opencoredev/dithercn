@@ -26,10 +26,10 @@ export const tilt = slider({
   unit: "°",
 });
 
-export const spin = segmented({
+export const direction = segmented({
   default: "clockwise",
-  id: "spin",
-  label: "Spin",
+  id: "direction",
+  label: "Direction",
   options: ["clockwise", "counterclockwise"],
 });
 
@@ -71,7 +71,7 @@ export const controls = [
   tint,
   colorField,
   tilt,
-  spin,
+  direction,
   size,
   disk,
   stars,
