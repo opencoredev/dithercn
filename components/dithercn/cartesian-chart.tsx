@@ -433,7 +433,12 @@ const layoutPlot = ({
   return { band, plot, plotWidth, tickLabels, xAt, yAt };
 };
 
-/** Every value, for screen readers. */
+/**
+ * Every value, for screen readers.
+ * Hidden through a wrapping div, not the table itself: a table ignores the
+ * 1px size, and Safari clips only the table box, which leaves the caption
+ * painted across the chart.
+ */
 const DataTable = ({
   summary,
   series,
@@ -443,30 +448,32 @@ const DataTable = ({
   series: readonly { label: string }[];
   rows: readonly { label: string; values: readonly ReadoutRow[] }[];
 }) => (
-  <table className="sr-only">
-    <caption>{summary}</caption>
-    <thead>
-      <tr>
-        <th scope="col">Category</th>
-        {series.map((entry) => (
-          <th key={entry.label} scope="col">
-            {entry.label}
-          </th>
-        ))}
-      </tr>
-    </thead>
-    <tbody>
-      {rows.map((row, index) => (
-        // oxlint-disable-next-line react/no-array-index-key -- categories can repeat; position is the identity.
-        <tr key={index}>
-          <th scope="row">{row.label}</th>
-          {row.values.map((value) => (
-            <td key={value.label}>{value.value}</td>
+  <div className="sr-only">
+    <table>
+      <caption>{summary}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Category</th>
+          {series.map((entry) => (
+            <th key={entry.label} scope="col">
+              {entry.label}
+            </th>
           ))}
         </tr>
-      ))}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {rows.map((row, index) => (
+          // oxlint-disable-next-line react/no-array-index-key -- categories can repeat; position is the identity.
+          <tr key={index}>
+            <th scope="row">{row.label}</th>
+            {row.values.map((value) => (
+              <td key={value.label}>{value.value}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
 );
 
 /**

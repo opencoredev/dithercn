@@ -42,7 +42,7 @@ export function Deploys() {
 }
 ```
 
-Each bar is a dithered body under a solid 2px cap. One bar is drawn solid, the last by default, with its value above it. When the pointer or keyboard focus moves to another bar, that one fills in instead. `x` and each series' `value` name fields of your data, or take a function when you render from a Client Component.
+Each bar is a dithered body under a solid 2px cap. One bar is drawn in a denser dither, the last by default, with its value above it. When the pointer or keyboard focus moves to another bar, that one fills in instead. `x` and each series' `value` name fields of your data, or take a function when you render from a Client Component.
 
 ## Examples
 
@@ -131,7 +131,7 @@ Grouped bars sit side by side, one per series. `highlight="none"` leaves every b
       type: 'number | "last" | "max" | "none"',
       default: '"last"',
       description:
-        "The bar drawn solid, with its value, while nothing is scrubbed.",
+        "The bar drawn in a denser dither, with its value, while nothing is scrubbed.",
     },
     {
       name: "height",
@@ -144,13 +144,14 @@ Grouped bars sit side by side, one per series. `highlight="none"` leaves every b
       type: "number",
       default: "0.75",
       description:
-        "Gradient only: coverage at the top of each bar, from 0 to 1.",
+        "Coverage at the top of each gradient bar, from 0 to 1. Also where the highlighted or scrubbed bar's denser dither settles, for every fill but solid.",
     },
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
       default: '"bayer4"',
-      description: "Gradient only: the dither texture.",
+      description:
+        "The dither texture of gradient bars and of the highlighted or scrubbed bar.",
     },
     {
       name: "cell",
@@ -192,6 +193,6 @@ Series colours follow the palette: ink, then orange, green, pink, purple, blue, 
 
 ## Notes
 
-- The chart is a focusable group with a short summary, and every value is in a visually hidden table. The arrow keys, Home and End move between bars, a polite live region reads out each stop, and Escape clears the readout and any locked series. The scrubbed column gets a soft band and fills in solid.
+- The chart is a focusable group with a short summary, and every value is in a visually hidden table. The arrow keys, Home and End move between bars, a polite live region reads out each stop, and Escape clears the readout and any locked series. The scrubbed column gets a soft band and fills in to a denser dither.
 - Bars rise from the baseline one after another on entrance. With reduced motion they appear in place.
 - Bars are capped at 36px wide and snapped to whole pixels, and the dither cell to whole device pixels, so edges and cells stay sharp.

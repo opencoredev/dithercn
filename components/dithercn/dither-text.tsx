@@ -197,20 +197,27 @@ interface Paint {
 }
 
 interface Grid {
+  /** Cells across and down the image, bleed included. */
   cols: number;
   rows: number;
-  aspect: number;
+  /** Whole cells of bleed before the text box, left and top. */
+  leadCols: number;
+  leadRows: number;
+  /** The text box in cells (fractional), which the field spans. */
+  boxCols: number;
+  boxRows: number;
   time: number;
 }
 
 /** Fill `data` (RGBA bytes, `cols` × `rows`) with the dithered field. */
 const paintCells = (
   data: Uint8ClampedArray,
-  { cols, rows, aspect, time }: Grid,
+  { cols, rows, leadCols, leadRows, boxCols, boxRows, time }: Grid,
   field: FieldOptions,
   { colors, gap }: Paint,
   matrix: DitherMatrix
 ) => {
+  const aspect = boxCols / boxRows;
   const { size: tile, thresholds } = getThresholdMap(matrix);
   const segments = colors.length - 1;
   const ink = colors.at(-1) ?? [0, 0, 0, 1];
@@ -222,16 +229,21 @@ const paintCells = (
   const ox = Math.round(-field.dx * time * 2);
   const oy = Math.round(-field.dy * time * 2);
   for (let y = 0; y < rows; y += 1) {
-    const v = (y + 0.5) / rows;
+    // Cell coordinates from the text box's corner, so the field and the
+    // lattices line up with the letters whatever the bleed.
+    const by = y - leadRows;
+    const v = (by + 0.5) / boxRows;
     for (let x = 0; x < cols; x += 1) {
+      const bx = x - leadCols;
       let pick: Rgba | undefined = ink;
       if (texture) {
-        pick = texture(x + ox, y + oy) ? ink : gap;
+        pick = texture(bx + ox, by + oy) ? ink : gap;
       } else if (field.fill !== "solid") {
-        const tone = toneAt(field, (x + 0.5) / cols, v, aspect, time);
+        const tone = toneAt(field, (bx + 0.5) / boxCols, v, aspect, time);
         const scaled = clamp01(tone) * segments;
         const low = Math.min(segments - 1, Math.floor(scaled));
-        const threshold = thresholds[(y % tile) * tile + (x % tile)] ?? 0.5;
+        const threshold =
+          thresholds[modulo(by, tile) * tile + modulo(bx, tile)] ?? 0.5;
         pick = scaled - low > threshold ? colors[low + 1] : colors[low];
       }
       const [r, g, b, alpha] = pick ?? [0, 0, 0, 0];
@@ -245,9 +257,14 @@ const paintCells = (
 };
 
 interface Frame {
+  /** The root, which carries `data-state`. */
+  root: HTMLElement;
+  /** The element the frame paints, clipped to its text. */
   el: HTMLElement;
   /** CSS `background-size` for the frame. */
   size: string;
+  /** CSS `background-position` for the frame. */
+  position: string;
   url: string;
 }
 
@@ -284,7 +301,8 @@ const showQueued = async (swapper: Swapper) => {
   swapper.shown = image;
   frame.el.style.backgroundImage = `url(${frame.url})`;
   frame.el.style.backgroundSize = frame.size;
-  frame.el.dataset.state = "ready";
+  frame.el.style.backgroundPosition = frame.position;
+  frame.root.dataset.state = "ready";
   // Not awaited: this call finishes once it has handed off, so a long run
   // of slow decodes doesn't build a chain of pending promises.
   showQueued(swapper);
@@ -306,6 +324,15 @@ const fillSettings = (props: DitherTextFill & { ghost?: number }) => {
  * dots or hatching in any palette colour. The text stays a real element
  * (selectable, read by screen readers, indexed); the dither is a small
  * generated image clipped to the glyphs with `background-clip: text`.
+ *
+ * That clip stops at the border box of the element it is on, and with tight
+ * line-height the ascenders and descenders reach past it. So the image is
+ * painted on an inner span that bleeds 0.3em past the text on every side
+ * (padding, cancelled by an equal negative margin, so layout is unchanged).
+ * The span ignores the pointer so the bleed can't take clicks from
+ * neighbours, and elements nested in it take pointer events again. They
+ * don't inherit `pointer-events: none` from an ancestor through the span:
+ * disable nested links with `inert`, or set `pointer-events` on them.
  */
 export const DitherText = (props: DitherTextProps) => {
   const {
@@ -336,8 +363,16 @@ export const DitherText = (props: DitherTextProps) => {
   const setRef = useCallback((node: HTMLElement | null) => {
     ref.current = node;
   }, []);
+  const paintRef = useRef<HTMLSpanElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const sizeRef = useRef({ cell: 3, height: 0, width: 0 });
+  // The paint span's padding box and its bleed, in CSS pixels.
+  const sizeRef = useRef({
+    bleedX: 0,
+    bleedY: 0,
+    cell: 3,
+    height: 0,
+    width: 0,
+  });
   const timeRef = useRef(0);
   const swapperRef = useRef<Swapper>({
     busy: false,
@@ -352,13 +387,20 @@ export const DitherText = (props: DitherTextProps) => {
   // Paint one frame into a cell-sized canvas and set it as the background.
   const draw = useCallback(
     (time: number) => {
-      const el = ref.current;
-      const { width, height, cell: size } = sizeRef.current;
-      if (!el || !resolved || width === 0 || height === 0) {
+      const root = ref.current;
+      const el = paintRef.current;
+      const { bleedX, bleedY, cell: size, height, width } = sizeRef.current;
+      // The text box, in cells: the field spans it.
+      const boxCols = (width - 2 * bleedX) / size;
+      const boxRows = (height - 2 * bleedY) / size;
+      if (!root || !el || !resolved || boxCols <= 0 || boxRows <= 0) {
         return;
       }
-      const cols = Math.ceil(width / size);
-      const rows = Math.ceil(height / size);
+      // Whole cells of bleed, so the cell grid starts on the text box.
+      const leadCols = Math.ceil(bleedX / size);
+      const leadRows = Math.ceil(bleedY / size);
+      const cols = leadCols * 2 + Math.ceil(boxCols);
+      const rows = leadRows * 2 + Math.ceil(boxRows);
       canvasRef.current ??= document.createElement("canvas");
       const canvas = canvasRef.current;
       if (canvas.width !== cols || canvas.height !== rows) {
@@ -378,7 +420,7 @@ export const DitherText = (props: DitherTextProps) => {
       const image = context.createImageData(cols, rows);
       paintCells(
         image.data,
-        { aspect: width / height, cols, rows, time },
+        { boxCols, boxRows, cols, leadCols, leadRows, rows, time },
         { dx, dy, fill, from, scale, to },
         { colors, gap: custom ? (colors[0] ?? gap) : gap },
         matrix
@@ -387,6 +429,8 @@ export const DitherText = (props: DitherTextProps) => {
       const swapper = swapperRef.current;
       swapper.queued = {
         el,
+        position: `${bleedX - leadCols * size}px ${bleedY - leadRows * size}px`,
+        root,
         size: `${cols * size}px ${rows * size}px`,
         url: canvas.toDataURL(),
       };
@@ -405,16 +449,19 @@ export const DitherText = (props: DitherTextProps) => {
     { enabled: animate && fill !== "solid", fps: 12, target: ref }
   );
 
-  // Track the box and font size; redraw at the last time on any change.
+  // Track the box, bleed and font size; redraw at the last time on any change.
   useEffect(() => {
-    const el = ref.current;
+    const el = paintRef.current;
     if (!el) {
       return;
     }
     const measure = () => {
-      const fontSize = Number.parseFloat(getComputedStyle(el).fontSize);
+      const computed = getComputedStyle(el);
+      const fontSize = Number.parseFloat(computed.fontSize);
       const auto = Math.max(2, Math.round(fontSize / 24));
       sizeRef.current = {
+        bleedX: Number.parseFloat(computed.paddingLeft) || 0,
+        bleedY: Number.parseFloat(computed.paddingTop) || 0,
         cell: cell ?? (Number.isFinite(auto) ? auto : readDitherCell(el)),
         height: el.offsetHeight,
         width: el.offsetWidth,
@@ -423,7 +470,8 @@ export const DitherText = (props: DitherTextProps) => {
     };
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(el);
+    // Border box: a font-size change moves the bleed as well as the text.
+    observer.observe(el, { box: "border-box" });
     return () => observer.disconnect();
   }, [cell, draw]);
 
@@ -431,12 +479,14 @@ export const DitherText = (props: DitherTextProps) => {
   const rootStyle: CSSProperties & Record<"--dither-text-ink", string> = {
     "--dither-text-ink": cssColor(ink),
     filter: bloomFilter(ink, bloom),
-    // Until the dither is painted, a CSS mask at the average tone.
-    ...(resolved || fill === "solid"
-      ? {}
-      : ditherMaskStyle((from + to) / 2, { matrix })),
     ...style,
   };
+  // Until the dither is painted, a CSS mask at the average tone. It sits on
+  // the paint span too, since a mask also stops at the border box.
+  const paintStyle =
+    resolved || fill === "solid"
+      ? undefined
+      : ditherMaskStyle((from + to) / 2, { matrix });
 
   return (
     <Tag
@@ -444,14 +494,26 @@ export const DitherText = (props: DitherTextProps) => {
       ref={setRef}
       data-state="fallback"
       className={cn(
-        "inline-block bg-no-repeat text-(--dither-text-ink) [image-rendering:pixelated]",
-        "data-[state=ready]:bg-clip-text data-[state=ready]:text-transparent",
-        "forced-colors:bg-none forced-colors:text-[CanvasText]",
+        "group/dither-text inline-block text-(--dither-text-ink)",
         className
       )}
       style={rootStyle}
     >
-      {children}
+      <span
+        ref={paintRef}
+        className={cn(
+          // The bleed lets ascenders and descenders take the fill. It must not
+          // take clicks meant for neighbours; nested links still get theirs, at
+          // zero specificity so a child's own pointer-events utility wins.
+          "pointer-events-none -m-(--dither-text-bleed) block p-(--dither-text-bleed) [--dither-text-bleed:0.3em] [:where(&)_*]:pointer-events-auto",
+          "bg-no-repeat [image-rendering:pixelated]",
+          "group-data-[state=ready]/dither-text:bg-clip-text group-data-[state=ready]/dither-text:text-transparent",
+          "forced-colors:bg-none forced-colors:text-[CanvasText]"
+        )}
+        style={paintStyle}
+      >
+        {children}
+      </span>
     </Tag>
   );
 };
