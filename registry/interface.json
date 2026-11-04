@@ -111,5 +111,20 @@
       }
     ],
     "dependencies": ["radix-ui"]
+  },
+  {
+    "name": "dither-switch",
+    "type": "registry:component",
+    "title": "Dither switch",
+    "description": "A Radix toggle switch whose track fills with dither behind the thumb, stepping through the Bayer levels, with a lit dithered knob, four fills and any palette colour.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-switch.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-switch.tsx"
+      }
+    ],
+    "dependencies": ["radix-ui"]
   }
 ]
