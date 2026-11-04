@@ -50,7 +50,7 @@ The bands move far more than the lines do. The gratings slide apart by a fractio
 
 ### Rings in a palette
 
-`colors` gives each band the next colour from a list in turn. The lines that cross take the band's colour and the rest a tint of it, and the colours change halfway between two bands, inside the flat tint, so no colour edge cuts across the crisp stripes. With `"rings"`, the bands fan out from the middle, so the colours do too.
+`colors` gives each band the next colour from a list in turn. The lines that cross take the band's colour and the rest a tint of it, and the colours change halfway between two bands, inside the flat tint, so no colour edge cuts across the crisp stripes. With `"rings"`, the bands fan out from the middle, so the colours do too. Ring colours run into each other across most of each band, and they fade towards grey near the middle, where every band meets, so the centre shows the rings' own interference rather than slices of colour.
 
 <ComponentPreview src="examples/moire-rings.tsx" size="lg" align="stretch">
   <MoireRings />
@@ -177,6 +177,6 @@ The bands move far more than the lines do. The gratings slide apart by a fractio
 
 - It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
 - With reduced motion turned on, it draws one still frame and stops.
-- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it draws the same two gratings as CSS repeating gradients, at half strength each and added together with `mix-blend-mode: plus-lighter`, so the moiré still appears where their lines cross.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it draws the same two gratings as CSS repeating gradients, in the palette's middle colour, with the last colour where their lines cross, so the moiré still appears. An SVG displacement filter bends the second grating by `warp`, so the bands curve, though not in exactly the same shape as the shader's. With `colors`, the colour stripes stay straight while the bands bend, and the ring colours blend smoothly instead of as dots.
 - Each line is drawn in whole cells and every cell is either on a line or not, so the fine pattern never blurs into grey and never flickers. No line moves more than a cell every few seconds; only the bands move quickly.
 - It costs a few dot products per cell, at 30 fps and one pixel per dither cell. See [Performance](/docs/engine/performance).

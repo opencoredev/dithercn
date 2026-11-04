@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 import { cssColor, DitherShader, readDitherCell } from "@/lib/dither";
@@ -80,6 +80,13 @@ const MASKS = {
 
 /** How much of a band's colour the lines that don't cross take, in `colors` mode. */
 const TINT = 0.4;
+
+/** Ring colours blend over this much either side of halfway between two bands. */
+const RING_BLEND = 0.4;
+/** Ring colours fade towards grey within this distance of the middle, in lengths of the box's shorter side. */
+const RING_CALM = 0.45;
+/** How far towards grey the ring colours fade, right in the middle. */
+const RING_GREY = 0.8;
 
 const MOIRE_PALETTE = [
   "--dither-paper",
@@ -200,6 +207,7 @@ vec3 moireInk(float band) {
 vec3 colorField(vec2 uv, vec2 res, float t) {
   vec4 phase = moirePhases(uv, res, t);
   vec2 cover = moireCover(phase);
+  bool rings = moireMode > 0.5 && moireMode < 1.5;
   // Which band the cell is in: a whole number where the gratings line up.
   // Mesh bands form a lattice; summing both axes runs the colours along
   // its diagonals.
@@ -210,10 +218,21 @@ vec3 colorField(vec2 uv, vec2 res, float t) {
   // Colours change halfway between two bands, where the pattern is a flat
   // tint, so no change cuts across the crisp stripes. Each cell takes one
   // of the two colours, picked by a fixed per-cell threshold, so they mix
-  // as dots instead of blending into a muddy in-between.
+  // as dots instead of blending into a muddy in-between. Ring bands all
+  // meet in the middle, so a sharp change there reads as pie slices; they
+  // blend across most of the band instead, pure only on the stripes.
   float k = floor(band);
-  float share = smoothstep(0.4, 0.6, band - k);
+  float soft = rings ? ${RING_BLEND.toFixed(2)} : 0.1;
+  float share = smoothstep(0.5 - soft, 0.5 + soft, band - k);
   vec3 ink = moireInk(k + step(hash21(floor(uv * res) + 7.3), share));
+  if (rings) {
+    // Near the middle, where the bands crowd together, the colours fade
+    // towards grey, so the rings' own interference shows there.
+    vec2 p = (uv - vec2(moireCenter.x, 1.0 - moireCenter.y)) * res;
+    float near = 1.0 - smoothstep(0.0, ${RING_CALM.toFixed(2)}, length(p) / min(res.x, res.y));
+    vec3 grey = vec3(dot(ink, vec3(0.2126, 0.7152, 0.0722)));
+    ink = mix(ink, grey, ${RING_GREY.toFixed(2)} * near);
+  }
   float crossed = cover.x * cover.y;
   return mix(paletteColor(0.0).rgb, ink, mix(moireTint, 1.0, crossed));
 }
@@ -270,10 +289,44 @@ const bandStops = (colors: readonly string[], start: number, size: number) =>
     )
     .join(", ");
 
+const smoothstep = (edge0: number, edge1: number, x: number) => {
+  const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * The colour at `band`, as the colour field picks it: band k's colour,
+ * turning into band k + 1's over `soft` either side of halfway. The CSS
+ * blends where the shader mixes dots.
+ */
+const bandColor = ({
+  band,
+  colors,
+  soft,
+}: {
+  band: number;
+  colors: readonly string[];
+  soft: number;
+}) => {
+  const k = Math.floor(band);
+  const share = smoothstep(0.5 - soft, 0.5 + soft, band - k);
+  const from = colors[wrap(k, colors.length)] ?? "transparent";
+  const to = colors[wrap(k + 1, colors.length)] ?? "transparent";
+  if (share < 0.005) {
+    return from;
+  }
+  if (share > 0.995) {
+    return to;
+  }
+  return `color-mix(in srgb, ${to} ${(share * 100).toFixed(1)}%, ${from})`;
+};
+
 /**
  * Band colours around the ring midpoint, as a conic gradient starting at
  * the direction of ring centre A. Far from the centres, the band index is
- * -gap / pitch * cos(angle) - 2 * slide, so each colour is a wedge.
+ * -gap / pitch * cos(angle) - 2 * slide, so each colour is a wedge. Stops
+ * sit where each blend starts and ends, so a colour holds across its band
+ * and runs into the next one as in the shader.
  */
 const ringBandStops = ({
   colors,
@@ -286,24 +339,48 @@ const ringBandStops = ({
   slide: number;
 }) => {
   const band = (turn: number) => -gap * Math.cos(turn) - 2 * slide;
-  const edges = [0, 2 * Math.PI];
-  for (let half = Math.floor(-gap - 2 * slide); half <= gap; half += 1) {
-    const cos = -(half + 0.5 + 2 * slide) / gap;
-    if (Math.abs(cos) < 1) {
-      const turn = Math.acos(cos);
-      edges.push(turn, 2 * Math.PI - turn);
+  const stops = [0, Math.PI, 2 * Math.PI].map((turn) => ({
+    color: bandColor({ band: band(turn), colors, soft: RING_BLEND }),
+    turn,
+  }));
+  for (let k = Math.floor(-gap - 2 * slide) - 1; k <= gap; k += 1) {
+    for (const level of [k + 0.5 - RING_BLEND, k + 0.5 + RING_BLEND]) {
+      const cos = -(level + 2 * slide) / gap;
+      if (Math.abs(cos) < 1) {
+        const turn = Math.acos(cos);
+        const color = bandColor({ band: level, colors, soft: RING_BLEND });
+        stops.push({ color, turn }, { color, turn: 2 * Math.PI - turn });
+      }
     }
   }
-  edges.sort((a, b) => a - b);
-  return edges
-    .slice(1)
-    .map((end, index) => {
-      const start = edges[index] ?? 0;
-      const pick = Math.round(band((start + end) / 2));
-      const color = colors[wrap(pick, colors.length)] ?? "transparent";
-      return `${color} ${degrees(start)} ${degrees(end)}`;
-    })
+  return stops
+    .toSorted((a, b) => a.turn - b.turn)
+    .map(({ color, turn }) => `${color} ${degrees(turn)}`)
     .join(", ");
+};
+
+/**
+ * The colour the shader gives `tone` (0 paper, 1 ink): the palette entry
+ * there, or, between two entries, the mix their dots make.
+ */
+const paletteAt = (palette: DitherPalette, tone: number) => {
+  const scaled = tone * (palette.length - 1);
+  const index = Math.floor(scaled);
+  const low = cssColor(palette[index] ?? palette[0]);
+  const high = palette[index + 1];
+  const share = scaled - index;
+  return share < 0.005 || high === undefined
+    ? low
+    : `color-mix(in srgb, ${cssColor(high)} ${(share * 100).toFixed(1)}%, ${low})`;
+};
+
+/**
+ * The cell size the shader draws at: `cell`, else the inherited
+ * `--dither-cell`, never below one pixel.
+ */
+const cellSize = (cell: number | undefined, inherited: number) => {
+  const size = cell ?? inherited;
+  return Math.max(1, Number.isFinite(size) ? size : inherited);
 };
 
 interface BoxSize {
@@ -360,6 +437,7 @@ interface FallbackPose {
   /** In radians, as the shader's `moireAngle`. */
   readonly angle: number;
   readonly bands: number;
+  readonly box: BoxSize;
   readonly center: MoirePoint;
   /** Band colours, or the one ink. */
   readonly inks: readonly string[];
@@ -375,11 +453,20 @@ interface FallbackPose {
   readonly time: number;
 }
 
-interface FallbackLayer {
-  /** The grating: a layer masked to its lines. */
-  readonly style: CSSProperties;
+interface FallbackGrating {
+  /** The mask that draws its lines, on a square turned by `turn`. */
+  readonly image: string;
+  /** In radians. */
+  readonly turn: number;
   /** Its colour, inside it: the ink, or the band colours. */
   readonly band: CSSProperties;
+}
+
+interface FallbackGratings {
+  /** Half the side of both gratings' squares, centred on the pivot, in px. */
+  readonly radius: number;
+  readonly a: FallbackGrating;
+  readonly b: FallbackGrating;
 }
 
 /** The normal of lines running along `a` (CSS angle in radians), on screen. */
@@ -387,15 +474,18 @@ const normalOf = (a: number) => [Math.cos(a), Math.sin(a)] as const;
 /** The direction of lines running along `a`, on screen, y down. */
 const directionOf = (a: number) => [Math.sin(a), -Math.cos(a)] as const;
 
+const GREY = (alpha: number) => `rgb(128 128 128 / ${alpha.toFixed(3)})`;
+
 /**
  * Two ring gratings, as in the shader: centre A half the gap along the
  * axis, B opposite, A's rings at whole pitches plus the slide and B's
- * minus it. Band colours are wedges of a conic gradient.
+ * minus it. Band colours are wedges of a conic gradient, greyed towards
+ * the middle as the colour field does.
  */
 const ringLayers = ({
   angle,
   bands,
-  center,
+  box,
   inks,
   line,
   pitch,
@@ -404,31 +494,29 @@ const ringLayers = ({
   slide,
   step,
   time,
-}: FallbackPose): FallbackLayer[] => {
+}: FallbackPose): FallbackGratings => {
   const gap = bands * pitch * (1 + 0.35 * Math.sin(time * 0.07));
   const turn = angle + 0.3 * Math.sin(time * 0.031 + 0.6);
   const radius = Math.ceil(reach / step + gap) * step;
+  const calm = RING_CALM * Math.min(box.width, box.height);
   const band: CSSProperties = {
     ...squareAt([0.5, 0.5], radius),
     backgroundColor: inks[0],
-    backgroundImage:
-      inks.length > 1
-        ? `conic-gradient(from ${degrees(turn)}, ${ringBandStops({ colors: inks, gap: gap / pitch, slide })})`
-        : undefined,
+    ...(inks.length > 1 && {
+      backgroundBlendMode: "saturation, normal",
+      backgroundImage: `radial-gradient(circle, ${GREY(RING_GREY)}, ${GREY(RING_GREY / 2)} ${px(calm / 2)}, ${GREY(0)} ${px(calm)}), conic-gradient(from ${degrees(turn)}, ${ringBandStops({ colors: inks, gap: gap / pitch, slide })})`,
+    }),
   };
-  return [1, -1].map((sign) => {
+  const grating = (sign: 1 | -1): FallbackGrating => {
     const x = radius + ((sign * gap) / 2) * Math.sin(turn) * size;
     const y = radius - ((sign * gap) / 2) * Math.cos(turn) * size;
-    const image = `repeating-radial-gradient(circle at ${px(x)} ${px(y)}, ${lineStops({ offset: sign * slide * step, pitch: step, width: line })})`;
     return {
       band,
-      style: {
-        ...squareAt(center, radius),
-        WebkitMaskImage: image,
-        maskImage: image,
-      },
+      image: `repeating-radial-gradient(circle at ${px(x)} ${px(y)}, ${lineStops({ offset: sign * slide * step, pitch: step, width: line })})`,
+      turn: 0,
     };
-  });
+  };
+  return { a: grating(1), b: grating(-1), radius };
 };
 
 /**
@@ -440,7 +528,6 @@ const ringLayers = ({
 const lineLayers = ({
   angle,
   bands,
-  center,
   inks,
   line,
   pitch,
@@ -454,7 +541,7 @@ const lineLayers = ({
   /** The longer side of the box, in cells. */
   readonly span: number;
   readonly mesh: boolean;
-}): FallbackLayer[] => {
+}): FallbackGratings => {
   const twist = ((bands * pitch) / span) * (1 + 0.3 * Math.sin(time * 0.083));
   const turn = angle + 0.1 * Math.sin(time * 0.037 + 1.3);
   // In whole pitches, so the layer's middle line sits on the pivot.
@@ -469,12 +556,9 @@ const lineLayers = ({
   const gy = (ay - by + cy - dy) / step;
   const bandSize = 1 / Math.max(Math.hypot(gx, gy), 1e-6);
   const bandAt = 2 * slide * (mesh ? 1.6 : 1);
-  return [1, -1].map((sign) => {
+  const grating = (sign: 1 | -1): FallbackGrating => {
     const own = turn + (sign * twist) / 2;
     const across = `repeating-linear-gradient(90deg, ${lineStops({ offset: radius - sign * slide * step, pitch: step, width: line })})`;
-    const image = mesh
-      ? `${across}, repeating-linear-gradient(180deg, ${lineStops({ offset: radius + 0.6 * sign * slide * step, pitch: step, width: line })})`
-      : across;
     return {
       band: {
         ...squareAt([0.5, 0.5], radius, Math.atan2(gy, gx) - own),
@@ -484,23 +568,79 @@ const lineLayers = ({
             ? `repeating-linear-gradient(90deg, ${bandStops(inks, radius - (0.5 + bandAt) * bandSize, bandSize)})`
             : undefined,
       },
-      style: {
-        ...squareAt(center, radius, own),
-        WebkitMaskImage: image,
-        maskImage: image,
-      },
+      image: mesh
+        ? `${across}, repeating-linear-gradient(180deg, ${lineStops({ offset: radius + 0.6 * sign * slide * step, pitch: step, width: line })})`
+        : across,
+      turn: own,
     };
-  });
+  };
+  return { a: grating(1), b: grating(-1), radius };
 };
+
+/** How far the shader bends grating B, in pitches, per unit of `warp`. */
+const BEND = { lines: 0.6, mesh: 0.6, rings: 0.25 } as const satisfies Record<
+  MoireVariant,
+  number
+>;
+
+/**
+ * How much stronger the shader's simplex noise swings than one octave of
+ * `feTurbulence`, whose values mostly stay within 0.5 ± 0.15.
+ */
+const NOISE_GAIN = 3.5;
+
+/**
+ * The bend of grating B as an SVG filter: slow fractal noise, one or two
+ * swells across the box as in the shader, pushes each pixel about as far
+ * as the shader's bend, `shift` px at full swing. Applied to box-sized
+ * layers only, so every copy of grating B bends the same way.
+ */
+const WarpFilter = ({
+  id,
+  frequency,
+  shift,
+}: {
+  id: string;
+  /** Noise frequency per px. */
+  frequency: number;
+  /** Largest push in px. */
+  shift: number;
+}) => (
+  <svg aria-hidden="true" focusable="false" className="absolute size-0">
+    <filter
+      id={id}
+      x="-20%"
+      y="-20%"
+      width="140%"
+      height="140%"
+      colorInterpolationFilters="sRGB"
+    >
+      <feTurbulence
+        type="fractalNoise"
+        baseFrequency={frequency.toFixed(6)}
+        numOctaves={1}
+        seed={7}
+      />
+      {/* Opaque, so the map's colour is read as is. */}
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1" />
+      <feDisplacementMap
+        in="SourceGraphic"
+        scale={(2 * NOISE_GAIN * shift).toFixed(2)}
+        xChannelSelector="R"
+        yChannelSelector="G"
+      />
+    </filter>
+  </svg>
+);
 
 /**
  * The same two gratings in CSS, shown without WebGL, posed as the shader
- * is at `time`. Each grating is a layer masked to its lines at half
- * strength, and the second adds onto the first with `plus-lighter`, so a
- * line of one grating is a tint and a cell where both cross is full ink,
- * as in the shader, and the moiré bands appear from the overlap. With
- * `colors`, each layer holds the band colours, turned back to where the
- * shader puts them. The lines stay straight: there is no warp.
+ * is at `time`. Each grating is a layer masked to its lines and filled
+ * with the palette's middle colour (a tint of the band colour, with
+ * `colors`). Inside grating A, a copy of grating B filled with the last
+ * colour (the band colour) marks the cells where both cross, so the moiré
+ * bands appear from the overlap. An SVG displacement filter bends grating
+ * B by `warp`, so the bands curve; band colours stay straight.
  */
 const MoireFallback = ({
   variant,
@@ -510,6 +650,7 @@ const MoireFallback = ({
   angle,
   center,
   drift,
+  warp,
   time,
   cell,
   mask,
@@ -524,6 +665,7 @@ const MoireFallback = ({
   angle: number;
   center: MoirePoint;
   drift: number;
+  warp: number;
   time: number;
   /** Dither cell size in CSS pixels; when unset, read from `--dither-cell`. */
   cell: number | undefined;
@@ -541,7 +683,8 @@ const MoireFallback = ({
       setInherited(readDitherCell(ref.current));
     }
   }, [cell]);
-  const size = cell ?? inherited;
+  const filterId = `moire-warp-${useId().replaceAll(/[^\w-]/g, "")}`;
+  const size = cellSize(cell, inherited);
   const step = pitch * size;
   const line = width * size;
   const inks = (colors ?? [palette.at(-1) ?? palette[1]]).map(cssColor);
@@ -559,6 +702,7 @@ const MoireFallback = ({
   const pose = {
     angle,
     bands,
+    box,
     center,
     inks,
     line,
@@ -569,7 +713,7 @@ const MoireFallback = ({
     step,
     time,
   };
-  const layers =
+  const { a, b, radius } =
     variant === "rings"
       ? ringLayers(pose)
       : lineLayers({
@@ -578,28 +722,75 @@ const MoireFallback = ({
           span: Math.max(box.width, box.height) / size,
         });
 
+  // A cell on one grating only: the palette's middle colour, or the band
+  // colour at the shader's tint.
+  const single: CSSProperties =
+    colors === undefined
+      ? { backgroundColor: paletteAt(palette, 0.5), backgroundImage: "none" }
+      : { opacity: TINT };
+  const bend: CSSProperties | undefined =
+    warp > 0 ? { filter: `url(#${filterId})` } : undefined;
+  const grating = (
+    { band, image, turn }: FallbackGrating,
+    fill?: CSSProperties
+  ) => (
+    <div
+      style={{
+        ...squareAt(center, radius, turn),
+        WebkitMaskImage: image,
+        maskImage: image,
+      }}
+    >
+      <div style={{ ...band, ...fill }} />
+    </div>
+  );
+  const [pivotX, pivotY] = [center[0] * box.width, center[1] * box.height];
+
   return (
     <div
       ref={ref}
       className="absolute inset-0 overflow-hidden"
       style={{ backgroundColor: cssColor(palette[0]) }}
     >
+      {warp > 0 && (
+        <WarpFilter
+          id={filterId}
+          frequency={1.6 / Math.max(box.width, box.height)}
+          shift={BEND[variant] * warp * step}
+        />
+      )}
       <div
-        className="absolute inset-0 isolate"
+        className="absolute inset-0"
         style={{ WebkitMaskImage: maskImage, maskImage }}
       >
-        {layers.map(({ style, band }, index) => (
+        <div className="absolute inset-0" style={bend}>
+          {grating(b, single)}
+        </div>
+        {grating(a, single)}
+        <div
+          style={{
+            ...squareAt(center, radius, a.turn),
+            WebkitMaskImage: a.image,
+            maskImage: a.image,
+          }}
+        >
+          {/* The box again, turned back square, so grating B bends here
+              exactly as it does above. */}
           <div
-            key={index === 0 ? "a" : "b"}
             style={{
-              ...style,
-              mixBlendMode: index === 0 ? undefined : "plus-lighter",
-              opacity: 0.5,
+              ...bend,
+              height: px(box.height),
+              left: px(radius - pivotX),
+              position: "absolute",
+              top: px(radius - pivotY),
+              transform: `rotate(${degrees(-a.turn)})`,
+              transformOrigin: `${px(pivotX)} ${px(pivotY)}`,
+              width: px(box.width),
             }}
           >
-            <div style={band} />
+            {grating(b)}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
@@ -669,6 +860,7 @@ export const Moire = ({
           angle={(angle * Math.PI) / 180}
           center={center}
           drift={Math.max(0, drift)}
+          warp={clamp(warp, 0, 2)}
           time={stillTime}
           cell={props.cell}
           mask={mask}
