@@ -499,8 +499,9 @@ export const DitherText = (props: DitherTextProps) => {
         ref={paintRef}
         className={cn(
           // The bleed lets ascenders and descenders take the fill. It must not
-          // take clicks meant for neighbours; nested links still get theirs.
-          "pointer-events-none -m-(--dither-text-bleed) block p-(--dither-text-bleed) [--dither-text-bleed:0.3em] [&_*]:pointer-events-auto",
+          // take clicks meant for neighbours; nested links still get theirs, at
+          // zero specificity so a child's own pointer-events utility wins.
+          "pointer-events-none -m-(--dither-text-bleed) block p-(--dither-text-bleed) [--dither-text-bleed:0.3em] [:where(&)_*]:pointer-events-auto",
           "bg-no-repeat [image-rendering:pixelated]",
           "group-data-[state=ready]/dither-text:bg-clip-text group-data-[state=ready]/dither-text:text-transparent",
           "forced-colors:bg-none forced-colors:text-[CanvasText]"
