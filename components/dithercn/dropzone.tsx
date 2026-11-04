@@ -315,8 +315,11 @@ const GLOW_PEAK = 0.4;
 const MARCH = { active: 16, rest: 5 } as const;
 /** Seconds for the energy to cover most of the way to its target. */
 const EASE = { fall: 0.18, rise: 0.08 } as const;
-/** How long a rejected drop holds the red state, and an accepted one its flash. */
-const HOLD_MS = { accept: 1100, reject: 2600 } as const;
+/**
+ * How long an accepted drop holds its flash. A rejection stays until the
+ * next drag or pick, so a long filename can be read in full.
+ */
+const ACCEPT_HOLD_MS = 1100;
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 const fract = (value: number) => value - Math.floor(value);
@@ -921,11 +924,11 @@ const rejectedTitle = ({ accepted, rejected }: DropzoneFiles) => {
     : `${rejected.length} files weren't added`;
 };
 
-/** The status a finished drop or pick holds for a moment, if any. */
+/** The status a finished drop or pick shows: a rejection until the next drag or pick, an accepted flash for a moment. */
 const resultStatus = (result: DropzoneFiles) => {
   if (result.rejected.length > 0) {
     return {
-      ms: HOLD_MS.reject,
+      ms: undefined,
       status: {
         kind: "rejected",
         message: result.rejected[0]?.message ?? "",
@@ -935,7 +938,7 @@ const resultStatus = (result: DropzoneFiles) => {
   }
   if (result.accepted.length > 0) {
     return {
-      ms: HOLD_MS.accept,
+      ms: ACCEPT_HOLD_MS,
       status: {
         files: result.accepted.length,
         kind: "accepted",

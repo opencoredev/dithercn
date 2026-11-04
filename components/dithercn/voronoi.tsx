@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { cssColor, DitherShader } from "@/lib/dither";
+import { cssColor, DitherShader, readDitherCell } from "@/lib/dither";
 import type {
   DitherColor,
   DitherPalette,
@@ -324,12 +324,21 @@ const Fallback = ({
   cells: number;
   wall: number;
   fade: number;
-  cell: number;
+  /** Dither cell size in CSS pixels; when unset, read from `--dither-cell`. */
+  cell: number | undefined;
   palette: DitherPalette;
   colors: readonly DitherColor[] | undefined;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const box = useBoxSize(ref) ?? FIRST_BOX;
+  // The shader reads `--dither-cell` when `cell` is unset, so the fallback
+  // does too, once mounted; 3 is the engine's default until then.
+  const [inherited, setInherited] = useState(3);
+  useEffect(() => {
+    if (cell === undefined && ref.current) {
+      setInherited(readDitherCell(ref.current));
+    }
+  }, [cell]);
   // Like the shader, a grid square is the shorter side over `cells`.
   const fit = Math.max(
     1,
@@ -351,7 +360,7 @@ const Fallback = ({
   const ink = palette.at(-1) ?? second;
   // Capped at a fifth of a grid square, as in the shader. Only exact once
   // the box is measured, since the first frame's square is a guess.
-  const wallPx = Math.min(wall * cell, square * 0.2);
+  const wallPx = Math.min(wall * (cell ?? inherited), square * 0.2);
   const fillOf = (grain: number) => {
     const color =
       colors === undefined
@@ -447,7 +456,7 @@ export const Voronoi = ({
           cells={cells}
           wall={wallWidth}
           fade={clear}
-          cell={props.cell ?? 3}
+          cell={props.cell}
           palette={palette}
           colors={colors}
         />

@@ -208,7 +208,7 @@ const CausticsFallback = ({
       className="absolute inset-0"
       style={{
         backgroundColor: cssColor(palette[0]),
-        backgroundImage: `radial-gradient(ellipse at 30% 25%, color-mix(in oklab, ${mid} 40%, transparent), transparent 70%)`,
+        backgroundImage: `radial-gradient(ellipse at 30% 25%, color-mix(in oklab, ${mid} ${(40 * intensity).toFixed(1)}%, transparent), transparent 70%)`,
       }}
     >
       {FALLBACK_SHEETS.map((sheet) => {
