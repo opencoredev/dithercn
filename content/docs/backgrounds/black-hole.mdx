@@ -1,0 +1,178 @@
+---
+title: "Black Hole"
+description: "A black hole with a dark shadow, a thin photon ring and a hot accretion disk seen at a slant, its far side lensed over the top and under the bottom, orbiting with one side brighter."
+---
+
+import BlackHoleDemo from "@/examples/black-hole-demo";
+import { controls as blackHoleControls } from "@/examples/black-hole-controls";
+import BlackHoleCloseUp from "@/examples/black-hole-close-up";
+import BlackHoleHero from "@/examples/black-hole-hero";
+
+<ComponentPreview
+  src="examples/black-hole-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={blackHoleControls}
+>
+  <BlackHoleDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="black-hole" />
+
+## Usage
+
+```tsx
+import { BlackHole } from "@/components/dithercn/black-hole";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <BlackHole className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+A dark shadow sits at the centre, ringed by a thin, solid photon ring. Around it, a hot accretion disk is seen at a slant: `tilt` sets how edge-on it is. The lens bends the far half of the disk up into an arc over the top of the shadow and, as a thinner image, under the bottom, so the disk seems to wrap round the hole. The near half crosses in front of the shadow as a band. The disk has some thickness, so the inner edge of that band is shaded rather than cut, and it bows slightly with the curve of the disk. The photon ring fades behind the band where the gas is dense and shows faintly through the thin gas towards the rim. A thin dark gap runs between the photon ring and the disk all the way round. A sparse field of stars sits behind; as the sky drifts, the lens pushes the ones near the hole out and round it.
+
+Lanes of gas orbit the hole, the inner ones several times faster than the rim, each carrying brighter and darker streaks, so the disk visibly turns. The side turning towards you is brighter, as a real disk's is: the right with `direction="clockwise"`, the left with `"counterclockwise"`.
+
+By default the palette maps brightness to colour, from paper to the last colour, so the brightest gas and the photon ring take the last colour. A palette such as `["--dither-paper", "orange", "#ffe9d6"]` gives the familiar white-hot disk. Set `colorField` to colour the dots by temperature instead: the last colour on the photon ring and the hot inner edge, fading through the palette to the first ink colour at the cool rim, with a palette colour for each star.
+
+A black hole should be the darkest thing in the picture, so on a light page the shadow does not stay paper. When the paper is lighter than the last palette colour and there are at least two ink colours, the shadow and the gap round the photon ring are drawn in the last colour, and the gas runs from paper through the others. The demo's last colour is its tint mixed into the page's foreground: on a dark page that is near-white, so the gas burns from the tint to white on a black sky; on a light page it is a deep shade of the tint, so the hole is a dark void inside a tinted disk on a pale sky. With a single ink, or with `colorField`, the shadow stays paper.
+
+The lens is faked, not traced: each cell works out which part of the disk it shows in polar coordinates round the centre, so it costs about as much as the [Galaxy](/docs/backgrounds/galaxy).
+
+## Examples
+
+### Warm close-up
+
+A larger `size` crops the disk at the edges of the box, and a slight `angle` cants it. `colorField` with explicit colours, from a warm black through red and amber to white, keeps the sky dark in both themes. The 8×8 matrix gives a finer texture.
+
+<ComponentPreview
+  src="examples/black-hole-close-up.tsx"
+  size="full"
+  align="stretch"
+>
+  <BlackHoleCloseUp />
+</ComponentPreview>
+
+### Beside a headline
+
+The hole sits on the right, canted slightly, and turns clockwise, so its dim side faces the text on the left and the bright side is on the far edge. A soft tint of the ink between paper and ink fills in the outer disk, so it reads as a glow rather than scattered dots. Below 560px wide, the example moves the `center` to the top middle and the text to the bottom, so the disk stays in frame and clear of the copy.
+
+<ComponentPreview src="examples/black-hole-hero.tsx" size="lg" align="stretch">
+  <BlackHoleHero />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "tilt",
+      type: "number",
+      default: "80",
+      description:
+        "How far the disk leans away, in degrees: 0 is face-on, 88 nearly edge-on. The lensed arcs fade out as it turns face-on.",
+    },
+    {
+      name: "angle",
+      type: "number",
+      default: "90",
+      description:
+        "Direction of the disk's long axis, in degrees as in CSS: 0 is up, 90 right.",
+    },
+    {
+      name: "direction",
+      type: '"clockwise" | "counterclockwise"',
+      default: '"clockwise"',
+      description:
+        "Which way the disk turns on screen. The side turning towards you is brighter.",
+    },
+    {
+      name: "center",
+      type: "[x: number, y: number]",
+      default: "[0.5, 0.5]",
+      description:
+        "Centre of the black hole, as fractions of the box from the top left.",
+    },
+    {
+      name: "size",
+      type: "number",
+      default: "0.5",
+      description:
+        "Radius of the accretion disk as a share of the box's shorter side. The shadow's radius is 0.3 of it.",
+    },
+    {
+      name: "disk",
+      type: "number",
+      default: "1",
+      description:
+        "Brightness of the accretion disk, from 0 (only the shadow, the photon ring and the stars) to 1.5.",
+    },
+    {
+      name: "stars",
+      type: "number",
+      default: "1",
+      description:
+        "How many background stars, from 0 to 3. Near the hole the lens pushes them out and round it.",
+    },
+    {
+      name: "colorField",
+      type: "boolean",
+      default: "false",
+      description:
+        "Colour the dots by temperature: the last palette colour on the ring and the inner disk, fading to the first ink colour at the rim. Give the palette three or more colours. The shadow stays paper on any theme.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink"]',
+      description:
+        'Colours from paper to ink: palette names such as "orange", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description:
+        "How fast the gas orbits. At 1 the innermost lane of gas goes round in about 6.5 seconds, the outer lanes more slowly.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description:
+        "false stops the motion: a still frame if it starts off, the current frame if it was moving.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The black hole fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- The black hole is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a still SVG of the same scene in smooth gradients: the shadow, the photon ring, the near half of the disk in front with the same soft edge, the lensed arcs over and under the shadow, the brighter side and a scatter of stars, in the same colours, the dark void on a light page included.
+- On a light theme the sky stays light and, with two or more inks, the shadow takes the last ink, so the hole still reads as a void (see Usage). Pass a dark first palette colour, as the close-up does, for a black sky on any theme.

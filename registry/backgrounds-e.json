@@ -1,0 +1,100 @@
+[
+  {
+    "name": "flow-field",
+    "type": "registry:component",
+    "title": "Flow field",
+    "description": "A wind map: streamlines of a slowly turning, swirling flow, with bright streaks that travel along them and leave fading tails.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/flow-field.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/flow-field.tsx"
+      }
+    ]
+  },
+  {
+    "name": "voronoi",
+    "type": "registry:component",
+    "title": "Voronoi Cells",
+    "description": "A cellular surface like soap foam, crackle glaze or raised stone tiles, with walls of one width and seeds that drift so cells swell, shrink and trade edges.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/voronoi.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/voronoi.tsx"
+      }
+    ]
+  },
+  {
+    "name": "galaxy",
+    "type": "registry:component",
+    "title": "Galaxy",
+    "description": "A tilted spiral galaxy turning slowly, with a bright core, arms with knots of stars, dust lanes and fixed stars behind.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/galaxy.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/galaxy.tsx"
+      }
+    ]
+  },
+  {
+    "name": "moire",
+    "type": "registry:component",
+    "title": "Moiré",
+    "description": "Two fine gratings of lines, rings or mesh laid over each other and sliding slowly, so huge interference bands bloom, sweep and turn across the box.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/moire.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/moire.tsx"
+      }
+    ]
+  },
+  {
+    "name": "rain",
+    "type": "registry:component",
+    "title": "Rain",
+    "description": "Rain on a window at night: soft out-of-focus city lights behind the glass, beads that show them brighter like tiny lenses, and bigger drops that slide down in jerky runs and leave wet trails.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/rain.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/rain.tsx"
+      }
+    ]
+  },
+  {
+    "name": "black-hole",
+    "type": "registry:component",
+    "title": "Black Hole",
+    "description": "A black hole with a thin photon ring and a hot accretion disk seen at a slant, its far side lensed over the top and under the bottom, streaming round with one side brighter.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/black-hole.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/black-hole.tsx"
+      }
+    ]
+  },
+  {
+    "name": "fire",
+    "type": "registry:component",
+    "title": "Fire",
+    "description": "Flames rising from the edge of the box, with a hot base, tapering tongues that lick up and tear off, and embers that drift above them.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/fire.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/fire.tsx"
+      }
+    ]
+  }
+]

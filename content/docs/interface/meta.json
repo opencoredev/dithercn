@@ -3,12 +3,16 @@
   "description": "Everyday interface pieces with a dithered finish.",
   "pages": [
     "dither-button",
+    "dither-switch",
+    "dither-slider",
+    "dither-tabs",
     "avatar",
     "dither-card",
     "divider",
     "skeleton",
     "loader",
     "empty-state",
+    "dropzone",
     "not-found"
   ]
 }

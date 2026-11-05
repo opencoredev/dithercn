@@ -1,0 +1,166 @@
+---
+title: "Flow field"
+description: "A wind map drawn as a dither: streamlines of a slowly turning, swirling flow, with bright streaks that travel along them and leave fading tails."
+---
+
+import FlowFieldDemo from "@/examples/flow-field-demo";
+import { controls as flowFieldControls } from "@/examples/flow-field-controls";
+import FlowFieldWeather from "@/examples/flow-field-weather";
+import FlowFieldHeadline from "@/examples/flow-field-headline";
+
+<ComponentPreview
+  src="examples/flow-field-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={flowFieldControls}
+>
+  <FlowFieldDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="flow-field" />
+
+## Usage
+
+```tsx
+import { FlowField } from "@/components/dithercn/flow-field";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <FlowField className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+The wind is a steady breeze along `angle`, bent by slow swirls that drift downwind and change shape as they go. The streamlines are the level lines of its stream function, so they never cross, and they bunch together where the wind runs fast. Bright streaks travel along each line at their own pace, with a crisp head and a tail that fades behind it. Streaks in fast wind are brighter than those in still air, and the prevailing direction veers a few degrees back and forth over time. The swirls keep their size in pixels, so a narrow box shows a smaller piece of the same wind rather than a squashed one.
+
+## Examples
+
+### Weather map
+
+`variant="lines"` draws every streamline in the first colour after the paper, and the streaks run through the rest of the palette as they brighten, so the colour reads as wind speed. More `density` and `turbulence`, and a higher `scale` for smaller swirls, fill the box with eddies, and `levels={19}` puts each of the four colours on an exact step.
+
+<ComponentPreview
+  src="examples/flow-field-weather.tsx"
+  size="full"
+  align="stretch"
+>
+  <FlowFieldWeather />
+</ComponentPreview>
+
+### Behind a headline
+
+Fewer lines, a low `turbulence` and long trails give a calm, even breeze. Two soft tints of the ink keep the brightest streak well below full contrast, so the text reads on top.
+
+<ComponentPreview
+  src="examples/flow-field-headline.tsx"
+  size="lg"
+  align="stretch"
+>
+  <FlowFieldHeadline />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "variant",
+      type: '"streaks" | "lines"',
+      default: '"streaks"',
+      description:
+        "streaks draws only the travelling dashes. lines also draws every streamline underneath them.",
+    },
+    {
+      name: "density",
+      type: "number",
+      default: "1",
+      description:
+        "How tightly the streamlines pack. 2 packs twice as many in.",
+    },
+    {
+      name: "trail",
+      type: "number",
+      default: "0.55",
+      description:
+        "Length of each streak's fading tail, as a share of the gap between streaks, from 0.1 to 1.",
+    },
+    {
+      name: "turbulence",
+      type: "number",
+      default: "1",
+      description:
+        "How much the wind meanders and curls into eddies, from 0 (a straight, steady wind) to 2.",
+    },
+    {
+      name: "scale",
+      type: "number",
+      default: "1",
+      description:
+        "Size of the swirls. Higher values pack more, smaller ones in.",
+    },
+    {
+      name: "angle",
+      type: "number",
+      default: "70",
+      description:
+        "Direction the wind blows towards, in degrees as in CSS: 0 points up, 90 right.",
+    },
+    {
+      name: "intensity",
+      type: "number",
+      default: "1",
+      description:
+        "The brightest tone, from 0 to 1. Lower it to sit text on top.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: "Paper, a tint of --dither-ink, then --dither-ink",
+      description:
+        'Colours from paper to ink: palette names such as "blue", CSS variable names, or any CSS colour. Streamlines take the second colour; streaks brighten through the rest.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer8"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the wind blows and the swirls drift.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description:
+        "false stops the motion: a still frame if it starts off, the current frame if it was moving.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The wind fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows straight CSS lines along the wind in the same colours, cut into dashes, spaced by `density` and with tails as long as `trail` sets.
+- It samples the stream function three times per cell, at 30 fps and one pixel per dither cell. See [Performance](/docs/engine/performance).

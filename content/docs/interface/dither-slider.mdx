@@ -1,0 +1,211 @@
+---
+title: "Dither slider"
+description: "A range slider whose fill is a Bayer ramp that gets denser towards the thumb and ends in a solid edge, with a lit, dithered thumb. One thumb or two, steps and tick marks."
+---
+
+import DitherSliderDemo from "@/examples/dither-slider-demo";
+import { controls as ditherSliderControls } from "@/examples/dither-slider-controls";
+import DitherSliderPrice from "@/examples/dither-slider-price";
+import DitherSliderVolume from "@/examples/dither-slider-volume";
+
+<ComponentPreview
+  src="examples/dither-slider-demo.tsx"
+  controls={ditherSliderControls}
+>
+  <DitherSliderDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-slider" />
+
+## Usage
+
+```tsx
+import { DitherSlider } from "@/components/dithercn/dither-slider";
+
+export function Opacity() {
+  return <DitherSlider label="Opacity" defaultValue={[64]} unit="%" />;
+}
+```
+
+`DitherSlider` is built on the Radix `Slider`, so it takes the same `value`, `defaultValue`, `onValueChange`, `onValueCommit`, `min`, `max`, `step` and `name` props. Values are arrays, as in shadcn's slider: one value draws one thumb, two values draw a range.
+
+The filled part of the track is a Bayer ramp worked out cell by cell. It is sparse far from the thumb, gets denser towards it, and is solid for the last two cells before a one-cell gap at the thumb, so the value reads at a glance. The cells sit on the track's own grid: dragging flips cells through their thresholds instead of sliding a texture along. With two thumbs the ramp runs in from both ends and thins out in the middle.
+
+Hover, keyboard focus and dragging fade in a ramp twice as long with a denser floor. The thumb is a notched cap lit like [Dither button](/docs/interface/dither-button): a highlight dithered down from the top, a shade dithered up from the bottom and a grip line. Hover brightens it and dragging shades it from the top, so it looks pressed.
+
+```tsx
+<DitherSlider
+  label="Price"
+  defaultValue={[150, 600]}
+  max={1000}
+  step={50}
+  format={{ style: "currency", currency: "USD", maximumFractionDigits: 0 }}
+  showRange
+/>
+```
+
+## Examples
+
+### Price filter
+
+Two values make a range. `format` takes `Intl.NumberFormat` options, here dollars, and is used for the readout, the `showRange` labels under the ends and each thumb's `aria-valuetext`. `minStepsBetweenThumbs={1}` keeps the two thumbs one step apart. The product count updates from `onValueChange`.
+
+<ComponentPreview src="examples/dither-slider-price.tsx" size="md">
+  <DitherSliderPrice />
+</ComponentPreview>
+
+### Stepped volume
+
+`step={1}` on a 0 to 10 scale snaps the thumb to eleven positions, and `ticks` marks each one under the track. Ticks inside the selected range take the full colour. This one is `size="lg"` in `purple` with a low bloom, and the mute button sets the value from outside.
+
+<ComponentPreview src="examples/dither-slider-volume.tsx" size="md">
+  <DitherSliderVolume />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "label",
+      type: "string",
+      required: true,
+      description:
+        "What the slider sets. Shown above the track and used as the accessible name.",
+    },
+    {
+      name: "value",
+      type: "number[]",
+      description:
+        "The controlled values. One value draws one thumb, two draw a range.",
+    },
+    {
+      name: "defaultValue",
+      type: "number[]",
+      default: "[min]",
+      description: "The starting values when uncontrolled.",
+    },
+    {
+      name: "onValueChange",
+      type: "(value: number[]) => void",
+      description:
+        "Called on every change. onValueCommit fires once when a drag or key press ends.",
+    },
+    {
+      name: "min",
+      type: "number",
+      default: "0",
+      description: "The start of the scale.",
+    },
+    {
+      name: "max",
+      type: "number",
+      default: "100",
+      description: "The end of the scale.",
+    },
+    {
+      name: "step",
+      type: "number",
+      default: "1",
+      description: "The interval values snap to.",
+    },
+    {
+      name: "ticks",
+      type: "boolean | number[]",
+      default: "false",
+      description:
+        "Marks under the track: true for one per step (up to 101), or the values to mark.",
+    },
+    {
+      name: "showValue",
+      type: "boolean",
+      default: "true",
+      description: "Show the value, or both ends of a range, beside the label.",
+    },
+    {
+      name: "showRange",
+      type: "boolean",
+      default: "false",
+      description: "Show min and max under the ends of the track.",
+    },
+    {
+      name: "hideLabel",
+      type: "boolean",
+      default: "false",
+      description:
+        "Hide the label and readout visually. Screen readers still get them.",
+    },
+    {
+      name: "unit",
+      type: "string",
+      default: '""',
+      description: 'Shown after each value, such as "%".',
+    },
+    {
+      name: "format",
+      type: "Intl.NumberFormatOptions",
+      default: "{ maximumFractionDigits: 1 }",
+      description:
+        "How values are formatted in the readout, range and aria-valuetext.",
+    },
+    {
+      name: "thumbLabels",
+      type: "string[]",
+      description:
+        'Accessible names per thumb. Default: the label, or "<label>, minimum" and "<label>, maximum".',
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        'A palette name such as "blue" or "green", a CSS variable name, or any CSS colour.',
+    },
+    {
+      name: "size",
+      type: '"sm" | "md" | "lg"',
+      default: '"md"',
+      description:
+        "Track heights of 6, 8 and 12 pixels, with thumbs 14, 18 and 22 pixels wide, at the default `cell` of 2. Other cell sizes round each part to whole cells, so the sizes shift a little.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description:
+        "A soft glow in the slider's colour behind the fill and thumbs.",
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "Threshold pattern of the ramp.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description:
+        "Size of one dither cell in CSS pixels. Track and thumb sizes snap to whole cells.",
+    },
+    {
+      name: "disabled",
+      type: "boolean",
+      default: "false",
+      description: "Ignore input and drop to 45% opacity.",
+    },
+  ]}
+/>
+
+All other props, such as `name`, `onValueCommit` and `minStepsBetweenThumbs`, pass through to Radix `Slider.Root`. `className` and `style` go on the outer wrapper.
+
+## Notes
+
+- Each thumb has `role="slider"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax` and an `aria-valuetext` that includes the unit or currency. Arrow keys step, Page Up and Page Down step by ten, and Home and End jump to the ends.
+- Inside a `<form>`, the slider submits one hidden input per thumb under `name` (`name[]` for a range).
+- Focus shows a notched ring around the thumb with `:focus-visible`, and thickens the ramp just as hover does, so keyboard users see the same states as pointer users.
+- With reduced motion the ramp and thumb states switch without fading. Nothing else moves.
+- The fill is one SVG path per state, rebuilt as the value changes; the thumb is CSS masks in one shared `<style>` tag. No canvas or WebGL. Before the track is measured, a CSS ramp stands in.
+- The slider is horizontal and left to right only.

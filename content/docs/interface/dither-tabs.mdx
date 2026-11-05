@@ -1,0 +1,148 @@
+---
+title: "Dither tabs"
+description: "Tabs whose active indicator is a dithered pill or underline that glides to the chosen tab, dissolving out of the old one and in at the new one through the Bayer levels."
+---
+
+import { controls as ditherTabsControls } from "@/examples/dither-tabs-controls";
+import DitherTabsDemo from "@/examples/dither-tabs-demo";
+import DitherTabsPricing from "@/examples/dither-tabs-pricing";
+import DitherTabsDashboard from "@/examples/dither-tabs-dashboard";
+
+<ComponentPreview
+  src="examples/dither-tabs-demo.tsx"
+  size="sm"
+  controls={ditherTabsControls}
+>
+  <DitherTabsDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-tabs" />
+
+## Usage
+
+```tsx
+import {
+  DitherTabs,
+  DitherTabsContent,
+  DitherTabsList,
+  DitherTabsTrigger,
+} from "@/components/dithercn/dither-tabs";
+
+export function Project() {
+  return (
+    <DitherTabs defaultValue="overview" color="blue">
+      <DitherTabsList aria-label="Project">
+        <DitherTabsTrigger value="overview">Overview</DitherTabsTrigger>
+        <DitherTabsTrigger value="deploys">Deploys</DitherTabsTrigger>
+      </DitherTabsList>
+      <DitherTabsContent value="overview">…</DitherTabsContent>
+      <DitherTabsContent value="deploys">…</DitherTabsContent>
+    </DitherTabs>
+  );
+}
+```
+
+The parts match shadcn's `Tabs` and are built on Radix Tabs, so arrow keys, Home and End, roving focus and the tab, tablist and tabpanel roles work as they do there. `DitherTabs` takes `value` and `onValueChange` for a controlled tab, or `defaultValue` on its own.
+
+The indicator is drawn on one canvas behind the triggers, a canvas pixel per cell. Choosing a tab moves it in three overlapping parts: the old tab's indicator thins out in place, a body glides across with its leading edge ahead of its trailing edge and its dots thinning towards the back, and the new tab's indicator fills in underneath. Every cell switches on or off at its threshold in the matrix, so the move reads as a dissolve rather than a slide. The canvas is only redrawn while the indicator moves, and the trigger positions are measured, so it follows resizes and web fonts that load late.
+
+`pill` is lit like [Dither button](/docs/interface/dither-button): the full colour, a highlight dithered down from the top and a shade dithered up from the bottom, with the label's band left plain. `underline` is a bar whose ends fade through the levels, under a sparse glow that rises towards the label. Inactive tabs show a light dot lattice in the same colour on hover.
+
+Panels change at once, so their text is readable the moment it appears; the indicator carries the motion. A tab chosen with the arrow keys jumps there without a glide, so stepping through tabs never lags behind the keys.
+
+## Examples
+
+### Pricing toggle
+
+Two triggers as a monthly and yearly switch, in green. Each panel holds both plans, so switching swaps both prices at once.
+
+<ComponentPreview src="examples/dither-tabs-pricing.tsx" size="md">
+  <DitherTabsPricing />
+</ComponentPreview>
+
+### Dashboard sections
+
+The `underline` variant across the top of a card, switching between three metrics. The list stretches to the card's width and draws a hairline under the triggers; the bar sits on it.
+
+<ComponentPreview src="examples/dither-tabs-dashboard.tsx" size="md">
+  <DitherTabsDashboard />
+</ComponentPreview>
+
+## Props
+
+### DitherTabs
+
+<PropsTable
+  rows={[
+    {
+      name: "variant",
+      type: '"pill" | "underline"',
+      default: '"pill"',
+      description:
+        "Pill lights a dithered surface behind the label. Underline draws a dithered bar under it.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        'Indicator colour: a palette name such as "blue", a CSS variable name, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The order cells switch on and off as the indicator moves.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description:
+        "A soft glow in the indicator's colour that follows the cells.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "value",
+      type: "string",
+      default: "–",
+      description:
+        "The selected tab, for a controlled component. Pair it with onValueChange.",
+    },
+    {
+      name: "defaultValue",
+      type: "string",
+      default: "–",
+      description: "The tab selected at first, when uncontrolled.",
+    },
+    {
+      name: "orientation",
+      type: '"horizontal" | "vertical"',
+      default: '"horizontal"',
+      description:
+        "Vertical stacks the triggers, moves the indicator up and down, and puts the underline on the start edge: the left, or the right in a right-to-left context.",
+    },
+  ]}
+/>
+
+All other Radix `Tabs.Root` props, such as `onValueChange`, `activationMode` and `dir`, pass through.
+
+### DitherTabsList, DitherTabsTrigger, DitherTabsContent
+
+These take the props of Radix `Tabs.List`, `Tabs.Trigger` and `Tabs.Content`. Give the list an `aria-label`, and every trigger a `value` that matches one panel. A trigger can hold an icon or a short note next to its label.
+
+## Notes
+
+- The indicator, the hover dots and the glow are hidden from assistive technology. Screen readers hear the Radix roles and the selected state.
+- Focus shows a 2 pixel outline with `:focus-visible` on triggers and panels.
+- With reduced motion, the indicator jumps to the new tab and labels change colour without a fade.
+- Before the canvas first draws, and without JavaScript, the active trigger gets a flat version of the indicator in CSS, so the selection never goes missing.
+- Right to left works through Radix: pass `dir="rtl"` to `DitherTabs` or wrap it in a Radix `DirectionProvider`. Arrow keys follow the direction, the indicator follows the measured triggers, and the vertical underline, its hairline, the hover dots and the label indent move to the right. Radix does not read the page's `dir` attribute, so an RTL page needs one of the two.
+- The list does not wrap. For many tabs on a narrow screen, give it `overflow-x-auto`: the canvas covers the whole scroll width, in either direction.

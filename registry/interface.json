@@ -84,6 +84,24 @@
     ]
   },
   {
+    "name": "dropzone",
+    "type": "registry:component",
+    "title": "Dropzone",
+    "description": "A file drop area with a dithered dashed border that marches round its edge, thickens and pulls a glow in on drag-over and turns red for a rejected file, with a file list showing dithered progress.",
+    "registryDependencies": [
+      "{{REGISTRY_URL}}/dither-core.json",
+      "{{REGISTRY_URL}}/dither-button.json",
+      "{{REGISTRY_URL}}/progress-bar.json"
+    ],
+    "files": [
+      {
+        "path": "components/dithercn/dropzone.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dropzone.tsx"
+      }
+    ]
+  },
+  {
     "name": "not-found",
     "type": "registry:component",
     "title": "Not found",
@@ -108,6 +126,51 @@
         "path": "components/dithercn/dither-button.tsx",
         "type": "registry:component",
         "target": "components/dithercn/dither-button.tsx"
+      }
+    ],
+    "dependencies": ["radix-ui"]
+  },
+  {
+    "name": "dither-switch",
+    "type": "registry:component",
+    "title": "Dither switch",
+    "description": "A Radix toggle switch whose track fills with dither behind the thumb, stepping through the Bayer levels, with a lit dithered knob, four fills and any palette colour.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-switch.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-switch.tsx"
+      }
+    ],
+    "dependencies": ["radix-ui"]
+  },
+  {
+    "name": "dither-slider",
+    "type": "registry:component",
+    "title": "Dither slider",
+    "description": "A range slider on Radix Slider whose fill is a Bayer ramp that gets denser towards a lit, dithered thumb, with one or two thumbs, steps, tick marks and a readout.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-slider.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-slider.tsx"
+      }
+    ],
+    "dependencies": ["radix-ui"]
+  },
+  {
+    "name": "dither-tabs",
+    "type": "registry:component",
+    "title": "Dither tabs",
+    "description": "Tabs whose dithered pill or underline indicator glides to the chosen tab, dissolving out of the old one and in at the new one through the Bayer levels.",
+    "registryDependencies": ["{{REGISTRY_URL}}/dither-core.json"],
+    "files": [
+      {
+        "path": "components/dithercn/dither-tabs.tsx",
+        "type": "registry:component",
+        "target": "components/dithercn/dither-tabs.tsx"
       }
     ],
     "dependencies": ["radix-ui"]

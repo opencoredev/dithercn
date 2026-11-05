@@ -1,0 +1,144 @@
+---
+title: "Rain"
+description: "Rain on a window at night: a few big, soft city lights out of focus behind the glass, drops that show them flipped and brighter like tiny lenses, and bigger drops that slide down and leave wet trails."
+---
+
+import RainDemo from "@/examples/rain-demo";
+import { controls as rainControls } from "@/examples/rain-controls";
+import RainCity from "@/examples/rain-city";
+import RainHeadline from "@/examples/rain-headline";
+
+<ComponentPreview
+  src="examples/rain-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={rainControls}
+>
+  <RainDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="rain" />
+
+## Usage
+
+```tsx
+import { Rain } from "@/components/dithercn/rain";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Rain className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+The scene has two layers. Behind the glass, the city is a few big, soft discs of out-of-focus light, each in one of the palette's colours after the paper. Each is full in the middle and thins out to its edge. There are more of them low down along the street than up in the sky, over a faint glow that rises from the street, and they sway very slightly, as if the camera breathed.
+
+On the glass, a scatter of beads sit still, and every so often a new one lands. Each bead is a tiny lens: it shows the light behind it upside down, shrunk and brighter, inside a dark rim. Just inside the rim it catches an arc of light on the side facing the brightest light near it, longer the brighter that light is, a short glint across from it, and a faint line round the rest of its edge. So a bead over a light glows in that light's colour, ringed in dark, and a bead over the dark sky is only its arc, glint and faint outline, each one turned its own way. A few bigger drops gather water for a moment, then slide down at an easy, uneven pace, slowing almost to a stop now and then and running on, stretching as they run. Each leaves a wavering wet trail, widest just behind the drop, where the film of water either side of it softly bends the lights, and tapering to a thin, dim thread higher up as it dries. The drop wipes the beads off its path; the beads come back one by one as the trail dries.
+
+The lights scale with the box. The drops are measured in dither cells, so they keep their size on a phone and a wide screen shows more of them.
+
+## Examples
+
+### City lights
+
+Red tail lights and orange street lamps, a brighter `glow`, a slightly higher `scale` for more, smaller lights and more `drops` give a busy street seen through a wet window.
+
+<ComponentPreview src="examples/rain-city.tsx" size="lg" align="stretch">
+  <RainCity />
+</ComponentPreview>
+
+### Behind a headline
+
+`fade={1}` clears the drops from an oval in the middle of the box and dims the lights behind it, as if someone had wiped the glass, so the text sits on dark, quiet ground. A lower `glow` keeps the lights around it calm.
+
+<ComponentPreview src="examples/rain-headline.tsx" size="lg" align="stretch">
+  <RainHeadline />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "drops",
+      type: "number",
+      default: "1",
+      description:
+        "How many drops are on the glass, from 0 (dry glass, only the lights) to 2. Scales the beads and the drops that slide.",
+    },
+    {
+      name: "glow",
+      type: "number",
+      default: "1",
+      description:
+        "How bright the city lights behind the glass are, from 0 to 2. The drops brighten with them.",
+    },
+    {
+      name: "scale",
+      type: "number",
+      default: "1",
+      description:
+        "Size of the lights behind the glass. Higher values make more, smaller ones.",
+    },
+    {
+      name: "fade",
+      type: "number",
+      default: "0",
+      description:
+        "How far the drops clear and the lights dim in the middle of the box, from 0 to 1, to make room for text.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: '["--dither-paper", "--dither-ink", "orange"]',
+      description:
+        'The paper, then one colour per kind of light: palette names such as "blue", CSS variable names, or any CSS colour. Each light takes one of them, and each drop the colour of the light behind it.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"blue-noise"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description:
+        "Size of one dither cell in CSS pixels. The drops are measured in cells, so a bigger cell makes bigger drops.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description:
+        "How fast the drops slide and land. At 1 a big drop slides about 10 cells a second on average, slowing and speeding up as it goes.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description:
+        "false stops the motion: a still frame if it starts off, the current frame if it was moving.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The window fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame, with drops caught mid-slide and their trails behind them, and stops.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a still SVG of the same window: soft discs of light over the street's glow, beads ringed in dark with their arcs turned towards the lights, and a few big drops with their tapering trails, in the same colours.
+- On a light theme the paper is light and the lights are drawn in ink, like a printed negative. Pass a dark first palette colour, or set `className="dark"` on a wrapper, for night on any theme.
+- Every cell checks the nine nearest lights once, its own two bead squares and two sliding drops, with no loop over every drop. The colour pass repeats that work. See [Performance](/docs/engine/performance).

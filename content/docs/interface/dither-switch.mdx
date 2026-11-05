@@ -1,0 +1,142 @@
+---
+title: "Dither switch"
+description: "A toggle switch whose track fills with dither behind the thumb as it turns on, stepping through the Bayer levels, and drains the same way when it turns off."
+---
+
+import DitherSwitchDemo from "@/examples/dither-switch-demo";
+import { controls as ditherSwitchControls } from "@/examples/dither-switch-controls";
+import DitherSwitchSettings from "@/examples/dither-switch-settings";
+import DitherSwitchPalette from "@/examples/dither-switch-palette";
+
+<ComponentPreview
+  src="examples/dither-switch-demo.tsx"
+  size="sm"
+  controls={ditherSwitchControls}
+>
+  <DitherSwitchDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="dither-switch" />
+
+## Usage
+
+```tsx
+import { DitherSwitch } from "@/components/dithercn/dither-switch";
+
+export function AutoDeploy() {
+  return (
+    <div className="flex items-center gap-3">
+      <DitherSwitch id="auto-deploy" color="blue" defaultChecked />
+      <label htmlFor="auto-deploy" className="text-sm">
+        Auto-deploy
+      </label>
+    </div>
+  );
+}
+```
+
+`DitherSwitch` is the Radix `Switch`: a `<button role="switch">` that you control with `checked` and `onCheckedChange`, or leave uncontrolled with `defaultChecked`. Space and Enter toggle it. Give it a name with a `<label htmlFor>` or `aria-label`.
+
+Off, the track is a faint grey tint with a sparse grey texture inside a hairline. Turning it on fills the track from the left in five layers: four copies of the colour masked to denser and denser Bayer levels, then the full lit surface, the colour with a highlight dithered down from the top and a shade dithered up from the bottom, as on [Dither button](/docs/interface/dither-button). Each layer starts a beat after the one below it, so sparse cells run just behind the thumb and the dense ones fill in after. Turning it off runs the wave backwards: the solid surface pulls back with the thumb and the sparse levels drain after it.
+
+The thumb is a light knob lit the same way, over a dithered drop shadow. Hover brightens the knob and the track, and pressing shades the knob from the top.
+
+## Examples
+
+### Settings with a form
+
+A list of labelled switches with descriptions inside a `<form>`. Each switch has a `name`, so it submits as a checkbox would: `on` when checked, absent when not. The first row is `disabled`; like a disabled checkbox, it is left out of what the form sends. Each description is tied to its switch with `aria-describedby`. Toggle a few and press Save.
+
+<ComponentPreview src="examples/dither-switch-settings.tsx" size="md">
+  <DitherSwitchSettings />
+</ComponentPreview>
+
+### Fills, colours and sizes
+
+Every fill in four colours, then the three sizes. `fill` sets the texture of the shade when on and of the track when off: `gradient` is a Bayer ramp up from the bottom, `dotted` a staggered dot lattice, `hatched` rising diagonals, and `solid` a thin dithered rim. Toggle any of them to watch the wave.
+
+<ComponentPreview src="examples/dither-switch-palette.tsx" size="md">
+  <DitherSwitchPalette />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "checked",
+      type: "boolean",
+      description:
+        "Whether it is on, when you control it. Pair with onCheckedChange.",
+    },
+    {
+      name: "defaultChecked",
+      type: "boolean",
+      default: "false",
+      description: "Whether it starts on, when it is uncontrolled.",
+    },
+    {
+      name: "onCheckedChange",
+      type: "(checked: boolean) => void",
+      description: "Called with the new state on every toggle.",
+    },
+    {
+      name: "color",
+      type: "DitherColor",
+      default: '"ink"',
+      description:
+        'Colour of the ink when on: a palette name such as "blue" or "green", a CSS variable name, or any CSS colour.',
+    },
+    {
+      name: "fill",
+      type: '"gradient" | "dotted" | "hatched" | "solid"',
+      default: '"gradient"',
+      description:
+        "Texture of the shade when on and of the track when off: a Bayer ramp, a dot lattice, diagonals, or a thin rim.",
+    },
+    {
+      name: "size",
+      type: '"sm" | "md" | "lg"',
+      default: '"md"',
+      description:
+        "Tracks of 34 by 20, 42 by 24 and 54 by 30 pixels, rounded to whole cells.",
+    },
+    {
+      name: "bloom",
+      type: '"off" | "low" | "high"',
+      default: '"off"',
+      description:
+        "A soft glow in the ink's colour that follows the cells when on.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "2",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "disabled",
+      type: "boolean",
+      default: "false",
+      description: "Ignores clicks and keys and drops to 45% opacity.",
+    },
+    {
+      name: "name",
+      type: "string",
+      description:
+        "Submits the switch with its form. Use value to send something other than on, and required to make it mandatory.",
+    },
+  ]}
+/>
+
+All other props pass through to the Radix `Switch.Root` button.
+
+## Notes
+
+- Focus shows a 2 pixel outline with `:focus-visible` and the hover highlight, so keyboard users see the same step as pointer users.
+- The clip of every layer and the thumb move on a staircase easing, one step per cell that follows the ease-out curve, so the cells never sit between pixels mid-move. Browsers without CSS `linear()` easing use even steps instead.
+- The hit area reaches a few pixels past the track, so the small size is still easy to tap.
+- With reduced motion, the switch changes state at once: no wave, no slide, no fades.
+- The surface is plain CSS masks and clips in one shared `<style>` tag. There is no canvas and no WebGL, so a settings page with dozens of switches stays cheap.

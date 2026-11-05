@@ -1,0 +1,163 @@
+---
+title: "Fire"
+description: "Flames rising from the edge of the box, with a hot base, tapering tongues that lick up and tear off, and embers that drift above them, drawn as a dither."
+---
+
+import FireDemo from "@/examples/fire-demo";
+import { controls as fireControls } from "@/examples/fire-controls";
+import FireCampfire from "@/examples/fire-campfire";
+import FireHeadline from "@/examples/fire-headline";
+
+<ComponentPreview
+  src="examples/fire-demo.tsx"
+  size="full"
+  align="stretch"
+  controls={fireControls}
+>
+  <FireDemo />
+</ComponentPreview>
+
+## Installation
+
+<InstallBlock name="fire" />
+
+## Usage
+
+```tsx
+import { Fire } from "@/components/dithercn/fire";
+
+export function Hero() {
+  return (
+    <section className="relative isolate min-h-[480px]">
+      <Fire height={0.4} className="absolute inset-0 -z-10" />
+      <h1>Your headline</h1>
+    </section>
+  );
+}
+```
+
+The fire burns along one edge of the box. Its heat is noise that scrolls away from the edge, stretched upright and swayed from side to side, minus a falloff with height. Where the heat drops to zero the flame ends in a crisp edge, so the tongues taper to tips, split in two and tear off as licks that rise and vanish. Every part of it moves slowly enough that a dot at the edge of a flame seldom turns on more than twice a second, so the fire flickers without flashing.
+
+The palette runs as a heat ramp: the first colour after the paper at the tips and edges, the last in the dense base. With the default palette that is a tint of the ink and then the ink, so it reads as fire printed in one colour. Give it warm colours, such as `["--dither-paper", "red", "orange", <a pale yellow>]`, for flames that glow from deep red at the tips to yellow-white at the base. Each dot takes one of the colours, so the ramp shows as mixed dots rather than blended paint.
+
+Embers rise out of the flames, drift up in the wind and cool towards the first colour as they climb, then wink out each at its own height. Set `embers={0}` to turn them off.
+
+## Examples
+
+### Campfire
+
+`spread={0.5}` gathers the fire into one blaze in the middle of the box, tallest at its centre and dying down at its sides. A tall `height`, narrower tongues and more `embers` make it a campfire, in red, orange and a pale yellow core.
+
+<ComponentPreview src="examples/fire-campfire.tsx" size="lg" align="stretch">
+  <FireCampfire />
+</ComponentPreview>
+
+### Behind a headline
+
+A low `height` keeps the flames in the bottom third of a hero, and the headline sits on clear paper above them. This one uses the default palette, so the fire is drawn in the theme's ink, and leans a little to the left.
+
+<ComponentPreview src="examples/fire-headline.tsx" size="lg" align="stretch">
+  <FireHeadline />
+</ComponentPreview>
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "height",
+      type: "number",
+      default: "0.55",
+      description:
+        "How far up the box the tallest tongues reach, from 0.1 to 1. Embers rise past it.",
+    },
+    {
+      name: "scale",
+      type: "number",
+      default: "1",
+      description:
+        "Width of the tongues. Higher values make more, narrower ones.",
+    },
+    {
+      name: "spread",
+      type: "number",
+      default: "1",
+      description:
+        "How much of the edge burns, from 0.1 to 1. Below 1 the flames gather into one fire in the middle, tallest at its centre.",
+    },
+    {
+      name: "wind",
+      type: "number",
+      default: "0.15",
+      description:
+        "Sideways lean of the flames and embers, from -1 (left) to 1 (right).",
+    },
+    {
+      name: "embers",
+      type: "number",
+      default: "1",
+      description:
+        "How many embers drift up above the flames, from 0 (none) to 3.",
+    },
+    {
+      name: "intensity",
+      type: "number",
+      default: "1",
+      description:
+        "The brightest tone, from 0 to 1. Lower it to sit text on top.",
+    },
+    {
+      name: "edge",
+      type: '"bottom" | "top"',
+      default: '"bottom"',
+      description:
+        "The edge the fire burns along. With top, the flames hang down from it.",
+    },
+    {
+      name: "palette",
+      type: "[DitherColor, DitherColor, ...DitherColor[]]",
+      default: "Paper, a tint of --dither-ink, then --dither-ink",
+      description:
+        'The paper, then a heat ramp from the tips to the base: palette names such as "red", CSS variable names, or any CSS colour.',
+    },
+    {
+      name: "matrix",
+      type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
+      default: '"bayer4"',
+      description: "The threshold pattern. See Dither engine.",
+    },
+    {
+      name: "cell",
+      type: "number",
+      default: "--dither-cell",
+      description: "Size of one dither cell in CSS pixels.",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "How fast the flames climb and the embers rise.",
+    },
+    {
+      name: "animate",
+      type: "boolean",
+      default: "true",
+      description:
+        "false stops the motion: a still frame if it starts off, the current frame if it was moving.",
+    },
+    {
+      name: "className",
+      type: "string",
+      default: "–",
+      description: "Size and position. The fire fills this box.",
+    },
+  ]}
+/>
+
+## Notes
+
+- It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
+- With reduced motion turned on, it draws one still frame and stops.
+- It does not flash. At the default `speed`, no dot turns on more than three times in any second, and almost every dot at most twice, whatever the other props. Each ember fades in and out over about half a second. A `speed` above 1 makes everything change faster.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a still SVG traced from the shader's own still frame: the flames in three layers from the tip colour to the core colour, the licks torn off above them, and embers.
+- It takes five noise samples per cell for the flames, and the colour pass repeats them, at 30 fps and one pixel per dither cell. See [Performance](/docs/engine/performance).
