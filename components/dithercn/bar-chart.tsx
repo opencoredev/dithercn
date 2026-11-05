@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import type { ComponentProps } from "react";
 
 import {
@@ -21,7 +21,7 @@ import type {
   ValueFormat,
 } from "@/components/dithercn/cartesian-chart";
 import { BloomGroup, cssColor, FillPattern } from "@/lib/dither";
-import type { DitherColor, DitherMatrix } from "@/lib/dither";
+import type { DitherColor, DitherMatrix, FillRamp } from "@/lib/dither";
 
 export type {
   Accessor,
@@ -46,15 +46,20 @@ export interface BarChartProps<T>
    */
   layout?: BarLayout;
   /**
-   * The bar drawn solid while nothing is scrubbed: an index, the `last`,
-   * the `max`, or `none`. Default `last`.
+   * The bar drawn emphasised while nothing is scrubbed: an index, the
+   * `last`, the `max`, or `none`. Default `last`. An emphasised bar is a
+   * denser dither, solid at the top and never thinner than an ordinary
+   * bar's peak, with its value written above it.
    */
   highlight?: number | "last" | "max" | "none";
   /** Height in px, axes included. Default 240. */
   height?: number;
-  /** Gradient only: coverage at the top of each bar, 0 to 1. Default 0.75. */
+  /**
+   * Coverage at the top of each gradient bar, 0 to 1, and where the
+   * emphasised bar's denser ramp settles for every textured fill. Default 0.75.
+   */
   level?: number;
-  /** Gradient only: threshold matrix. Default `bayer4`. */
+  /** Threshold matrix of gradient bars and of the emphasised bar's ramp. Default `bayer4`. */
   matrix?: DitherMatrix;
   /** Dither cell in px. Default `--dither-cell`. */
   cell?: number;
@@ -73,6 +78,8 @@ export interface BarChartProps<T>
 
 const fillId = (uid: string, seriesIndex: number) =>
   `${uid}-bar-${seriesIndex}`;
+const denseId = (uid: string, seriesIndex: number) =>
+  `${uid}-dense-${seriesIndex}`;
 
 /** Widest a single bar gets, so wide charts keep air between bars. */
 const MAX_BAR = 36;
@@ -84,6 +91,13 @@ const CAP = 2;
 const FADE = 0.7;
 /** Coverage the gradient settles at, far from the top. */
 const FLOOR = 0.125;
+/**
+ * The emphasised bar runs the same ramp from solid down to an ordinary
+ * bar's peak `level`. Every row is at least as dense as the plain ramp, so
+ * on the same threshold grid it only adds cells: the bar fills in rather
+ * than swapping texture.
+ */
+const DENSE_TOP = 1;
 
 const PERCENT_SCALE: Scale = { max: 100, min: 0, ticks: [0, 25, 50, 75, 100] };
 const formatPercent = (value: number) => `${Math.round(value)}%`;
@@ -120,10 +134,15 @@ interface Bar {
   height: number;
 }
 
+// The emphasised fill is always a ramp, cloned per bar like the gradient.
+const denseFill = (uid: string, bar: Bar, index: number) =>
+  `url(#${uid}-d${index}-${bar.seriesIndex})`;
+
 /**
  * A bar chart: each bar is a dithered body under a solid cap. With the
  * default `gradient` fill a bar is densest at its top and thins toward
- * the axis. The highlighted bar, or the scrubbed one, fills in solid.
+ * the axis. The highlighted bar, or the scrubbed one, fills in to a denser
+ * dither: solid at the top, fading to an ordinary bar's peak density.
  */
 export const BarChart = <T,>({
   data,
@@ -273,10 +292,19 @@ export const BarChart = <T,>({
       opacityOf,
     } = context;
     const plotHeight = plot.bottom - plot.top;
+    const ramp: FillRamp = {
+      at: 0,
+      edge: "top",
+      extent: plotHeight + px * 8,
+      length: plotHeight * FADE,
+    };
     const columns = data.map((_, index) => barsAt(index, context));
-    const solidIndex = scrubbing ? null : highlighted;
+    // A solid fill is already as dense as it gets, so it keeps its own.
+    const denseIndex = scrubbing || fill === "solid" ? null : highlighted;
     const labelBar =
-      solidIndex === null ? undefined : columns[solidIndex]?.at(-1);
+      scrubbing || highlighted === null
+        ? undefined
+        : columns[highlighted]?.at(-1);
     const labelValue = peakAt(highlighted);
     return (
       <>
@@ -291,26 +319,41 @@ export const BarChart = <T,>({
               level={level}
               floor={FLOOR}
               matrix={matrix}
-              ramp={{
-                at: 0,
-                edge: "top",
-                extent: plotHeight + px * 8,
-                length: plotHeight * FADE,
-              }}
+              ramp={ramp}
             />
           ))}
-          {fill === "gradient"
-            ? columns.flatMap((bars, index) =>
-                bars.map((bar) => (
+          {series.map((entry, seriesIndex) => (
+            <FillPattern
+              key={entry.label}
+              id={denseId(uid, seriesIndex)}
+              fill="gradient"
+              color={colorOf(seriesIndex)}
+              cell={px}
+              level={DENSE_TOP}
+              // Never thinner than a plain bar's floor, even with a low `level`.
+              floor={Math.max(level, FLOOR)}
+              matrix={matrix}
+              ramp={ramp}
+            />
+          ))}
+          {columns.flatMap((bars, index) =>
+            bars.map((bar) => (
+              <Fragment key={bar.key}>
+                {fill === "gradient" ? (
                   <pattern
-                    key={bar.key}
                     id={`${uid}-b${index}-${bar.seriesIndex}`}
                     href={`#${fillId(uid, bar.seriesIndex)}`}
                     y={bar.y}
                   />
-                ))
-              )
-            : null}
+                ) : null}
+                <pattern
+                  id={`${uid}-d${index}-${bar.seriesIndex}`}
+                  href={`#${denseId(uid, bar.seriesIndex)}`}
+                  y={bar.y}
+                />
+              </Fragment>
+            ))
+          )}
           <clipPath id={`${uid}-bar-clip`}>
             <rect
               x={plot.left}
@@ -365,19 +408,13 @@ export const BarChart = <T,>({
                       y={bar.y}
                       width={bar.width}
                       height={bar.height}
-                      fill={barFill(uid, bar, index)}
+                      fill={
+                        index === denseIndex
+                          ? denseFill(uid, bar, index)
+                          : barFill(uid, bar, index)
+                      }
                       shapeRendering="crispEdges"
                     />
-                    {index === solidIndex ? (
-                      <rect
-                        x={bar.x}
-                        y={bar.y}
-                        width={bar.width}
-                        height={bar.height}
-                        fill={color}
-                        shapeRendering="crispEdges"
-                      />
-                    ) : null}
                     <rect
                       x={bar.x}
                       y={bar.y}
@@ -410,27 +447,40 @@ export const BarChart = <T,>({
     );
   };
 
-  // The scrubbed column fills in solid, fading up over the dither.
-  const activeMarks = (index: number, context: ChartContext) => (
-    <g
-      key={index}
-      clipPath={`url(#${context.uid}-bar-clip)`}
-      className="opacity-100 transition-opacity duration-150 ease-out motion-reduce:transition-none starting:opacity-0"
-    >
-      {barsAt(index, context).map((bar) => (
-        <rect
-          key={bar.key}
-          x={bar.x}
-          y={bar.y}
-          width={bar.width}
-          height={bar.height}
-          fill={cssColor(context.colorOf(bar.seriesIndex))}
-          opacity={context.opacityOf(bar.seriesIndex)}
-          shapeRendering="crispEdges"
-        />
-      ))}
-    </g>
-  );
+  // The scrubbed column fades up to the dense dither. Over a gradient bar
+  // it only adds cells. Over dots or hatching it sits on paper, so the two
+  // textures never mix.
+  const activeMarks = (index: number, context: ChartContext) =>
+    fill === "solid" ? null : (
+      <g
+        key={index}
+        clipPath={`url(#${context.uid}-bar-clip)`}
+        className="opacity-100 transition-opacity duration-150 ease-out motion-reduce:transition-none starting:opacity-0"
+      >
+        {barsAt(index, context).map((bar) => (
+          <g key={bar.key} opacity={context.opacityOf(bar.seriesIndex)}>
+            {fill === "gradient" ? null : (
+              <rect
+                x={bar.x}
+                y={bar.y}
+                width={bar.width}
+                height={bar.height}
+                fill={cssColor("--dither-paper")}
+                shapeRendering="crispEdges"
+              />
+            )}
+            <rect
+              x={bar.x}
+              y={bar.y}
+              width={bar.width}
+              height={bar.height}
+              fill={denseFill(context.uid, bar, index)}
+              shapeRendering="crispEdges"
+            />
+          </g>
+        ))}
+      </g>
+    );
 
   return (
     <CartesianChart

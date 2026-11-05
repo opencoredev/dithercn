@@ -183,4 +183,5 @@ A smaller heading that thins out to the right, drawn in `--foreground` so it mat
 - The text is the accessible content. The fill is a background image, so assistive technology ignores it.
 - Before the client draws the fill, the letters show in the ink colour through a plain dither mask, so there is no flash of unstyled text. In forced-colours mode the fill is removed and the text uses the system colour.
 - Selected text shows in the site's selection colours, solid, so it stays readable while highlighted.
+- The fill reaches 0.3em past the text so ascenders and descenders get it at any line height, without changing the layout or taking clicks from elements nearby. Links nested inside take clicks even when an ancestor sets `pointer-events: none`; to disable them, use `inert` or set `pointer-events` on the links themselves.
 - With reduced motion turned on, or `animate={false}`, it draws one frame. It redraws at 12 fps only while on screen, at one pixel per dither cell, and pauses in hidden tabs. `solid` never animates.
