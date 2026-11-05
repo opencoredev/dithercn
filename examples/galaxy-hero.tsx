@@ -6,7 +6,7 @@ import { Galaxy } from "@/components/dithercn/galaxy";
 
 // Wide boxes put the galaxy high on the right, beside the copy. Narrow ones
 // stack the copy at the bottom, so the galaxy moves to the top centre.
-const WIDE = { center: [0.74, 0.38], size: 0.36 } as const;
+const WIDE = { center: [0.74, 0.38], size: 0.4 } as const;
 const NARROW = { center: [0.5, 0.22], size: 0.3 } as const;
 
 export default function GalaxyHero() {

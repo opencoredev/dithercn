@@ -7,7 +7,7 @@ export default function GalaxyEdgeOn() {
       angle={78}
       arms={3}
       twist={1.4}
-      size={0.46}
+      size={0.5}
       dust={1}
       stars={1.4}
       colorField
