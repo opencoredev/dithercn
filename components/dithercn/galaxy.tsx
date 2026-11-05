@@ -173,16 +173,21 @@ vec2 galaxyLight(vec2 v, float t, float cell) {
   // It goes dark just before the arm narrows past a few dots, so the tip
   // ends in a clean point instead of a thin trail of single dots.
   float reach = smoothstep(0.08, 0.32, r) * (1.0 - smoothstep(1.08, 1.17, r));
-  // Brightest where the arms leave the bulge, dimming outwards.
-  float crest = (2.4 - 1.1 * smoothstep(0.2, 1.1, r)) * (0.86 + 0.14 * clump);
+  // Never near solid, so the core outshines them: dimmest inside the
+  // bulge's glow, which adds to them there, brightest through the middle
+  // of the disc and a little dimmer towards the tips. Nearly edge-on the
+  // arms blur into one lens, which needs more light to stay dense.
+  float crest = (0.8 + 0.32 * smoothstep(0.25, 0.6, r) - 0.25 * smoothstep(0.75, 1.1, r))
+    * (0.86 + 0.14 * clump) * (1.0 + 0.9 * galaxyEdgeOn());
   float light = (arm + 0.25 * ridge * exp(-d * d / (4.0 * width * width))) * crest * reach
     + 0.12 * exp(-r * 5.0) * (1.0 - smoothstep(0.5, 0.9, r))
     + 0.35 * knot * arm * arm * reach;
 
-  // The bulge: a solid centre on a wide glowing shoulder that fades out
-  // into the inner disc.
+  // The bulge: a small solid centre on a wide shoulder that steps down
+  // through many tones into the inner disc, past the first turn of the
+  // arms. The shoulder, not a bigger centre, is what makes it glow.
   float rb = galaxyBulgeRadius(v);
-  float bulge = (2.4 * exp(-rb * rb * 36.0) + 0.3 * exp(-rb * 8.0)) * (1.0 - smoothstep(0.32, 0.62, rb));
+  float bulge = (2.6 * exp(-rb * rb * 100.0) + 1.9 * exp(-rb * 7.5)) * (1.0 - smoothstep(0.35, 0.65, rb));
 
   // Dust lanes along the arms, from the edge of the bulge out past the
   // last bright stretch, and a dusty ring whose near half, seen at a
@@ -341,13 +346,14 @@ const PROFILE_STOPS = [
 
 /**
  * Brightness of an arm's crest at radius `r`, as in `field`: growing out
- * of the bulge, brightest just past it and dimming outwards, but still
- * bright near the tip, where the arm ends by narrowing.
+ * of the bulge, dim inside its glow, brightest through the middle of the
+ * disc and dimming a little towards the tip, where the arm ends by
+ * narrowing. Never as bright as the core.
  */
 const armTone = (r: number) =>
   exposeDisc(
     0.93 *
-      (2.4 - 1.1 * smooth(0.2, 1.1, r)) *
+      (0.8 + 0.32 * smooth(0.25, 0.6, r) - 0.25 * smooth(0.75, 1.1, r)) *
       smooth(0.08, 0.32, r) *
       (1 - smooth(1.08, 1.17, r))
   );
@@ -362,8 +368,8 @@ const discTone = (r: number) =>
  */
 const bulgeTone = (r: number) =>
   expose(
-    (2.4 * Math.exp(-r * r * 36) + 0.3 * Math.exp(-r * 8)) *
-      (1 - smooth(0.32, 0.62, r))
+    (2.6 * Math.exp(-r * r * 100) + 1.9 * Math.exp(-r * 7.5)) *
+      (1 - smooth(0.35, 0.65, r))
   );
 
 /** Strength of the dust lane along an arm at radius `r`. */
