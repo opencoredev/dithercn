@@ -36,11 +36,11 @@ export function Hero() {
 }
 ```
 
-The fire burns along one edge of the box. Its heat is noise that scrolls away from the edge, stretched upright and swayed from side to side, minus a falloff with height. Where the heat drops to zero the flame ends in a crisp edge, so the tongues taper to points, split in two and tear off as small licks that rise and vanish. Small licks race up faster than the big tongues they sit on, which keeps the flicker lively without any cell flashing on and off.
+The fire burns along one edge of the box. Its heat is noise that scrolls away from the edge, stretched upright and swayed from side to side, minus a falloff with height. Where the heat drops to zero the flame ends in a crisp edge, so the tongues taper to tips, split in two and tear off as licks that rise and vanish. Every part of it moves slowly enough that a dot at the edge of a flame seldom turns on more than twice a second, so the fire flickers without flashing.
 
 The palette runs as a heat ramp: the first colour after the paper at the tips and edges, the last in the dense base. With the default palette that is a tint of the ink and then the ink, so it reads as fire printed in one colour. Give it warm colours, such as `["--dither-paper", "red", "orange", <a pale yellow>]`, for flames that glow from deep red at the tips to yellow-white at the base. Each dot takes one of the colours, so the ramp shows as mixed dots rather than blended paint.
 
-Embers light inside the flames, drift up in the wind and cool towards the first colour as they climb, then wink out each at its own height. Set `embers={0}` to turn them off.
+Embers rise out of the flames, drift up in the wind and cool towards the first colour as they climb, then wink out each at its own height. Set `embers={0}` to turn them off.
 
 ## Examples
 
@@ -158,6 +158,6 @@ A low `height` keeps the flames in the bottom third of a hero, and the headline 
 
 - It is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
 - With reduced motion turned on, it draws one still frame and stops.
-- Nothing in it flashes: the flames move by scrolling smooth noise, and each ember fades in and out over about half a second.
-- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a still SVG of the same row of leaning tongues, each in three layers from the tip colour to the core colour, with a hot band along the edge, a few torn-off licks and embers above.
-- It takes four noise samples per cell for the flames, and the colour pass repeats them, at 30 fps and one pixel per dither cell. See [Performance](/docs/engine/performance).
+- It does not flash. At the default `speed`, no dot turns on more than three times in any second, and almost every dot at most twice, whatever the other props. Each ember fades in and out over about half a second. A `speed` above 1 makes everything change faster.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a still SVG traced from the shader's own still frame: the flames in three layers from the tip colour to the core colour, the licks torn off above them, and embers.
+- It takes five noise samples per cell for the flames, and the colour pass repeats them, at 30 fps and one pixel per dither cell. See [Performance](/docs/engine/performance).

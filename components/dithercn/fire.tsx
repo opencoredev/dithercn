@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { cssColor, DitherShader } from "@/lib/dither";
 import type { DitherPalette, DitherShaderProps } from "@/lib/dither";
@@ -48,39 +48,56 @@ float fireProfile(float x, vec2 res) {
   return mix(clamp(1.0 - across * across, 0.0, 1.0), 1.0, smoothstep(0.85, 1.0, fireSpread));
 }
 
+// A ridge with a rounded top: 1 - fireRidge(n) peaks where noise n
+// crosses zero, like 1 - abs(n), but without the sharp crease, so a tongue
+// keeps some width just below its tip and its height eases in time instead
+// of spiking.
+float fireRidge(float n) {
+  return sqrt(n * n + 0.0225) - 0.15;
+}
+
 // The heat of the flames: above 0 inside a tongue, 1 at the base, 0 at
 // the edge. Each column of the fire reaches up to its crown: inverted
-// ridged noise along x, whose cusps give pointed, tapering tips, and which
-// changes slowly so tongues grow, shrink and split. A wave running up the
-// fire bends their upper parts from side to side, and noise scrolling
-// upward faster than that tears licks off the tips and frays the edges.
-float fireHeat(vec2 b, vec2 res, float t) {
+// ridged noise along x, whose peaks give tapering tips, and which changes
+// slowly so tongues grow, shrink and split. A slow wave running up the fire
+// bends their upper parts from side to side, and tall licks of noise
+// scrolling upward tear off the tips and fray the edges. Every part moves
+// slowly enough at a given dot that it rarely crosses the edge of a flame
+// more than twice a second. density is the same heat with less of the
+// licks in it, for how densely the dots fill the inside of the flames, so
+// the fast part only moves the edges.
+float fireHeat(vec2 b, vec2 res, float t, out float density) {
   float reach = max(fireHeight, 0.05);
   float h = b.y / reach;
   float s = 2.8 * fireScale;
   // The tongues lean with the wind, further the higher they get.
   float x = b.x - fireWind * 0.22 * b.y * (0.6 + 0.8 * h);
-  x += 0.1 / fireScale * h * snoise(vec2(x * s * 0.5 + 4.1, b.y * s * 0.6 - t * 0.9));
-  float big = 1.0 - abs(snoise(vec2(x * s * 0.55, t * 0.32)));
-  float small = 1.0 - abs(snoise(vec2(x * s * 1.25 + 9.1, t * 0.45 + 3.0)));
-  float crown = 0.28 + 0.62 * big * big * big + 0.24 * small * small;
+  x += 0.05 / fireScale * h * snoise(vec2(x * s * 0.5 + 4.1, b.y * s * 0.45 - t * 0.36));
+  float big = 1.0 - fireRidge(snoise(vec2(x * s * 0.55, t * 0.18)));
+  float small = 1.0 - fireRidge(snoise(vec2(x * s * 1.25 + 9.1, t * 0.25 + 3.0)));
+  float crown = 0.29 + 0.58 * pow(big, 2.5) + 0.22 * small * small;
   float profile = fireProfile(b.x, res);
   crown *= mix(0.12, 1.0, profile);
   // Taller fires get taller licks, but less than in proportion, so a low
   // fire still has upright licks rather than squat blobs.
   vec2 q = vec2(x * s, b.y * s / (0.45 + 0.55 * reach));
-  float lick = 0.65 * snoise(vec2(q.x * 1.1, q.y * 0.7 - t * 1.5))
-    + 0.35 * snoise(vec2(q.x * 2.3, q.y * 1.5 - t * 2.6) + vec2(7.1, 2.3));
+  float lick = 0.7 * snoise(vec2(q.x * 1.1, q.y * 0.5 - t * 0.6))
+    + 0.1 * snoise(vec2(q.x * 2.0, q.y - t * 0.72) + vec2(7.1, 2.3));
+  lick *= 0.08 + 0.34 * smoothstep(0.0, 0.7, h);
   // Past the sides of a gathered fire nothing burns, the bed included, and
   // the cut-off narrows with height so the blaze slopes in towards the top.
-  return 1.0 - h / crown + lick * (0.08 + 0.34 * smoothstep(0.0, 0.7, h)) - (1.0 - profile) * (1.15 + 1.5 * h);
+  float base = 1.0 - h / crown - (1.0 - profile) * (1.15 + 1.5 * h);
+  density = base + 0.4 * lick;
+  return base + lick;
 }
 
 // Embers: one slot per 18 cells, in columns that rise at their own pace.
-// Most slots are empty. An ember lights inside the flames, cools as it
+// Most slots are empty. An ember rises out of the flames, cools as it
 // climbs, and winks out over half a second at a height of its own. age runs
-// from 0 when it lights to 1 when it goes out.
-float fireEmber(vec2 uv, vec2 res, float t, out float age) {
+// from 0 when it lights to 1 when it goes out. heat is the flames' heat at
+// the same point: an ember shows only clear of them, so a dot at the edge
+// of a flame never flickers with both.
+float fireEmber(vec2 uv, vec2 res, float t, float heat, out float age) {
   age = 0.0;
   if (fireEmbers <= 0.0) {
     return 0.0;
@@ -112,19 +129,21 @@ float fireEmber(vec2 uv, vec2 res, float t, out float age) {
   age = clamp((c.y - born) / max(end - born, 1.0), 0.0, 1.0);
   float life = smoothstep(born, born + 10.0, c.y) * (1.0 - smoothstep(end - 8.0, end, c.y));
   float glint = 0.85 + 0.15 * sin(t * 2.3 + seed * 40.0);
-  return spot * present * life * glint * (1.0 - 0.4 * age);
+  float clear = 1.0 - smoothstep(-0.5, -0.15, heat);
+  return spot * present * life * glint * clear * (1.0 - 0.4 * age);
 }
 `;
 
 const FIELD = `${GEOMETRY}
 float field(vec2 uv, vec2 res, float t) {
   vec2 b = fireBox(uv, res);
-  float heat = fireHeat(b, res, t);
+  float density;
+  float heat = fireHeat(b, res, t, density);
   // A crisp edge, then denser towards the hot core. The peak stops short of
   // solid ink so the dither still shows in the base.
-  float flame = smoothstep(0.0, 0.04, heat) * mix(0.5, 0.92, smoothstep(0.04, 0.7, heat));
+  float flame = smoothstep(0.0, 0.05, heat) * mix(0.5, 0.92, smoothstep(0.05, 0.7, density));
   float age;
-  float ember = fireEmber(uv, res, t, age);
+  float ember = fireEmber(uv, res, t, heat, age);
   return max(flame, ember) * fireIntensity;
 }
 `;
@@ -132,9 +151,10 @@ float field(vec2 uv, vec2 res, float t) {
 const COLOR_FIELD = `${GEOMETRY}
 vec3 colorField(vec2 uv, vec2 res, float t) {
   vec2 b = fireBox(uv, res);
-  float heat = fireHeat(b, res, t);
+  float density;
+  float heat = fireHeat(b, res, t, density);
   float age;
-  float ember = fireEmber(uv, res, t, age);
+  float ember = fireEmber(uv, res, t, heat, age);
   // A heat ramp through the inks: the first at the tips and edges, the last
   // in the base. Embers start hot and cool as they climb.
   float x = smoothstep(0.05, 1.0, heat);
@@ -210,120 +230,253 @@ const useBoxSize = (ref: { current: HTMLElement | null }) => {
   return size;
 };
 
-interface Tongue {
-  /** Centre of the base, in box heights from the left. */
-  readonly x: number;
-  /** Half the width of the base, in box heights. */
-  readonly half: number;
-  /** Height of the tip above the edge, in box heights. */
-  readonly tall: number;
-  /** How far the tip sits to the side of the base, in box heights. */
-  readonly lean: number;
-  /** Seeds the tongue's shape and whether a lick tears off above it. */
-  readonly seed: number;
+// GLSL's simplex noise from the engine, in TypeScript, so the fallback can
+// trace the same flames the shader draws.
+const C0 = 0.211_324_865_405_187;
+const C1 = 0.366_025_403_784_439;
+const C2 = -0.577_350_269_189_626;
+const C3 = 0.024_390_243_902_439;
+const mod289 = (x: number) => x - Math.floor(x / 289) * 289;
+const permute = (x: number) => mod289((x * 34 + 1) * x);
+const fract = (x: number) => x - Math.floor(x);
+
+const noiseCorner = (p: number, x: number, y: number) => {
+  let m = Math.max(0.5 - x * x - y * y, 0);
+  m *= m;
+  m *= m;
+  const g = 2 * fract(p * C3) - 1;
+  const h = Math.abs(g) - 0.5;
+  const a0 = g - Math.floor(g + 0.5);
+  m *= 1.792_842_914_001_59 - 0.853_734_720_953_14 * (a0 * a0 + h * h);
+  return m * (a0 * x + h * y);
+};
+
+const snoise = (vx: number, vy: number) => {
+  const skew = (vx + vy) * C1;
+  const ix = Math.floor(vx + skew);
+  const iy = Math.floor(vy + skew);
+  const unskew = (ix + iy) * C0;
+  const x0 = vx - ix + unskew;
+  const y0 = vy - iy + unskew;
+  const i1x = x0 > y0 ? 1 : 0;
+  const i1y = 1 - i1x;
+  const px = mod289(ix);
+  const py = mod289(iy);
+  return (
+    130 *
+    (noiseCorner(permute(permute(py) + px), x0, y0) +
+      noiseCorner(
+        permute(permute(py + i1y) + px + i1x),
+        x0 + C0 - i1x,
+        y0 + C0 - i1y
+      ) +
+      noiseCorner(permute(permute(py + 1) + px + 1), x0 + C2, y0 + C2))
+  );
+};
+
+interface FlameShape {
+  /** Box width over height. */
+  readonly aspect: number;
+  readonly height: number;
+  readonly scale: number;
+  readonly spread: number;
+  readonly wind: number;
+  /** The shader time of the still frame. */
+  readonly time: number;
+}
+
+/** `fireProfile` from the shader. */
+const flameProfile = (x: number, { aspect, spread }: FlameShape) => {
+  const across = x / Math.max(spread * 0.5 * aspect, 1e-3);
+  const gathered = smooth(0.85, 1, spread);
+  return clamp(1 - across * across, 0, 1) * (1 - gathered) + gathered;
+};
+
+const ridge = (n: number) => Math.sqrt(n * n + 0.0225) - 0.15;
+
+/**
+ * `fireHeat` from the shader at one point: x across the box in box heights,
+ * 0 in the middle, y up from the burning edge.
+ */
+const flameHeat = (bx: number, by: number, shape: FlameShape) => {
+  const { height, scale, time: t, wind } = shape;
+  const reach = Math.max(height, 0.05);
+  const h = by / reach;
+  const s = 2.8 * scale;
+  let x = bx - wind * 0.22 * by * (0.6 + 0.8 * h);
+  x += (0.05 / scale) * h * snoise(x * s * 0.5 + 4.1, by * s * 0.45 - t * 0.36);
+  const big = 1 - ridge(snoise(x * s * 0.55, t * 0.18));
+  const small = 1 - ridge(snoise(x * s * 1.25 + 9.1, t * 0.25 + 3));
+  const profile = flameProfile(bx, shape);
+  const crown =
+    (0.29 + 0.58 * big ** 2.5 + 0.22 * small * small) * (0.12 + 0.88 * profile);
+  const qx = x * s;
+  const qy = (by * s) / (0.45 + 0.55 * reach);
+  const lick =
+    (0.7 * snoise(qx * 1.1, qy * 0.5 - t * 0.6) +
+      0.1 * snoise(qx * 2 + 7.1, qy - t * 0.72 + 2.3)) *
+    (0.08 + 0.34 * smooth(0, 0.7, h));
+  return 1 - h / crown - (1 - profile) * (1.15 + 1.5 * h) + lick;
+};
+
+/**
+ * The fallback's layers: the heat each one's edge follows, from the outer
+ * flame in the first ink to the core in the last, and its opacity with one
+ * ink or several. With one ink, the layers step up in opacity instead, as
+ * the shader's dots get denser.
+ */
+const FLAME_LAYERS = [
+  { heat: 0, level: 0, mono: 0.5, multi: 0.92 },
+  { heat: 0.4, level: 0.5, mono: 0.72, multi: 0.95 },
+  { heat: 0.72, level: 1, mono: 0.92, multi: 1 },
+] as const;
+
+/** Rows sampled up each column of the still frame. */
+const FLAME_ROWS = 64;
+
+type Point = readonly [x: number, y: number];
+
+/** A smooth path through `points` (Catmull-Rom as cubic Béziers), y down. */
+const smoothPath = (points: readonly Point[]) =>
+  points
+    .slice(1)
+    .map((point, index) => {
+      const p0 = points[index - 1] ?? points[index] ?? point;
+      const p1 = points[index] ?? point;
+      const p3 = points[index + 2] ?? point;
+      return `C${fixed(p1[0] + (point[0] - p0[0]) / 6)} ${fixed(p1[1] + (point[1] - p0[1]) / 6)} ${fixed(point[0] - (p3[0] - p1[0]) / 6)} ${fixed(point[1] - (p3[1] - p1[1]) / 6)} ${fixed(point[0])} ${fixed(point[1])}`;
+    })
+    .join("");
+
+interface FlameOutline {
+  /** One closed path per entry of `FLAME_LAYERS`, outer first. */
+  readonly layers: readonly string[];
+  /** Licks torn off above the flames, as one path. */
+  readonly licks: string;
+  /** Height of the outer edge above each column, for placing embers. */
+  readonly top: (x: number) => number;
 }
 
 /**
- * The tongues along the edge: one every `gap` box heights, of varied
- * heights, lower towards the sides of a fire with `spread` below 1, and
- * leaning with the wind as the shader's do.
+ * Traces the shader's still frame: up each column of the box, the height
+ * where the heat first drops below each layer's level, and any lick that
+ * burns again above the flame. Neighbouring columns join into smooth
+ * outlines, so tongues keep the shader's uneven spacing, curved sides and
+ * shared bases, and each inner layer follows its own contour.
  */
-const fallbackTongues = ({
-  aspect,
-  height,
-  scale,
-  spread,
-  wind,
-}: {
-  aspect: number;
-  height: number;
-  scale: number;
-  spread: number;
-  wind: number;
-}): Tongue[] => {
-  const gap = 0.15 / scale;
-  const count = Math.ceil(aspect / gap) + 2;
-  const half = Math.max((spread * aspect) / 2, 1e-3);
-  return Array.from({ length: count }, (_, index): Tongue[] => {
-    const x = (index - 0.5 + 0.5 * (fallbackHash(index, 1) - 0.5)) * gap;
-    const across = (x - aspect / 2) / half;
-    const profile =
-      clamp(1 - across * across, 0, 1) * (1 - smooth(0.85, 1, spread)) +
-      smooth(0.85, 1, spread);
-    if (profile < 0.15) {
-      return [];
+const traceFlames = (shape: FlameShape): FlameOutline => {
+  const columns = Math.max(24, Math.round(shape.aspect * 72));
+  const step = 1 / FLAME_ROWS;
+  const tops = FLAME_LAYERS.map((): number[] => []);
+  const islands: ({ low: number; high: number } | null)[] = [];
+  for (let column = 0; column < columns; column += 1) {
+    const bx = (column / (columns - 1) - 0.5) * shape.aspect;
+    const heats = Array.from({ length: FLAME_ROWS + 1 }, (_, row) =>
+      flameHeat(bx, row * step, shape)
+    );
+    // Where the heat first falls below `level`, between two samples.
+    const crossing = (level: number) => {
+      const row = heats.findIndex((heat) => heat < level);
+      if (row <= 0) {
+        return row === 0 ? 0 : 1;
+      }
+      const above = heats[row] ?? level;
+      const below = heats[row - 1] ?? level;
+      return (row - 1 + (below - level) / (below - above)) * step;
+    };
+    for (const [index, layer] of FLAME_LAYERS.entries()) {
+      tops[index]?.push(crossing(layer.heat));
     }
-    // Alternate tall and short, with some jitter, so the crown never
-    // reads as a row of equal teeth.
-    const rank = index % 2 === 0 ? 0.62 : 0.42;
-    const tall =
-      height * (rank + 0.5 * fallbackHash(index, 2)) * (0.1 + 0.9 * profile);
-    return [
-      {
-        half: gap * (0.62 + 0.3 * fallbackHash(index, 3)),
-        lean: wind * 0.22 * tall * 1.2,
-        seed: fallbackHash(index, 4),
-        tall,
-        x,
-      },
-    ];
-  }).flat();
+    // One lick per column at most: the first run of heat above zero over
+    // the flame's edge. A lick that nearly touches the flame joins it.
+    const edge = Math.ceil((tops[0]?.at(-1) ?? 1) / step);
+    const start = heats.findIndex((heat, row) => row > edge && heat > 0);
+    const end =
+      start === -1
+        ? -1
+        : heats.findIndex((heat, row) => row > start && heat <= 0);
+    const high = (end < 0 ? FLAME_ROWS : end) * step;
+    const low = (start - 0.5) * step;
+    if (start !== -1 && start - edge <= 2) {
+      tops[0]?.splice(-1, 1, high);
+      islands.push(null);
+    } else {
+      islands.push(start === -1 ? null : { high, low });
+    }
+  }
+  const xAt = (column: number) => (column / (columns - 1)) * shape.aspect;
+  const layers = tops.map((heights) => {
+    // Fill notches one column wide, which the dither would show as a
+    // scratch, not a gap, then soften the outline a little.
+    const filled = heights.map((y, column) =>
+      Math.max(y, Math.min(heights[column - 1] ?? y, heights[column + 1] ?? y))
+    );
+    const points = filled.map(
+      (y, column): Point => [
+        xAt(column),
+        1 - ((filled[column - 1] ?? y) + 2 * y + (filled[column + 1] ?? y)) / 4,
+      ]
+    );
+    const [first] = points;
+    return first
+      ? `M0 1.01L${fixed(first[0])} ${fixed(first[1])}${smoothPath(points)}L${fixed(shape.aspect)} 1.01Z`
+      : "";
+  });
+  // Neighbouring columns with a lick join into one; a lick under three
+  // columns wide is a sliver the dither would barely show, so it is left
+  // out.
+  const licks: string[] = [];
+  let run: { column: number; low: number; high: number }[] = [];
+  const close = () => {
+    if (run.length > 2) {
+      const upper = run.map(
+        ({ column, high }): Point => [xAt(column), 1 - high]
+      );
+      const lower = run
+        .toReversed()
+        .map(({ column, low }): Point => [xAt(column), 1 - low]);
+      const [first] = upper;
+      const [turn] = lower;
+      if (first && turn) {
+        licks.push(
+          `M${fixed(first[0])} ${fixed(first[1])}${smoothPath(upper)}L${fixed(turn[0])} ${fixed(turn[1])}${smoothPath(lower)}Z`
+        );
+      }
+    }
+    run = [];
+  };
+  for (const [column, island] of islands.entries()) {
+    const last = run.at(-1);
+    if (
+      !island ||
+      (last && (island.low > last.high || island.high < last.low))
+    ) {
+      close();
+    }
+    if (island) {
+      run.push({ column, ...island });
+    }
+  }
+  close();
+  const outer = tops[0] ?? [];
+  return {
+    layers,
+    licks: licks.join(""),
+    top: (x) =>
+      outer[
+        clamp(Math.round((x / shape.aspect) * (columns - 1)), 0, columns - 1)
+      ] ?? 0,
+  };
 };
-
-/**
- * One flame tongue as a closed path, in box heights with y down and the
- * edge at y = 1: an S-curve up each side to a pointed, leaning tip.
- * `width` and `length` shrink it for the inner layers.
- */
-const tonguePath = (tongue: Tongue, width: number, length: number) => {
-  const w = tongue.half * width;
-  const h = tongue.tall * length;
-  const tipX = tongue.x + tongue.lean * length;
-  const tipY = 1 - h;
-  const bend = (tongue.seed - 0.5) * w * 0.8;
-  return [
-    `M${fixed(tongue.x - w)} 1`,
-    `C${fixed(tongue.x - w * 1.05)} ${fixed(1 - h * 0.38)} ${fixed(tipX - w * 0.15 + bend)} ${fixed(1 - h * 0.62)} ${fixed(tipX)} ${fixed(tipY)}`,
-    `C${fixed(tipX + w * 0.3 + bend)} ${fixed(1 - h * 0.55)} ${fixed(tongue.x + w * 1.05)} ${fixed(1 - h * 0.42)} ${fixed(tongue.x + w)} 1`,
-    "Z",
-  ].join("");
-};
-
-/** A small lick torn off above a tongue: a sliver pointing up, leaning with it. */
-const lickPath = (tongue: Tongue) => {
-  const w = tongue.half * 0.16;
-  const h = tongue.tall * 0.22;
-  const x = tongue.x + tongue.lean * 1.3;
-  const base = 1 - tongue.tall * 1.06;
-  const tipX = x + tongue.lean * 0.4 + w * (tongue.seed - 0.5);
-  return [
-    `M${fixed(x - w)} ${fixed(base)}`,
-    `C${fixed(x - w)} ${fixed(base - h * 0.45)} ${fixed(tipX - w * 0.2)} ${fixed(base - h * 0.75)} ${fixed(tipX)} ${fixed(base - h)}`,
-    `C${fixed(tipX + w * 0.4)} ${fixed(base - h * 0.6)} ${fixed(x + w)} ${fixed(base - h * 0.35)} ${fixed(x + w)} ${fixed(base)}`,
-    `C${fixed(x + w)} ${fixed(base + w * 0.7)} ${fixed(x - w)} ${fixed(base + w * 0.7)} ${fixed(x - w)} ${fixed(base)}`,
-    "Z",
-  ].join("");
-};
-
-/**
- * Nested flame layers, from the outer tongue in the first ink to the core
- * in the last. `level` places a layer on the ink ramp. With one ink, the
- * layers step up in opacity instead, as the shader's dots get denser.
- */
-const FLAME_LAYERS = [
-  { length: 1, level: 0, mono: 0.5, multi: 0.92, width: 1 },
-  { length: 0.68, level: 0.5, mono: 0.72, multi: 0.95, width: 0.7 },
-  { length: 0.38, level: 1, mono: 0.92, multi: 1, width: 0.44 },
-] as const;
 
 /** Embers per unit of `embers` across a 16:9 box. */
 const EMBERS_PER_UNIT = 9;
 
 /**
- * A static SVG stand-in shown without WebGL: the same row of leaning,
- * tapering tongues, each drawn as three nested layers from the tip colour
- * to the core colour, a hot band along the edge, a few torn-off licks and
- * embers above, in the same colours.
+ * A static SVG stand-in shown without WebGL: the shader's own still frame,
+ * traced. The flames are three nested layers from the tip colour to the
+ * core colour, each following the contour of its own heat, with the licks
+ * torn off above them and embers clear of them, in the same colours.
  */
 const FireFallback = ({
   palette,
@@ -334,6 +487,7 @@ const FireFallback = ({
   embers,
   edge,
   intensity,
+  time,
 }: {
   palette: DitherPalette;
   height: number;
@@ -343,6 +497,7 @@ const FireFallback = ({
   embers: number;
   edge: FireEdge;
   intensity: number;
+  time: number;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const box = useBoxSize(ref) ?? FIRST_BOX;
@@ -354,27 +509,25 @@ const FireFallback = ({
   const mono = inks.length === 1;
   const inkAt = (level: number) =>
     inks[Math.round(level * (inks.length - 1))] ?? ink;
-  const tongues = fallbackTongues({ aspect, height, scale, spread, wind });
-  const licks = tongues.filter((tongue) => tongue.seed > 0.7);
+  const outline = useMemo(
+    () => traceFlames({ aspect, height, scale, spread, time, wind }),
+    [aspect, height, scale, spread, time, wind]
+  );
   const embered = Array.from(
     { length: Math.round(EMBERS_PER_UNIT * embers * (aspect / (16 / 9))) },
     (_, index) => {
       const age = fallbackHash(index, 6);
       const across = (fallbackHash(index, 5) - 0.5) * spread * 0.85;
       const rise = height * (0.5 + 1.2 * age);
-      return {
-        age,
-        key: index,
-        x: aspect * (0.5 + across) + wind * 0.22 * rise,
-        y: 1 - rise,
-      };
+      const x = aspect * (0.5 + across) + wind * 0.22 * rise;
+      return { age, key: index, rise, x };
     }
-  ).filter((ember) => ember.y > 0.01);
+  ).filter(
+    (ember) => ember.rise < 0.99 && ember.rise > outline.top(ember.x) + 0.04
+  );
   // An ember about five CSS pixels across, in box heights.
   const emberRadius = 2.5 / box.height;
   const half = (spread * aspect) / 2;
-  // Along a whole burning edge the hot bed runs off both sides of the box.
-  const bed = spread >= 0.85 ? aspect / 2 + 0.05 : half * 0.92;
   return (
     <div
       ref={ref}
@@ -397,7 +550,7 @@ const FireFallback = ({
               x1="0"
               x2="0"
               y1="1"
-              y2={fixed(1 - height * layer.length * 1.1)}
+              y2={fixed(1 - height * (1.1 - layer.heat * 0.6))}
             >
               <stop
                 offset="0"
@@ -432,38 +585,23 @@ const FireFallback = ({
             ry={fixed(height * 1.1)}
             fill={`url(#${id}-glow)`}
           />
-          {licks.map((tongue) => (
-            <path
-              key={`lick-${tongue.x}`}
-              d={lickPath(tongue)}
-              style={{ fill: inkAt(0) }}
-              opacity={mono ? 0.4 : 0.75}
-            />
-          ))}
+          <path
+            d={outline.licks}
+            fill={`url(#${id}-layer-0)`}
+            opacity={mono ? 0.8 : 1}
+          />
           {FLAME_LAYERS.map((layer, index) => (
             <path
               key={layer.level}
-              d={tongues
-                .map((tongue) => tonguePath(tongue, layer.width, layer.length))
-                .join("")}
+              d={outline.layers[index]}
               fill={`url(#${id}-layer-${index})`}
             />
           ))}
-          {/* The hot bed along the edge, in the core colour. */}
-          <rect
-            x={fixed(aspect / 2 - bed)}
-            y={fixed(1 - height * 0.1)}
-            width={fixed(bed * 2)}
-            height={fixed(height * 0.1 + 0.01)}
-            rx={fixed(height * 0.05)}
-            style={{ fill: ink }}
-            opacity={mono ? 0.9 : 1}
-          />
           {embered.map((ember) => (
             <circle
               key={ember.key}
               cx={fixed(ember.x)}
-              cy={fixed(ember.y)}
+              cy={fixed(1 - ember.rise)}
               r={fixed(emberRadius)}
               style={{ fill: inkAt(1 - ember.age) }}
               opacity={fixed(1 - 0.5 * ember.age)}
@@ -527,6 +665,7 @@ export const Fire = ({
           embers={sparks}
           edge={edge}
           intensity={peak}
+          time={stillTime}
         />
       }
     />
