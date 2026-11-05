@@ -98,17 +98,24 @@ float galaxyEdgeOn() {
   return smoothstep(0.5, 0.85, 1.0 - galaxyCos);
 }
 
-// Light into tone. Light adds up past 1 near the core, so a soft exposure
-// curve rolls it off instead of clipping: only the very centre reaches
-// solid ink, and everything around it keeps stepping down through the
-// dither's tones.
+// Light into tone, with one curve for the bulge and a steeper one for the
+// disc. The bulge's light adds up past 1, so its soft exposure rolls off
+// instead of clipping: only the very centre reaches solid ink, and the
+// glow around it steps down smoothly through the dither's tones. The
+// disc's curve has a toe, so the faint light between the arms stays
+// paper and the gaps read dark.
 float galaxyExpose(float light) {
   return 1.0 - exp(-1.7 * light);
 }
 
+float galaxyExposeDisc(float light) {
+  return pow(1.0 - exp(-1.6 * light), 1.7);
+}
+
 // The light at view point v, already dimmed by the dust in front of it:
-// x from the disc and its arms, y from the bulge.
-vec2 galaxyLight(vec2 v, float t) {
+// x from the disc and its arms, y from the bulge. cell is the size of one
+// dot, in disc radii.
+vec2 galaxyLight(vec2 v, float t, float cell) {
   // Into the plane of the disc. Mirroring x flips the spiral and the spin.
   vec2 g = vec2(v.x * galaxySpin, v.y / galaxyCos);
   float r = length(g);
@@ -120,30 +127,41 @@ vec2 galaxyLight(vec2 v, float t) {
   vec2 m = galaxyTurn(turn) * g;
 
   // The arms: logarithmic spirals, bent by a slow smooth warp so they
-  // don't trace perfect curves.
-  float warp = snoise(m * 1.1 + vec2(3.7, 1.9));
-  float psi = galaxyArms * (theta + turn - galaxyTwist * 1.7 * log(r + 0.05)) + warp * 0.6;
-  // Phase from the nearest crest, positive on the inner flank.
+  // don't trace perfect curves. The warp eases off towards the rim, so an
+  // arm runs steadily outwards to its tip instead of dipping back inside
+  // the reach and leaving a loose blob past its point.
+  float warp = snoise(m * 1.1 + vec2(3.7, 1.9)) * (1.0 - 0.8 * smoothstep(0.55, 1.05, r));
+  float wind = galaxyTwist * 1.7;
+  float psi = galaxyArms * (theta + turn - wind * log(r + 0.05)) + warp * 0.6;
+  // Phase from the nearest crest, positive on the inner flank. Crests are
+  // 2 pi apart, so an arm and its gap share that span.
   float d = mod(psi + 3.14159265, 6.28318531) - 3.14159265;
-  // Each arm is a broad smooth ramp, steeper on the inner flank. Its
-  // crest stays bright to the end, and the arm ends by narrowing to a
-  // rounded point at the reach, so it never breaks up into loose dots.
-  float tip = clamp((r - 0.7) / ${(REACH - 0.7).toFixed(2)}, 0.0, 1.0);
-  float width = mix(1.25, 0.95, smoothstep(-0.4, 0.4, d)) / (1.0 + 0.8 * smoothstep(0.3, 1.0, r));
+  // How fast the phase changes across the arm, per disc radius, so a
+  // width in phase can be turned into a width on screen.
+  float across = galaxyArms * sqrt(1.0 / (r * r + 0.0025) + wind * wind / ((r + 0.05) * (r + 0.05)));
+  // Each arm is a smooth ramp, steeper on the inner flank, that narrows
+  // outwards and ends in a rounded point at the reach, so it never breaks
+  // up into loose dots. Narrow shoulders leave dark gaps between the arms.
+  float tip = clamp((r - 0.72) / 0.42, 0.0, 1.0);
+  float width = mix(1.05, 0.78, smoothstep(-0.4, 0.4, d)) / (1.0 + 0.9 * smoothstep(0.3, 1.0, r));
   width *= sqrt(1.0 - tip * tip) + 0.001;
   // Seen nearly edge-on, every line of sight crosses several arms, so they
   // blur into a smooth lens.
   float blur = 0.85 * galaxyEdgeOn();
-  // A dense crest inside a soft, faint halo.
-  float body = exp(-d * d / (width * width)) + 0.22 * exp(-d * d / (3.0 * width * width));
+  // A dense crest inside a soft halo that thins out to single dots. It
+  // narrows with the arm, so it never reaches across the gap to the next.
+  float body = exp(-d * d / (width * width)) + 0.16 * exp(-d * d / (2.6 * width * width));
   float arm = mix(body, 0.65 * exp(-r * 1.6), blur);
-  // A wide, faint wing: the soft glow that spills between the arms. It
-  // stays in the inner disc, so nothing faint trails past the arm tips.
-  float wing = exp(-d * d / 3.0) * (1.0 - smoothstep(0.45, 0.95, r));
-  // The dust lane runs along the inner flank, with a fainter ridge of light
-  // inside it, so it reads as a dark thread through the arm.
-  float lane = exp(-(d - 0.55) * (d - 0.55) / (0.05 * width));
-  float ridge = exp(-(d - 0.95) * (d - 0.95) / (0.09 * width)) * (1.0 - blur);
+  // The dust lane runs along the inner flank, partway down the shoulder,
+  // with a thin ridge of light inside it, so it reads as a dark thread
+  // through the arm. Its width is held near two dots on screen, so it
+  // stays crisp near the core and doesn't smear out towards the tips.
+  float laneAt = 0.5 * width + 0.08;
+  // A flat dark core with soft edges, so it stays an unbroken line.
+  float laneWidth = clamp(1.4 * cell * across, 0.1, 0.4 * width + 0.06);
+  float lane = 1.0 - smoothstep(0.55, 1.25, abs(d - laneAt) / laneWidth);
+  float ridgeAt = laneAt + 1.6 * laneWidth;
+  float ridge = exp(-(d - ridgeAt) * (d - ridgeAt) / (0.6 * laneWidth * laneWidth)) * (1.0 - blur);
 
   // Slow swells of light along the arms, and knots of young stars: small
   // round patches on the crests. Both turn with the arms, and both calm
@@ -154,26 +172,27 @@ vec2 galaxyLight(vec2 v, float t) {
   // The arms grow out of the bulge's glow rather than cutting across it.
   // It goes dark just before the arm narrows past a few dots, so the tip
   // ends in a clean point instead of a thin trail of single dots.
-  float reach = smoothstep(0.08, 0.36, r) * (1.0 - smoothstep(1.08, 1.17, r));
+  float reach = smoothstep(0.08, 0.32, r) * (1.0 - smoothstep(1.08, 1.17, r));
   // Brightest where the arms leave the bulge, dimming outwards.
-  float crest = (1.15 - 0.55 * smoothstep(0.2, 1.1, r)) * (0.88 + 0.12 * clump);
-  float light = ((arm + 0.3 * ridge) * crest + 0.04 * wing) * reach
-    + 0.18 * exp(-r * 4.0) * (1.0 - smoothstep(0.6, 1.0, r))
-    + 0.2 * knot * arm * arm * reach;
+  float crest = (2.4 - 1.1 * smoothstep(0.2, 1.1, r)) * (0.86 + 0.14 * clump);
+  float light = (arm + 0.25 * ridge * exp(-d * d / (4.0 * width * width))) * crest * reach
+    + 0.12 * exp(-r * 5.0) * (1.0 - smoothstep(0.5, 0.9, r))
+    + 0.35 * knot * arm * arm * reach;
 
-  // The bulge: a small bright centre on a wide glowing shoulder that runs
-  // out into the disc.
+  // The bulge: a solid centre on a wide glowing shoulder that fades out
+  // into the inner disc.
   float rb = galaxyBulgeRadius(v);
-  float bulge = 1.4 * exp(-rb * rb * 120.0) + 1.1 * exp(-rb * 7.0) * (1.0 - smoothstep(0.35, 0.7, rb));
+  float bulge = (2.4 * exp(-rb * rb * 36.0) + 0.3 * exp(-rb * 8.0)) * (1.0 - smoothstep(0.32, 0.62, rb));
 
-  // Dust lanes along the arms, reaching into the bulge, and a dusty ring
-  // whose near half, seen at a slant, lies in front of the bulge and the
-  // far side of the disc. The ring only shows past about 50 degrees.
+  // Dust lanes along the arms, from the edge of the bulge out past the
+  // last bright stretch, and a dusty ring whose near half, seen at a
+  // slant, lies in front of the bulge and the far side of the disc. The
+  // ring only shows past about 50 degrees.
   // (smoothstep needs ascending edges, so the near half is 1 minus it.)
-  float lanes = lane * (1.0 - blur) * smoothstep(0.12, 0.26, r) * (1.0 - smoothstep(0.7, 1.0, r));
+  float lanes = lane * (1.0 - blur) * smoothstep(0.08, 0.18, r) * (1.0 - smoothstep(0.88, 1.06, r)) * (1.0 - tip * tip);
   float near = (1.0 - smoothstep(-0.04, 0.0, g.y)) * smoothstep(0.35, 0.8, 1.0 - galaxyCos);
   float ring = smoothstep(0.1, 0.28, r) * (1.0 - smoothstep(0.6, 0.95, r));
-  float veil = clamp((lanes + near * ring * 0.8) * galaxyDust * (0.9 + 0.1 * clump), 0.0, 0.92);
+  float veil = clamp((lanes * 1.15 + near * ring * 0.8) * galaxyDust * (0.92 + 0.08 * clump), 0.0, 0.96);
 
   // Edge-on, the broad veil gives way to the thin lane across the core, so
   // the bulge still glows below it.
@@ -184,14 +203,20 @@ vec2 galaxyLight(vec2 v, float t) {
   // gains enough to keep outshining the arms that cross in front of it.
   light *= 1.0 + 1.2 * galaxyEdgeOn();
   bulge *= 1.0 + 0.8 * galaxyEdgeOn();
-  return vec2(light * (1.0 - veil), bulge * (1.0 - veil * (1.0 - galaxyEdgeOn()) * 0.6));
+  return vec2(light * (1.0 - veil), bulge * (1.0 - veil * (1.0 - galaxyEdgeOn()) * 0.92));
+}
+
+// The size of one dot, in disc radii.
+float galaxyCell(vec2 res) {
+  return ${REACH.toFixed(2)} / (galaxySize * min(res.x, res.y));
 }
 `;
 
 const FIELD = `${GEOMETRY}
 float field(vec2 uv, vec2 res, float t) {
   vec2 v = galaxyView(uv, res);
-  vec2 light = galaxyLight(v, t);
+  float cellSize = galaxyCell(res);
+  vec2 light = galaxyLight(v, t, cellSize);
 
   // Nearly edge-on, the dense inner ring on the near side reads as one
   // crisp dark lane across the core, as in the Sombrero galaxy, with bulge
@@ -200,13 +225,16 @@ float field(vec2 uv, vec2 res, float t) {
   // the disc or small the box.
   float across = abs(v.x);
   float laneY = -galaxyCos * sqrt(max(0.0324 - across * across, 0.0));
-  float cellSize = ${REACH.toFixed(2)} / (galaxySize * min(res.x, res.y));
   float laneD = abs(v.y - laneY) / max(0.022 + 0.07 * galaxyCos, 1.75 * cellSize);
   float midplane = 1.0 - smoothstep(0.55, 1.0, laneD);
   midplane *= 1.0 - smoothstep(0.34, 0.7, across);
   float band = clamp(galaxyEdgeOn() * midplane * galaxyDust * 1.2, 0.0, 0.97);
 
-  float glow = galaxyExpose((light.x + light.y) * (1.0 - band));
+  // The disc and the bulge each take their own curve, then add like light
+  // through a screen, so neither clips the other.
+  float disc = galaxyExposeDisc(light.x * (1.0 - band));
+  float core = galaxyExpose(light.y * (1.0 - band));
+  float glow = 1.0 - (1.0 - disc) * (1.0 - core);
 
   return max(glow, galaxyStar(uv, res).x);
 }
@@ -225,7 +253,7 @@ float galaxyBayer(vec2 cell) {
 
 vec3 colorField(vec2 uv, vec2 res, float t) {
   vec2 v = galaxyView(uv, res);
-  vec2 light = galaxyLight(v, t);
+  vec2 light = galaxyLight(v, t, galaxyCell(res));
   // The last palette colour where the bulge outshines the disc, so its glow
   // fades out in that colour, and the first ink colour on the arms, even
   // where they cross the core. Each dot takes one palette colour, picked
@@ -233,9 +261,10 @@ vec3 colorField(vec2 uv, vec2 res, float t) {
   // pattern, not noise or a muddy blend.
   // The floor keeps the bulge's faint tail from tinting the dark outskirts.
   float share = light.y / (light.x + light.y + 0.05);
-  // The handover is wide, so the core's colour thins out through the
-  // arms' instead of meeting it at an edge.
-  float x = smoothstep(0.15, 0.75, share) * galaxyInks;
+  // The handover is narrow, a short ordered ramp at the bulge's edge, so
+  // it reads as the core's own glow rather than a checkerboard. A palette
+  // with a middle colour steps through it on the way.
+  float x = smoothstep(0.38, 0.62, share) * galaxyInks;
   float pick = floor(x) + step(galaxyBayer(floor(uv * res)) + 0.03125, fract(x));
   // Each background star takes one palette colour, whole.
   vec2 star = galaxyStar(uv, res);
@@ -251,6 +280,22 @@ const CENTRE: GalaxyPoint = [0.5, 0.5];
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
+
+/** A prop as given, or its default when it isn't a finite number. */
+const finite = (value: number, fallback: number) =>
+  Number.isFinite(value) ? value : fallback;
+
+/** The defaults of the numeric props. */
+const DEFAULTS = {
+  angle: 70,
+  arms: 2,
+  dust: 0.8,
+  size: 0.48,
+  stars: 1,
+  stillTime: 8,
+  tilt: 55,
+  twist: 1,
+} as const;
 
 /** GLSL's smoothstep, for the fallback's profiles. */
 const smooth = (lo: number, hi: number, x: number) => {
@@ -268,20 +313,24 @@ const ARM_STEPS = 72;
 const ARM_INNER = 0.06;
 const ARM_OUTER = REACH;
 
-/** The shader's soft exposure: light in, tone out. */
+/** The shader's soft exposure for the bulge: light in, tone out. */
 const expose = (light: number) => 1 - Math.exp(-1.7 * light);
+
+/** The shader's steeper curve for the disc, which keeps faint light paper. */
+const exposeDisc = (light: number) => (1 - Math.exp(-1.6 * light)) ** 1.7;
 
 /**
  * Soft arms as stacked ribbons, widest and faintest first. `width` is the
  * half-width in the shader's arm phase (its crest is half as bright about
- * 0.9 away, and its faint halo reaches about 2), `alpha` the share of the arm's brightness each ribbon adds,
- * and `level` how bright the arm is at the ribbon's edge, which picks its
- * colour from a palette of three or more.
+ * 0.75 away, and its faint halo reaches about 1.4), `alpha` the share of
+ * the arm's brightness each ribbon adds, and `level` how bright the arm is
+ * at the ribbon's edge, which picks its colour from a palette of three or
+ * more.
  */
 const ARM_LAYERS = [
-  { alpha: 0.25, level: 0.3, width: 2 },
-  { alpha: 0.4, level: 0.65, width: 1.3 },
-  { alpha: 0.8, level: 1, width: 0.75 },
+  { alpha: 0.22, level: 0.3, width: 1.4 },
+  { alpha: 0.45, level: 0.65, width: 0.95 },
+  { alpha: 0.85, level: 1, width: 0.55 },
 ] as const;
 
 /** Radii where the fallback's gradients sample the shader's profiles. */
@@ -296,32 +345,32 @@ const PROFILE_STOPS = [
  * bright near the tip, where the arm ends by narrowing.
  */
 const armTone = (r: number) =>
-  expose(
-    0.88 *
-      (1.15 - 0.55 * smooth(0.2, 1.1, r)) *
-      smooth(0.08, 0.36, r) *
+  exposeDisc(
+    0.93 *
+      (2.4 - 1.1 * smooth(0.2, 1.1, r)) *
+      smooth(0.08, 0.32, r) *
       (1 - smooth(1.08, 1.17, r))
   );
 
 /** The faint light of the disc between the arms. */
 const discTone = (r: number) =>
-  expose(
-    0.18 * Math.exp(-r * 4) * (1 - smooth(0.6, 1, r)) +
-      0.04 * (1 - smooth(0.45, 0.95, r))
-  );
+  exposeDisc(0.12 * Math.exp(-r * 5) * (1 - smooth(0.5, 0.9, r)));
 
 /**
- * Brightness of the bulge at bulge radius `r`, as in `field`: a small
- * solid centre on a wide shoulder.
+ * Brightness of the bulge at bulge radius `r`, as in `field`: a solid
+ * centre that glows out softly into the inner disc.
  */
 const bulgeTone = (r: number) =>
   expose(
-    1.4 * Math.exp(-r * r * 120) +
-      1.1 * Math.exp(-r * 7) * (1 - smooth(0.35, 0.7, r))
+    (2.4 * Math.exp(-r * r * 36) + 0.3 * Math.exp(-r * 8)) *
+      (1 - smooth(0.32, 0.62, r))
   );
 
 /** Strength of the dust lane along an arm at radius `r`. */
-const laneTone = (r: number) => smooth(0.12, 0.26, r) * (1 - smooth(0.7, 1, r));
+const laneTone = (r: number) => {
+  const tip = clamp((r - 0.72) / 0.42, 0, 1);
+  return smooth(0.08, 0.18, r) * (1 - smooth(0.88, 1.06, r)) * (1 - tip * tip);
+};
 
 /** Strength of the dusty ring at radius `r`. */
 const ringTone = (r: number) =>
@@ -347,8 +396,8 @@ const armPath = ({
   const side = (sign: number) =>
     Array.from({ length: ARM_STEPS + 1 }, (_, step) => {
       const r = ARM_INNER * (ARM_OUTER / ARM_INNER) ** (step / ARM_STEPS);
-      const tip = clamp((r - 0.7) / (ARM_OUTER - 0.7), 0, 1);
-      const taper = Math.sqrt(1 - tip * tip) / (1 + 0.8 * smooth(0.3, 1, r));
+      const tip = clamp((r - 0.72) / 0.42, 0, 1);
+      const taper = Math.sqrt(1 - tip * tip) / (1 + 0.9 * smooth(0.3, 1, r));
       const theta =
         twist * 1.7 * Math.log(r + 0.05) + phase + sign * width * taper;
       return `${fixed(spin * r * Math.cos(theta))} ${fixed(-r * Math.sin(theta))}`;
@@ -462,7 +511,7 @@ const GalaxyFallback = ({
   const band = clamp(edgeOn * dust * 1.2, 0, 0.97) * 0.85;
   // Seen edge-on, the lanes along the arms pile up on the long axis into
   // one hard seam, so they give way to the lane across the core.
-  const lanes = 0.75 * dust * (1 - 0.85 * edgeOn);
+  const lanes = 0.95 * dust * (1 - 0.85 * edgeOn);
   const scale = (outer: number, tone: (r: number) => number, level = 1) =>
     PROFILE_STOPS.filter((r) => r <= outer).map((r) => {
       const { color, opacity } = paint(tone(r), r, level);
@@ -550,6 +599,16 @@ const GalaxyFallback = ({
             filterUnits="userSpaceOnUse"
           >
             <feGaussianBlur stdDeviation="0.025" />
+          </filter>
+          <filter
+            id={`${id}-fine`}
+            x="-1.5"
+            y="-1.5"
+            width="3"
+            height="3"
+            filterUnits="userSpaceOnUse"
+          >
+            <feGaussianBlur stdDeviation="0.006" />
           </filter>
           <radialGradient
             id={`${id}-lane`}
@@ -651,6 +710,10 @@ const GalaxyFallback = ({
                   />
                 ))
               )}
+            </g>
+            {/* The lanes get a finer blur than the arms, so they stay thin
+                dark threads instead of melting into them. */}
+            <g filter={`url(#${id}-fine)`}>
               {lanes > 0 &&
                 phases.map((phase) => (
                   <path
@@ -659,7 +722,7 @@ const GalaxyFallback = ({
                       phase: phase + 0.55 / arms,
                       spin,
                       twist,
-                      width: 0.22 / arms,
+                      width: 0.16 / arms,
                     })}
                     fill={`url(#${id}-lane)`}
                     opacity={fixed(lanes)}
@@ -706,61 +769,70 @@ const GalaxyFallback = ({
  * `absolute inset-0`.
  */
 export const Galaxy = ({
-  arms = 2,
-  twist = 1,
-  tilt = 55,
-  angle = 70,
+  arms = DEFAULTS.arms,
+  twist = DEFAULTS.twist,
+  tilt = DEFAULTS.tilt,
+  angle = DEFAULTS.angle,
   direction = "clockwise",
   center = CENTRE,
-  size = 0.48,
-  dust = 0.8,
-  stars = 1,
+  size = DEFAULTS.size,
+  dust = DEFAULTS.dust,
+  stars = DEFAULTS.stars,
   colorField = false,
   palette = DEFAULT_PALETTE,
-  stillTime = 8,
+  stillTime = DEFAULTS.stillTime,
   style,
   ...props
 }: GalaxyProps) => {
-  const armCount = Math.round(clamp(arms, 2, 5));
-  const leaning = clamp(tilt, 0, 80);
+  // NaN or Infinity from a slider or a parsed string would slip through the
+  // clamps and blank the shader, so each falls back to its default first.
+  const armCount = Math.round(clamp(finite(arms, DEFAULTS.arms), 2, 5));
+  const leaning = clamp(finite(tilt, DEFAULTS.tilt), 0, 80);
+  const turned = finite(angle, DEFAULTS.angle);
   const spin = direction === "counterclockwise" ? -1 : 1;
-  const winding = clamp(twist, 0.3, 2);
-  const disc = Math.max(0.05, size);
-  const dustiness = clamp(dust, 0, 1);
+  const winding = clamp(finite(twist, DEFAULTS.twist), 0.3, 2);
+  const disc = Math.max(0.05, finite(size, DEFAULTS.size));
+  const dustiness = clamp(finite(dust, DEFAULTS.dust), 0, 1);
+  const starCount = clamp(finite(stars, DEFAULTS.stars), 0, 3);
+  const still = finite(stillTime, DEFAULTS.stillTime);
+  const middle: GalaxyPoint = [
+    finite(center[0], CENTRE[0]),
+    finite(center[1], CENTRE[1]),
+  ];
   return (
     <DitherShader
       {...props}
       field={FIELD}
       colorField={colorField ? COLOR_FIELD : undefined}
       palette={palette}
-      stillTime={stillTime}
+      stillTime={still}
       style={{ containerType: "size", ...style }}
       uniforms={{
-        galaxyAngle: angle,
+        galaxyAngle: turned,
         galaxyArms: armCount,
-        galaxyCenter: center,
+        galaxyCenter: middle,
         galaxyCos: Math.max(0.17, Math.cos((leaning * Math.PI) / 180)),
         galaxyDust: dustiness,
         galaxyInks: palette.length - 2,
         galaxySize: disc,
         galaxySpin: spin,
-        galaxyStars: clamp(stars, 0, 3),
+        galaxyStars: starCount,
         galaxyTwist: winding,
       }}
       fallback={
         <GalaxyFallback
           palette={palette}
-          center={center}
+          center={middle}
           size={disc}
           tilt={leaning}
-          angle={angle}
+          angle={turned}
           arms={armCount}
           twist={winding}
           spin={spin}
-          turn={0.07 * stillTime}
+          turn={0.07 * still}
           dust={dustiness}
           colorField={colorField}
-          stars={clamp(stars, 0, 3)}
+          stars={starCount}
         />
       }
     />

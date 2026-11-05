@@ -36,17 +36,17 @@ export function Hero() {
 }
 ```
 
-The galaxy is a flat disc seen at an angle: `tilt` leans it away from you and `angle` turns its long axis on the screen. A solid core glows at the centre and fades softly into the disc. Broad logarithmic arms wind out of it and taper to a point, with knots of bright stars along them, a dark dust lane running through each one's inner edge, and a soft glow spilling between them. Sparse stars sit fixed behind it, spaced evenly, the brightest few drawn as small crosses.
+The galaxy is a flat disc seen at an angle: `tilt` leans it away from you and `angle` turns its long axis on the screen. A solid core glows at the centre and fades softly into the disc. Two bright logarithmic arms wind out of it with dark gaps between them and taper to a point, with knots of bright stars along them and a thin dark dust lane running along each one's inner edge, from the core out to near the tip. Sparse stars sit fixed behind it, spaced evenly, the brightest few drawn as small crosses.
 
 The whole pattern turns as one piece, so the spiral keeps its shape however long the page stays open.
 
-By default the palette maps brightness to colour, from paper to the last colour. Set `colorField` to colour the dots by place instead: the last colour where the core's glow outshines the disc, the first ink colour on the arms, and one palette colour for each background star. Where the two meet, the colours mix in an even ordered pattern.
+By default the palette maps brightness to colour, from paper to the last colour, and the demo draws it in one ink like the other backgrounds. Set `colorField` to colour the dots by place instead: the last colour where the core's glow outshines the disc, the first ink colour on the arms, and one palette colour for each background star. The handover is a short ordered ramp at the edge of the core; a middle colour, as in `["--dither-paper", "blue", "purple", "orange"]`, steps through it on the way.
 
 ## Examples
 
 ### Nearly edge-on
 
-`tilt={76}` lays the disc almost flat, so the arms blur into a smooth bright lens and the dust on the near side cuts a dark lane across the core, with the bulge glowing on both sides of it, as in the Sombrero galaxy. The lane fades in past about 60°; at the default tilt and flatter it stays hidden. Three arms, a tighter `twist` and `colorField` with a four-colour palette give a warm core that passes through purple into cool arms.
+`tilt={76}` lays the disc almost flat, so the arms blur into a smooth bright lens and the dust on the near side cuts a dark lane across the core, with the bulge glowing on both sides of it, as in the Sombrero galaxy. The lane fades in past about 60°; at the default tilt and flatter it stays hidden. Three arms and a tighter `twist` fill the lens out evenly.
 
 <ComponentPreview src="examples/galaxy-edge-on.tsx" size="full" align="stretch">
   <GalaxyEdgeOn />

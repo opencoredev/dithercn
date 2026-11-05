@@ -10,8 +10,6 @@ export default function GalaxyEdgeOn() {
       size={0.5}
       dust={1}
       stars={1.4}
-      colorField
-      palette={["--dither-paper", "blue", "purple", "orange"]}
       className="absolute inset-0"
     />
   );

@@ -5,14 +5,17 @@ import { usePreviewValue } from "@/components/preview-controls";
 import * as knobs from "@/examples/galaxy-controls";
 
 export default function GalaxyDemo() {
+  const tint = usePreviewValue(knobs.tint);
+  const core = usePreviewValue(knobs.core);
+  const colorField = usePreviewValue(knobs.colorField);
   return (
     <Galaxy
-      palette={[
-        "--dither-paper",
-        usePreviewValue(knobs.tint),
-        usePreviewValue(knobs.core),
-      ]}
-      colorField={usePreviewValue(knobs.colorField)}
+      // One ink by default, like the other backgrounds. Colour by place
+      // adds the core's colour as a second ink.
+      palette={
+        colorField ? ["--dither-paper", tint, core] : ["--dither-paper", tint]
+      }
+      colorField={colorField}
       arms={usePreviewValue(knobs.arms)}
       twist={usePreviewValue(knobs.twist)}
       tilt={usePreviewValue(knobs.tilt)}

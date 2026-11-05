@@ -4,21 +4,22 @@ import { color, segmented, slider, toggle } from "@/lib/preview-controls";
 // Knobs for the galaxy main demo, shared by the page and the demo.
 
 export const tint = color({
-  default: "blue",
+  default: "ink",
   id: "color",
-  label: "Arms",
+  label: "Colour",
   options: DITHER_COLOR_NAMES,
 });
 
+// Only used with colorField, which paints the core in its own colour.
 export const core = color({
   default: "orange",
   id: "core",
-  label: "Core",
+  label: "Core colour",
   options: DITHER_COLOR_NAMES,
 });
 
 export const colorField = toggle({
-  default: true,
+  default: false,
   id: "colorField",
   label: "Colour by place",
 });
