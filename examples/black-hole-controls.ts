@@ -11,7 +11,7 @@ export const tint = color({
 });
 
 export const colorField = toggle({
-  default: true,
+  default: false,
   id: "colorField",
   label: "Colour by heat",
 });

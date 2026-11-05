@@ -10,9 +10,10 @@ export default function BlackHoleDemo() {
 
   return (
     <BlackHole
-      // From a dim, cool rim to a white-hot inner edge: the page's
-      // foreground is the hottest colour in either theme.
-      palette={["--dither-paper", toward(tint, 60), tint, "--foreground"]}
+      // The tint thins out to the cool rim, and the hottest gas and the
+      // photon ring are the tint mixed into the page's foreground: warm
+      // white on a dark theme, deep ink on a light one.
+      palette={["--dither-paper", tint, toward(tint, 30, "--foreground")]}
       colorField={usePreviewValue(knobs.colorField)}
       tilt={usePreviewValue(knobs.tilt)}
       direction={usePreviewValue(knobs.direction)}
@@ -20,7 +21,6 @@ export default function BlackHoleDemo() {
       disk={usePreviewValue(knobs.disk)}
       stars={usePreviewValue(knobs.stars)}
       animate={usePreviewValue(knobs.animate)}
-      levels={19}
       className="absolute inset-0"
     />
   );
