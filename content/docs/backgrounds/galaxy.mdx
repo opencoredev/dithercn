@@ -36,17 +36,17 @@ export function Hero() {
 }
 ```
 
-The galaxy is a flat disc seen at an angle: `tilt` leans it away from you and `angle` turns its long axis on the screen. A round bulge glows at the centre, and logarithmic arms wind out of it, with knots of bright stars along them and dark dust lanes on their inner edges. A faint halo surrounds the disc, and sparse stars sit fixed behind it.
+The galaxy is a flat disc seen at an angle: `tilt` leans it away from you and `angle` turns its long axis on the screen. A solid core glows at the centre and fades softly into the disc. Broad logarithmic arms wind out of it and taper to a point, with knots of bright stars along them, a dark dust lane running through each one's inner edge, and a soft glow spilling between them. Sparse stars sit fixed behind it, spaced evenly, the brightest few drawn as small crosses.
 
-The arms turn slowly as one piece, the way a real spiral pattern does, while the stars and dust stream through them, faster near the core than at the rim. That shear is reset out of sight every few seconds, so the spiral keeps its shape however long the page stays open.
+The whole pattern turns as one piece, so the spiral keeps its shape however long the page stays open.
 
-By default the palette maps brightness to colour, from paper to the last colour. Set `colorField` to colour the dots by place instead: the last colour at the core, the first ink colour on the arms, and a random palette colour for each background star.
+By default the palette maps brightness to colour, from paper to the last colour. Set `colorField` to colour the dots by place instead: the last colour where the core's glow outshines the disc, the first ink colour on the arms, and one palette colour for each background star. Where the two meet, the colours mix in an even ordered pattern.
 
 ## Examples
 
 ### Nearly edge-on
 
-`tilt={76}` lays the disc almost flat, so the dust on the near side cuts a dark lane across the core, with the bulge glowing on both sides of it, as in the Sombrero galaxy. The lane fades in past about 60°; at the default tilt and flatter it stays hidden. Three arms, a tighter `twist` and `colorField` with a four-colour palette give a warm core that passes through purple into cool arms.
+`tilt={76}` lays the disc almost flat, so the arms blur into a smooth bright lens and the dust on the near side cuts a dark lane across the core, with the bulge glowing on both sides of it, as in the Sombrero galaxy. The lane fades in past about 60°; at the default tilt and flatter it stays hidden. Three arms, a tighter `twist` and `colorField` with a four-colour palette give a warm core that passes through purple into cool arms.
 
 <ComponentPreview src="examples/galaxy-edge-on.tsx" size="full" align="stretch">
   <GalaxyEdgeOn />
@@ -139,7 +139,7 @@ The galaxy sits high on the right and turns counterclockwise, and the text sits 
     {
       name: "matrix",
       type: '"bayer2" | "bayer4" | "bayer8" | "blue-noise"',
-      default: '"blue-noise"',
+      default: '"bayer4"',
       description: "The threshold pattern. See Dither engine.",
     },
     {
@@ -153,7 +153,7 @@ The galaxy sits high on the right and turns counterclockwise, and the text sits 
       type: "number",
       default: "1",
       description:
-        "How fast it turns. At 1 the arms take about 140 seconds for a full turn.",
+        "How fast it turns. At 1 the galaxy takes about 90 seconds for a full turn.",
     },
     {
       name: "animate",
@@ -175,5 +175,5 @@ The galaxy sits high on the right and turns counterclockwise, and the text sits 
 
 - The galaxy is decorative and hidden from assistive technology. Put real text on top of it, not inside it.
 - With reduced motion turned on, it draws one still frame and stops.
-- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a still SVG of the same tilted spiral, with its arms, bulge, dust and a fixed scatter of stars, in the same colours.
+- It pauses when scrolled out of view or when the tab is hidden, and releases its WebGL context when far offscreen. Without WebGL it shows a still SVG of the same tilted spiral, with its arms, core, dust lanes and a fixed scatter of stars, in the same colours.
 - On a light theme the paper is light and the galaxy is drawn in ink, so the dust lanes read as pale gaps, like a printed negative. Pass a dark first palette colour for a dark sky on any theme.
