@@ -15,7 +15,7 @@ It installs with the shadcn CLI as plain source you own, and works with Claude C
 
 - A dither engine (`lib/dither`): a WebGL shader for anything that moves, SVG and CSS fills for static shapes, image dithering, and PNG, SVG and CSS export
 - An agent skill that teaches your agent to write fields, place a dither on a landing page or dashboard, and check it in light, dark and reduced motion
-- 60 example components across backgrounds, charts, interface, text and images, each a starting point to install and edit
+- 63 example components across backgrounds, charts, interface, text and images, each a starting point to install and edit
 - Colours from your theme: the dither ink and paper map to your `--primary` and `--background`, and switch with light and dark mode
 - Motion, resizing, offscreen pausing and reduced motion handled by the engine
 
