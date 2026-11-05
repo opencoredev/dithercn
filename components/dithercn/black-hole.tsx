@@ -65,6 +65,25 @@ const LOW_THICK = 0.09;
  * it softens the inner edge of the near half into a shaded band.
  */
 const SLAB = 0.06;
+/** How many heights through the slab each cell samples. */
+const SLAB_SAMPLES = 12;
+/** How sharply the gas thins away from the slab's middle plane. */
+const SLAB_FALLOFF = 2.2;
+/** The heights the slab samples, from its top face (1) to its underside (-1). */
+const SLAB_HEIGHTS = Array.from(
+  { length: SLAB_SAMPLES },
+  (_, index) => 1 - (2 * (index + 0.5)) / SLAB_SAMPLES
+);
+/**
+ * How much brighter the slab glows than a single sheet of its gas: seen
+ * nearly edge-on, each cell looks through a long path of it.
+ */
+const SLAB_GLOW = 1.6;
+/** The sum of the samples' weights, so the slab's light keeps its scale. */
+const SLAB_WEIGHT = SLAB_HEIGHTS.reduce(
+  (sum, s) => sum + Math.exp(-SLAB_FALLOFF * s * s),
+  0
+);
 /**
  * How opaque the gas of the near half is, per unit of the disk's profile:
  * dense gas by the inner edge hides the photon ring, the thin gas towards
@@ -243,32 +262,39 @@ float holeLight(vec4 image, float cell, float t) {
   return heat * holeBeam(cos(image.y)) * (1.0 + depth * holeStreaks(image, cell, t));
 }
 
-// The flat disk as a slab with some thickness. Seen at a slant, a cell
-// looks through the slab along a short line across the disk; the share of
-// that line that falls on gas rather than in the hole in the middle sets
-// how much the cell shows. That softens the inner edge of the near half by
-// the same height on screen all along it, so it reads as a shaded band
-// that keeps the edge's slight bow. Returns the light of the near half,
-// the light of the far half, and how much gas of the near half the cell
-// looks through. At the sides, past the hole, the two shares add up to
-// the whole disk, so no seam runs along the horizon.
+// The flat disk as a slab of glowing gas with some thickness, thicker
+// towards the rim. Seen at a slant, a cell looks through the slab along a
+// short line, front to back, from its top face to its underside. The line
+// is sampled at several heights, densest at the middle plane; each sample
+// lands on the disk at its own radius, so the near half's inner edge keeps
+// its bow and both its edges shade off softly instead of stopping at a
+// line. Samples on the near side of the hole add their glow and dim what
+// lies behind, as gas does; samples on the far side add up to the flat far
+// half. Returns the near half's light, the far half's light, and how much
+// of what lies behind the near half shows through it. At the sides, past
+// the hole, the two halves share out the samples, so no seam runs along
+// the horizon.
 vec3 holeSlab(vec2 v, float cell, float t) {
-  float spread = ${glsl(SLAB)} * holeSin + 0.5 * cell;
-  // How far the slab's middle plane is above or below the edge of the hole.
-  float hole = holeCos * sqrt(max(${glsl(INNER + 0.012)} * ${glsl(INNER + 0.012)} - v.x * v.x, 0.0));
-  float nearShare = 1.0 - smoothstep(-spread, spread, v.y + hole);
-  float farShare = smoothstep(-spread, spread, v.y - hole);
-  // The gas each share shows: the middle plane where it is on the disk,
-  // else the hottest gas at the edge of the hole just beyond.
-  float gy = v.y / holeCos;
-  float edge = hole / holeCos + 0.008;
-  vec4 near = holeFlat(vec2(v.x, min(gy, -edge)));
-  vec4 far = holeFlat(vec2(v.x, max(gy, edge)));
-  return vec3(
-    nearShare * holeLight(near, cell, t),
-    farShare * holeLight(far, cell, t),
-    nearShare * holeProfile(near.x)
-  );
+  float r0 = max(length(vec2(v.x, v.y / holeCos)), holeInner);
+  float height = ${glsl(SLAB)} * (0.2 + r0);
+  float nearLight = 0.0;
+  float farLight = 0.0;
+  float through = 1.0;
+  for (int i = 0; i < ${SLAB_SAMPLES}; i++) {
+    // From the top face, in front, down to the underside behind.
+    float s = 1.0 - 2.0 * (float(i) + 0.5) / ${glsl(SLAB_SAMPLES)};
+    float w = exp(-${glsl(SLAB_FALLOFF)} * s * s);
+    vec4 image = holeFlat(vec2(v.x, (v.y - s * height * holeSin) / holeCos));
+    float glow = w * holeLight(image, cell, t);
+    if (sin(image.y) < 0.0) {
+      nearLight += glow;
+      through *= exp(-${glsl(OPACITY)} * holeDisk * w * holeProfile(image.x) / ${glsl(SLAB_WEIGHT)});
+    } else {
+      farLight += glow;
+    }
+  }
+  float scale = ${glsl(SLAB_GLOW)} / ${glsl(SLAB_WEIGHT)};
+  return vec3(nearLight * scale, farLight * scale, through);
 }
 
 float field(vec2 uv, vec2 res, float t) {
@@ -290,29 +316,31 @@ float field(vec2 uv, vec2 res, float t) {
 
   // The flat disk. Its far half only adds to the light out at the sides,
   // beyond the arc, and along the horizon, where it meets the near half,
-  // so the dark gap round the ring stays clean. The near half is in front
-  // of everything, the shadow included.
+  // so the dark gap round the ring stays clean. The near half glows in
+  // front of everything, the shadow included, and dims the images behind
+  // it as its gas thickens.
   vec3 slab = holeSlab(v, cell, t);
   float horizon = (1.0 - smoothstep(0.0, ${glsl(HORIZON)}, v.y)) * smoothstep(holeInner, holeInner + 0.03, abs(v.x));
   float sides = max(smoothstep(holeInner + 0.05, holeInner + 0.3, rho), horizon);
-  float cover = 1.0 - exp(-${glsl(OPACITY)} * holeDisk * slab.z);
-  float light = max(max(arc, low) * outside * (1.0 - cover), sides * slab.y * outside + slab.x);
+  float light = slab.x + max(slab.z * max(arc, low), sides * slab.y) * outside;
   float tone = 1.0 - exp(-${glsl(GAIN)} * holeDisk * light);
 
   // The photon ring: one thin, solid circle on the edge of the shadow. It
   // fades behind the near half as the gas there thickens.
   float ring = 1.0 - smoothstep(0.52, 0.8, abs(rho - holeShadow - 0.5 * cell) / cell);
-  tone = max(tone, ring * (1.0 - cover));
+  tone = max(tone, ring * slab.z);
 
   // Stars show only on clear sky.
   float hollow = holeHollow(rho, cell);
   vec2 star = holeStar(v, cell, t);
   float sky = outside * (1.0 - hollow) * (1.0 - smoothstep(0.02, 0.12, tone));
-  // On a light page the brightest gas stops at holeCap, and the void takes
-  // the last ink: gas in front of it lightens it towards holeCap. With one
-  // ink fewer for the gas, its tone is lifted so it still fills in solid.
-  float lifted = 1.0 - (1.0 - tone) * (1.0 - tone);
-  float onPaper = mix(holeCap * lifted, 1.0 - (1.0 - holeCap) * lifted, hollow);
+  // On a light page the brightest gas stops at holeCap, one ink short of
+  // the last, and the void takes that last ink: gas in front of it
+  // lightens it towards holeCap. Between the void and the gas there is no
+  // ink in between, so there the tone is lifted to keep the band from
+  // breaking into a checker of the two.
+  float lifted = 1.0 - pow(1.0 - tone, 3.0);
+  float onPaper = mix(holeCap * tone, 1.0 - (1.0 - holeCap) * lifted, hollow);
   tone = mix(tone, onPaper, holeVoid);
   return max(tone, star.x * sky);
 }
@@ -323,10 +351,11 @@ vec3 colorField(vec2 uv, vec2 res, float t) {
   vec2 v = holeView(uv, res);
   float rho = length(v);
   float cell = 1.0 / (holeSize * min(res.x, res.y));
-  // The disk radius this cell shows: the near half in front, else the image
-  // behind.
+  // The disk radius this cell shows: the near half in front, its soft
+  // edges included, else the image behind.
   vec4 near = holeNear(v);
-  vec4 image = v.y >= 0.0 ? holeFar(v, rho) : (holeProfile(near.x) > 0.02 ? near : holeLow(v, rho));
+  bool front = holeProfile(near.x) > 0.02 || (near.x > holeInner && near.x < 1.1);
+  vec4 image = v.y >= 0.0 ? holeFar(v, rho) : (front ? near : holeLow(v, rho));
   // Hottest at the inner edge, on the photon ring, and on the side turning
   // towards the viewer.
   float heat = (1.0 - smoothstep(holeInner, 0.95, image.x)) * clamp(0.6 + 0.3 * holeBeam(cos(image.y)), 0.0, 1.0);
@@ -345,6 +374,10 @@ const CENTRE: BlackHolePoint = [0.5, 0.5];
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
+
+/** `value` where it is a finite number, else `fallback`, as for NaN or Infinity. */
+const finite = (value: number, fallback: number) =>
+  Number.isFinite(value) ? value : fallback;
 
 /** GLSL's smoothstep, for the fallback's profiles. */
 const smooth = (lo: number, hi: number, x: number) => {
@@ -391,6 +424,9 @@ const isHollow = (colors: readonly Rgba[] | null) => {
   }
   return luminance(paper) > luminance(last) + 0.05;
 };
+
+/** Radius of the void the fallback draws on a light page, round the photon ring. */
+const VOID = INNER + 0.008;
 
 /** Half the side of the fallback's square, in disk radii. */
 const EXTENT = 1.1;
@@ -504,14 +540,41 @@ const BlackHoleFallback = ({
   const squash = Math.max(0.06, Math.cos(radians));
   const sin = Math.sin(radians);
   const lean = leanOf(sin);
-  // The spread of the shader's five heights through the slab, on screen.
-  const blur = 0.5 * SLAB * sin;
+  // The spread of the shader's heights through the slab on screen, at the
+  // middle of the disk.
+  const blur = (SLAB * (0.2 + 0.5) * sin) / Math.sqrt(2 * SLAB_FALLOFF);
   const arcThick = 1 + (ARC_THICK - 1) * lean;
+  // The colour and opacity a stop takes for the tone of the gas at radius
+  // `r`: on paper, the gas's inks; over the void, the void lightened
+  // towards the hottest gas ink, as the shader lifts it.
+  const onPaper = (tone: number, r: number) => paint(tone, r);
+  const overVoid = (tone: number) => ({
+    color: ramp.at(-1) ?? ink,
+    opacity: 1 - (1 - clamp(tone, 0, 1)) ** 3,
+  });
+  // How much of what lies behind the near half its gas hides, as black for
+  // a mask, as the shader's slab dims the photon ring.
+  const hides = (_tone: number, r: number) => ({
+    color: "#000",
+    opacity: 1 - Math.exp(-OPACITY * disk * profile(r)),
+  });
   // One gradient per image: `thick` packs the disk from the inner edge out
   // into that share of its width, as `holeArc` and `holeLow` do.
-  const gradient = (name: string, thick: number, strength: number) => {
-    // Paints with the light of `strength`, so a brighter side takes the
-    // hotter inks, as the beaming does in the shader.
+  const gradient = ({
+    name,
+    thick,
+    strength,
+    stop = onPaper,
+  }: {
+    name: string;
+    thick: number;
+    /**
+     * The light the gas paints with, so a brighter side takes the hotter
+     * inks, as the beaming does in the shader.
+     */
+    strength: number;
+    stop?: (tone: number, r: number) => { color: string; opacity: number };
+  }) => {
     const outer = INNER + (1 - INNER) * thick;
     return (
       <radialGradient
@@ -527,7 +590,7 @@ const BlackHoleFallback = ({
           style={{ stopColor: paper, stopOpacity: 0 }}
         />
         {SAMPLES.map(({ r, streak }) => {
-          const { color, opacity } = paint(
+          const { color, opacity } = stop(
             coverage(profile(r) * streak * strength * disk),
             r
           );
@@ -729,10 +792,47 @@ const BlackHoleFallback = ({
             <rect {...square} fill={`url(#${id}-under-fade)`} />
           </mask>
           {sides.map(({ key, light }) => [
-            gradient(`arc-${key}`, arcThick, light),
-            gradient(`flat-${key}`, 1, light),
-            gradient(`low-${key}`, LOW_THICK, 0.75 * light),
+            gradient({ name: `arc-${key}`, strength: light, thick: arcThick }),
+            gradient({
+              name: `flat-${key}`,
+              strength: SLAB_GLOW * light,
+              thick: 1,
+            }),
+            hollow &&
+              gradient({
+                name: `void-${key}`,
+                stop: overVoid,
+                strength: SLAB_GLOW * light,
+                thick: 1,
+              }),
+            gradient({
+              name: `low-${key}`,
+              strength: 0.75 * light,
+              thick: LOW_THICK,
+            }),
           ])}
+          {gradient({ name: "hides", stop: hides, strength: 1, thick: 1 })}
+          {/* The photon ring fades behind the near half as its gas
+              thickens, and shows in full with no disk. */}
+          <mask id={`${id}-ring`} maskUnits="userSpaceOnUse" {...square}>
+            <rect {...square} fill="#fff" />
+            <g filter={`url(#${id}-slab)`}>
+              <path
+                d={halfRing({ half: 1, outer: 1 })}
+                fill={`url(#${id}-hides)`}
+                transform={`scale(1 ${fixed(squash)})`}
+              />
+            </g>
+          </mask>
+          <clipPath id={`${id}-void`}>
+            <circle r={VOID} />
+          </clipPath>
+          {hollow && (
+            <mask id={`${id}-paper`} maskUnits="userSpaceOnUse" {...square}>
+              <rect {...square} fill="#fff" />
+              <circle r={VOID} fill="#000" />
+            </mask>
+          )}
         </defs>
         <g transform={`rotate(${angle - 90})`}>
           {sides.map(({ key, mask }) => (
@@ -772,31 +872,44 @@ const BlackHoleFallback = ({
               ring. On a light page the void takes the last ink and spans
               the gap round the ring too. */}
           {hollow ? (
-            <circle r={INNER + 0.008} style={{ fill: ink }} />
+            <circle r={VOID} style={{ fill: ink }} />
           ) : (
             <circle r={SHADOW} style={{ fill: paper }} />
           )}
           <circle
             r={SHADOW}
             fill="none"
+            mask={`url(#${id}-ring)`}
             style={{ stroke: ring.color }}
             strokeWidth="2"
             vectorEffect="non-scaling-stroke"
           />
-          {/* In front of everything: the near half of the disk. Its dense
-              inner gas hides the ring and its thin outer gas lets a trace
-              through, by the gradient's own opacity. */}
-          <g filter={`url(#${id}-slab)`}>
-            {sides.map(({ key, mask }) => (
-              <g key={key} mask={mask}>
-                <path
-                  d={halfRing({ half: 1, outer: 1 })}
-                  fill={`url(#${id}-flat-${key})`}
-                  transform={`scale(1 ${fixed(squash)})`}
-                />
+          {/* In front of everything: the near half of the disk, softened
+              across its thickness. On a light page the part over the void
+              lightens it instead of darkening the paper. */}
+          {(hollow ? (["flat", "void"] as const) : (["flat"] as const)).map(
+            (layer) => (
+              <g
+                key={layer}
+                mask={
+                  hollow && layer === "flat" ? `url(#${id}-paper)` : undefined
+                }
+                clipPath={layer === "void" ? `url(#${id}-void)` : undefined}
+              >
+                <g filter={`url(#${id}-slab)`}>
+                  {sides.map(({ key, mask }) => (
+                    <g key={key} mask={mask}>
+                      <path
+                        d={halfRing({ half: 1, outer: 1 })}
+                        fill={`url(#${id}-${layer}-${key})`}
+                        transform={`scale(1 ${fixed(squash)})`}
+                      />
+                    </g>
+                  ))}
+                </g>
               </g>
-            ))}
-          </g>
+            )
+          )}
         </g>
       </svg>
     </div>
@@ -830,12 +943,17 @@ export const BlackHole = ({
   style,
   ...props
 }: BlackHoleProps) => {
-  const leaning = clamp(tilt, 0, 88);
+  const leaning = clamp(finite(tilt, 80), 0, 88);
   const radians = (leaning * Math.PI) / 180;
   const turn = direction === "counterclockwise" ? -1 : 1;
-  const radius = Math.max(0.05, size);
-  const glow = clamp(disk, 0, 1.5);
-  const starCount = clamp(stars, 0, 3);
+  const radius = Math.max(0.05, finite(size, 0.5));
+  const glow = clamp(finite(disk, 1), 0, 1.5);
+  const starCount = clamp(finite(stars, 1), 0, 3);
+  const heading = finite(angle, 90);
+  const middle: BlackHolePoint = [
+    finite(center[0], CENTRE[0]),
+    finite(center[1], CENTRE[1]),
+  ];
   // The fallback is always mounted inside the shader's box, so the palette
   // resolves there, with any theme scoped round the component.
   const probe = useRef<HTMLDivElement>(null);
@@ -854,11 +972,11 @@ export const BlackHole = ({
       stillTime={stillTime}
       style={{ containerType: "size", ...style }}
       uniforms={{
-        holeAngle: angle,
+        holeAngle: heading,
         // On a light page the gas stops one ink short of the last, which
         // the void keeps.
         holeCap: hollow ? (inks - 1) / inks : 1,
-        holeCenter: center,
+        holeCenter: middle,
         holeCos: Math.max(0.06, Math.cos(radians)),
         holeDisk: glow,
         holeInks: inks,
@@ -872,10 +990,10 @@ export const BlackHole = ({
       fallback={
         <BlackHoleFallback
           palette={palette}
-          center={center}
+          center={middle}
           size={radius}
           tilt={leaning}
-          angle={angle}
+          angle={heading}
           spin={turn}
           disk={glow}
           colorField={colorField}

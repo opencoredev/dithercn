@@ -10,10 +10,17 @@ export default function BlackHoleDemo() {
 
   return (
     <BlackHole
-      // The tint thins out to the cool rim, and the hottest gas and the
-      // photon ring are the tint mixed into the page's foreground: warm
-      // white on a dark theme, deep ink on a light one.
-      palette={["--dither-paper", tint, toward(tint, 30, "--foreground")]}
+      // The gas runs from a pale tint at the cool rim through the full tint,
+      // and the hottest gas and the photon ring are the tint mixed into the
+      // page's foreground: warm white on a dark theme. On a light theme that
+      // last colour is deep ink, which the hole keeps as its void, so the
+      // gas still has two colours to shade through.
+      palette={[
+        "--dither-paper",
+        toward(tint, 45),
+        tint,
+        toward(tint, 30, "--foreground"),
+      ]}
       colorField={usePreviewValue(knobs.colorField)}
       tilt={usePreviewValue(knobs.tilt)}
       direction={usePreviewValue(knobs.direction)}
